@@ -16,11 +16,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500..800&family=Nunito:ital,wght@0,400..900;1,400..700&family=Caveat:wght@500;700&family=Comic+Neue:ital,wght@0,700;1,700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
 
 :root{
-  --room:#211820;
+  --room:#181017;
   --room-2:#2B202B;
-  --card:#2E2430;
-  --card-2:#3A2D3C;
-  --line:#4E3E51;
+  --card:#43334A;
+  --card-2:#523F59;
+  --line:#775C7E;
   --cream:#FFEFD9;
   --dim:#B39DA8;
   --amber:#FFB454;
@@ -33,6 +33,9 @@
   --tabbar-bg:rgba(28,20,27,.96);
   --tape:rgba(255,239,217,.14);
   --tape-line:rgba(255,239,217,.10);
+  /* never flips with theme — for text on permanently dark surfaces
+     (keepsake overlay buttons sit on paper pages and stay dark) */
+  --on-dark:#FFEFD9;
 }
 :root[data-theme="light"]{
   --room:#FAF3E8;
@@ -106,6 +109,14 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
     inset 0 -14px 30px rgba(58,46,40,.08), inset 0 6px 24px rgba(255,255,255,.6);
   padding:22px 16px 24px;color:#4A3A32;
 }
+/* in light mode the room is already cream, so the screen needs its own
+   "projector is on" cue: brighter white + a warm halo spilling onto the wall */
+:root[data-theme="light"] .screen{
+  background:linear-gradient(180deg,#FFFFFF 0%,#FFFCF4 70%,#FBF4E4 100%);
+  box-shadow:0 0 0 2px #C9B79B, 0 0 34px 6px rgba(255,203,120,.45),
+    0 16px 30px rgba(90,70,45,.28),
+    inset 0 -14px 30px rgba(58,46,40,.05), inset 0 6px 24px rgba(255,255,255,.9);
+}
 .screen-inner{position:relative;z-index:1}
 .screen .label{font-size:11px;letter-spacing:4px;color:var(--coral);text-transform:uppercase;font-weight:900}
 .screen .pickname{
@@ -146,17 +157,32 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 }
 /* projector animation state is JS-controlled (Settings > Appearance),
    defaulting to the OS's prefers-reduced-motion at boot — see applyMotion() */
-html.motion-on .screen-inner{animation:flicker 6.5s infinite}
-html.motion-on .screen .pickname{animation:projjig .9s steps(2) infinite}
+html.motion-on .screen-inner{animation:flicker 6.5s infinite, gateweave 1.7s steps(3) infinite}
+html.motion-on .screen .pickname{animation:projjig .55s steps(2) infinite}
 html.motion-on .burn.b1{animation:burnpop 11s 2.2s infinite}
 html.motion-on .burn.b2{animation:burnpop 14s 7.6s infinite}
 html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 @keyframes flicker{
-  0%,88%,100%{opacity:1}
-  89%{opacity:.82} 90%{opacity:1} 91.5%{opacity:.9} 92%{opacity:1}
-  96%{opacity:.94} 97%{opacity:1}
+  0%,72%,100%{opacity:1}
+  73%{opacity:.72} 74%{opacity:1} 75.5%{opacity:.84} 76%{opacity:1}
+  88%{opacity:.78} 89%{opacity:1} 90.5%{opacity:.88} 91%{opacity:1}
+  96%{opacity:.9} 97%{opacity:1}
 }
-@keyframes projjig{0%,100%{transform:translate(0,0)}50%{transform:translate(.5px,-.4px)}}
+/* projector gate weave — the whole frame drifts, the title shakes harder */
+@keyframes projjig{
+  0%{transform:translate(0,0)}
+  20%{transform:translate(1.2px,-.9px)}
+  40%{transform:translate(-1px,.7px)}
+  60%{transform:translate(.9px,1.1px)}
+  80%{transform:translate(-1.3px,-.5px)}
+  100%{transform:translate(0,0)}
+}
+@keyframes gateweave{
+  0%{transform:translate(0,0)}
+  33%{transform:translate(-.6px,.5px)}
+  66%{transform:translate(.5px,-.4px)}
+  100%{transform:translate(0,0)}
+}
 @keyframes burnpop{
   0%,100%{opacity:0;transform:scale(.2)}
   2%{opacity:.85;transform:scale(.7)}
@@ -363,7 +389,7 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 .ai-gen{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   margin-top:18px;min-height:54px;border-radius:99px;border:none;
-  background:linear-gradient(135deg,var(--sky2),#6FA0D8);color:#0F1E30;
+  background:linear-gradient(135deg,#8FB8DE,#6FA0D8);color:#0F1E30;
   font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;
 }
 .ai-gen:disabled{opacity:.5}
@@ -402,13 +428,14 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 .scrap-page{max-width:560px;margin:0 auto;padding:44px 22px 0}
 .scrap-close{
   position:fixed;top:calc(12px + env(safe-area-inset-top));right:14px;z-index:1110;
-  width:44px;height:44px;border-radius:50%;border:none;background:#3A2A20;color:var(--cream);
-  font-size:18px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.35);
+  width:44px;height:44px;border-radius:50%;border:none;background:#3A2A20;color:var(--on-dark);
+  font-size:20px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.35);
+  border:2px solid rgba(255,239,217,.35);
 }
 .sp-print{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   margin:28px 0 6px;min-height:52px;border-radius:99px;border:none;
-  background:#3A2A20;color:var(--cream);font-family:'Baloo 2',sans-serif;
+  background:#3A2A20;color:var(--on-dark);font-family:'Baloo 2',sans-serif;
   font-weight:800;font-size:16px;box-shadow:0 6px 18px rgba(74,53,32,.35);
 }
 .sp-print-hint{text-align:center;font-size:11px;color:#A3814F;font-weight:800;margin-bottom:6px}
@@ -766,19 +793,45 @@ footer{
 }
 
 /* ============ PRINT (keepsake PDFs — US Letter book pages) ============ */
-@page{ size: letter portrait; margin: 0.6in; }
+/* Keepsake PDF: US Letter book page, framed by a filmstrip on both edges.
+   The sprocket gutters also pull the text in to a comfortable reading
+   measure — full-width Letter text reads as stretched. */
+@page{ size: letter portrait; margin: 0.5in; }
 @media print{
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   html,body{background:#F8EEDC;padding:0;margin:0}
   .lights,.tabbar,.toast,#app{display:none !important}
   .scrap-overlay{position:static;inset:auto;overflow:visible;padding:0;background:#F8EEDC}
   .scrap-close,.sp-print,.sp-print-hint,.no-print{display:none !important}
-  .scrap-page{padding:0;max-width:none;font-size:13px}
+  .scrap-page{
+    max-width:none;font-size:12.5px;
+    padding:0.22in 0.62in;
+    background-color:transparent;
+    /* sprocket holes must come FIRST — earlier layers paint on top of later
+       ones, so the solid strips are listed last and sit underneath */
+    background-image:
+      linear-gradient(to bottom, transparent 0 0.075in, #F6ECD8 0.075in 0.175in, transparent 0.175in 0.25in),
+      linear-gradient(to bottom, transparent 0 0.075in, #F6ECD8 0.075in 0.175in, transparent 0.175in 0.25in),
+      linear-gradient(#2A1E14,#2A1E14),
+      linear-gradient(#2A1E14,#2A1E14);
+    background-size:
+      0.14in 0.25in, 0.14in 0.25in,
+      0.32in 100%, 0.32in 100%;
+    background-position:
+      0.09in top, right 0.09in top,
+      left top, right top;
+    background-repeat:
+      repeat-y, repeat-y,
+      no-repeat, no-repeat;
+  }
   .yb-cover{page-break-after:always}
   .yb-night,.sp-section{page-break-inside:avoid}
-  .sp-title{font-size:26px}
-  .sp-comic{font-size:15px}
-  .sp-scene{font-size:12px}
+  .sp-title{font-size:24px}
+  .sp-comic{font-size:14px}
+  .sp-scene{font-size:11.5px;line-height:1.5}
+  .sp-note{font-size:13px}
+  .sp-sticky,.sp-why .why-text{font-size:17px}
+  .yb-year{font-size:64px}
 }
 </style>
 </head>
@@ -910,10 +963,10 @@ if (window.matchMedia){
 
 /* ---------- the cast ---------- */
 var MEMBERS = [
-  { id:'chris',  name:'Chris',  color:'#FFB454', onWhite:'#B87A1E', paper:'#FBE3C0' },
+  { id:'chris',  name:'Chris',  color:'#7FB4E8', onWhite:'#2F6DA8', paper:'#D6E7F7' },
   { id:'kat',    name:'Kat',    color:'#F2705F', onWhite:'#C94F3D', paper:'#FAD9CE' },
   { id:'sedona', name:'Sedona', color:'#A8C686', onWhite:'#6E9155', paper:'#E2EDCF' },
-  { id:'river',  name:'River',  color:'#8FB8DE', onWhite:'#4E7FAE', paper:'#D8E6F4' }
+  { id:'river',  name:'River',  color:'#C4A5E8', onWhite:'#7350A8', paper:'#E9DEF8' }
 ];
 function memberById(id){
   for (var i=0;i<MEMBERS.length;i++) if (MEMBERS[i].id === id) return MEMBERS[i];
@@ -1615,7 +1668,7 @@ function openReaction(night, member){
     [
       { key:'laughed',    label:'😂 I laughed' },
       { key:'cried',      label:'😢 I cried' },
-      { key:'rewatch',    label:'🔁 Again!' },
+      { key:'rewatch',    label:'🔁 I’d see it again' },
       { key:'seenBefore', label:'👀 Seen it before' }
     ].forEach(function(pq){
       var c = el('button','poll-chip' + (poll[pq.key] ? ' on' : ''), pq.label);
@@ -1826,7 +1879,7 @@ function buildNightKeepsake(container, night){
     [
       { label:'😂 Did we laugh?', list:tally.laughed },
       { label:'😢 Did we cry?', list:tally.cried },
-      { label:'🔁 Watch it again?', list:tally.rewatch },
+      { label:'🔁 Would we see it again?', list:tally.rewatch },
       { label:'👀 Seen it before?', list:tally.seenBefore }
     ].forEach(function(pq){
       var row = el('div','sp-poll-row');
@@ -2531,7 +2584,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.3.1'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.4'));
   app.appendChild(footer);
 }
 
@@ -3013,7 +3066,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.3.1'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.4'));
   app.appendChild(foot);
 }
 
