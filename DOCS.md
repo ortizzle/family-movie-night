@@ -71,7 +71,7 @@ never removals — a hard delete resurrects on the next sync from another phone.
 
 | Type | Id shape | Holds |
 |---|---|---|
-| `night` | `night_<ts>_<rand>` | title, year, date, pickedBy, question, posterPath, cached `facts` |
+| `night` | `night_<ts>_<rand>` | title, year, date, pickedBy, question, bonus, venue, posterPath, cached `facts` |
 | `reaction` | `rx_<nightId>_<member>` | stars, thought, character, scene, quotes[], memories[], poll, answer, why |
 | `shortlist` | `short_<slug>` | movies held for later |
 | `seen` | `seen_<slug>` | "we've already watched this" — keeps it off the Ideas shelves |
@@ -141,6 +141,13 @@ so claiming out of order never skips anybody. The marquee, Coming Attractions,
 the Settings badge, and the add-night picker all read from this one projection,
 because when they each computed their own answer they disagreed.
 
+**Bonus nights are invisible to the rotation.** A night flagged `bonus: true`
+is a real movie night — card, reactions, scrapbook, stats, Ortizzle — but
+every function that decides whose turn it is runs its input through
+`turnNights()` first. That's `nightsSinceAnchor`, `rotationBase`, and
+`lineupSlots`. They still show in Coming Attractions, merged in by date at
+render time. If you add another rotation-aware function, filter it too.
+
 **`rotation_anchor` restarts the order without logging a movie.** It only
 decides where the order picks back up; once a night actually happens on or
 after the anchor date, real nights drive the rotation again.
@@ -193,6 +200,7 @@ mistake would hide.
 
 ## Version history
 
+- **v3.1** — bonus nights that don't take a turn, and where you watched
 - **v3.0** — picker's question, family votes, where-to-watch, The Ortizzle; source split into `src/fmn/*.js` and moved into its own repo
 - **v2.6** — "Not interested" on movie ideas
 - **v2.5** — Settings sections survive background repaints
