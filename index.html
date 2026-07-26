@@ -283,6 +283,147 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .log-btn:active{transform:scale(.98)}
 
+/* ---- The Ortizzle ---- */
+.ortiz-card{
+  display:flex;align-items:center;gap:12px;width:100%;margin-top:16px;
+  padding:14px 15px;border-radius:18px;text-align:left;min-height:64px;
+  background:linear-gradient(135deg,rgba(255,180,84,.2),rgba(242,112,95,.15));
+  border:2px solid var(--amber);color:var(--ink);
+}
+.ortiz-card .oc-ico{font-size:27px}
+.ortiz-card .oc-body{flex:1;min-width:0}
+.ortiz-card .oc-name{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;color:var(--amber)}
+.ortiz-card .oc-sub{font-size:12.5px;font-weight:800;color:var(--dim);margin-top:2px}
+.ortiz-card .oc-go{font-size:21px;font-weight:900;color:var(--amber)}
+/* the ceremony page rides on the keepsake sheet, so inks are fixed */
+.scrap-page.ortizzle .oz-title{
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:44px;line-height:1;
+  text-align:center;color:#8A6A2E;letter-spacing:-.5px;margin-top:4px;
+}
+.scrap-page.ortizzle .oz-sub{
+  text-align:center;font-size:12px;font-weight:700;font-style:italic;
+  color:#6B5A46;line-height:1.45;margin:8px 14px 0;
+}
+.scrap-page.ortizzle .oz-count{
+  text-align:center;font-size:10.5px;font-weight:900;letter-spacing:1.4px;
+  text-transform:uppercase;color:#8A7A66;margin-top:14px;
+}
+.scrap-page.ortizzle .oz-empty{
+  margin-top:22px;text-align:center;font-size:14px;font-weight:700;
+  color:#6B5A46;line-height:1.6;font-style:italic;
+}
+.scrap-page.ortizzle .oz-divider{
+  margin:26px 0 4px;text-align:center;font-size:11px;font-weight:900;
+  letter-spacing:2.5px;text-transform:uppercase;color:#8A6A2E;
+}
+.oz-award{
+  margin-top:16px;padding:14px 15px;border-radius:5px;background:#FFFDF6;
+  border-left:5px solid #C9A227;box-shadow:0 5px 14px rgba(74,53,32,.16);
+}
+.oz-award .oz-top{display:flex;align-items:center;gap:9px}
+.oz-award .oz-ico{font-size:19px}
+.oz-award .oz-name{
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15.5px;
+  color:#4A3520;line-height:1.2;
+}
+.oz-award .oz-blurb{font-size:11.5px;font-weight:700;color:#8A7A66;margin-top:3px;line-height:1.4}
+.oz-award .oz-winner{
+  font-family:'Caveat',cursive;font-size:27px;line-height:1.15;color:#231A14;margin-top:9px;
+}
+.oz-award .oz-detail{font-size:12px;font-weight:800;color:#8A6A2E;margin-top:4px}
+.oz-noms{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+.oz-nom{
+  display:block;width:100%;text-align:left;min-height:48px;padding:9px 11px;
+  border-radius:9px;border:2px solid #E4D8C2;background:#FFF;color:#4A3520;
+}
+.oz-nom.on{border-color:#C9A227;background:#FFF8E4}
+.oz-nom .on-text{display:block;font-size:13.5px;font-weight:700;font-style:italic;line-height:1.35}
+.oz-nom .on-by{display:block;font-size:10.5px;font-weight:900;margin-top:4px;
+  text-transform:uppercase;letter-spacing:.5px}
+
+/* ---- where can we watch it ---- */
+.watch-wrap:empty{display:none}
+.watch-row{
+  margin-top:12px;padding:10px 12px;border-radius:12px;
+  background:var(--card-2);border:2px solid var(--line);
+}
+.watch-row .wr-lead{
+  font-size:10.5px;font-weight:900;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--muted);
+}
+.watch-row .wr-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.watch-row .wr-pill{
+  font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;
+  background:rgba(143,184,222,.18);color:var(--ink);border:1.5px solid var(--line);
+}
+.watch-row .wr-pill.muted{background:transparent;color:var(--muted);font-weight:700}
+.watch-row .wr-link{
+  display:inline-block;margin-top:8px;font-size:12px;font-weight:900;
+  color:var(--amber);text-decoration:none;min-height:24px;
+}
+/* on the projector screen the surface is always light, so use fixed inks */
+.screen-watch:empty{display:none}
+.screen-watch .watch-row{
+  background:rgba(35,26,20,.05);border-color:rgba(35,26,20,.18);
+  text-align:left;margin-top:14px;
+}
+.screen-watch .wr-lead{color:#6B5A46}
+.screen-watch .wr-pill{background:#FFF;color:#231A14;border-color:rgba(35,26,20,.2)}
+.screen-watch .wr-pill.muted{background:transparent;color:#6B5A46}
+.screen-watch .wr-link{color:#A8620F}
+
+/* ---- put it to a vote ---- */
+.vote-start{
+  display:block;width:100%;margin-top:11px;border:2px dashed var(--line);
+  border-radius:99px;background:transparent;padding:14px;
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;
+  color:var(--dim);min-height:50px;
+}
+.vote-start:active{border-color:var(--amber);color:var(--amber)}
+.vote-card{
+  margin-top:14px;background:var(--card);border:2px solid var(--amber);
+  border-radius:20px;padding:15px 14px 14px;box-shadow:0 10px 28px rgba(0,0,0,.2);
+}
+.vote-head{display:flex;align-items:center;gap:9px}
+.vote-head .vc-ico{font-size:22px}
+.vote-head .vc-title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;color:var(--amber)}
+.vote-sub{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.6px;margin:4px 0 10px}
+.vote-opt{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:56px;
+  margin-top:8px;padding:9px 12px;border-radius:14px;text-align:left;
+  border:2px solid var(--line);background:var(--card-2);color:var(--ink);
+}
+.vote-opt.mine{border-color:var(--amber);background:rgba(255,180,84,.12)}
+.vote-opt .vo-main{flex:1;min-width:0}
+.vote-opt .vo-title{font-weight:800;font-size:14.5px;line-height:1.3}
+.vote-opt .vo-voters{display:flex;align-items:center;gap:4px;margin-top:5px;min-height:18px}
+.vote-opt .vo-dot{
+  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:9.5px;font-weight:900;color:#2A1B14;
+}
+.vote-opt .vo-none{font-size:10.5px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px}
+.vote-opt .vo-count{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:21px;
+  color:var(--amber);flex-shrink:0;min-width:22px;text-align:center}
+.vote-close{
+  display:block;width:100%;margin-top:12px;border:none;border-radius:99px;
+  background:var(--btn-bg);color:var(--btn-ink);padding:14px;min-height:50px;
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;
+}
+.vote-foot{margin-top:11px;font-size:12px;font-weight:700;color:var(--dim);
+  text-align:center;line-height:1.4}
+.vote-picklist{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.vote-pick{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:50px;
+  padding:11px 13px;border-radius:13px;text-align:left;
+  border:2px solid var(--line);background:var(--card-2);color:var(--ink);
+  font-weight:800;font-size:14px;
+}
+.vote-pick.on{border-color:var(--amber);background:rgba(255,180,84,.13)}
+.vote-pick .vp-title{flex:1;min-width:0}
+.vote-pick .vp-mark{color:var(--amber);font-weight:900;font-size:17px;flex-shrink:0}
+
 /* filmstrip divider */
 .film-divider{
   height:22px;margin:32px auto 0;max-width:300px;border-radius:5px;background-color:#17101A;
@@ -342,7 +483,7 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .night .del{
   background:none;border:none;color:var(--muted);font-size:18px;padding:8px 10px;
-  position:absolute;top:4px;right:4px;min-width:40px;min-height:40px;z-index:2;
+  position:absolute;top:4px;right:4px;min-width:44px;min-height:44px;z-index:2;
   letter-spacing:1px;line-height:1;
 }
 .night .del:active{color:var(--amber)}
@@ -546,6 +687,15 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   color:#4A3520;font-style:italic;
 }
 .sp-char-line{margin-top:10px;font-family:'Caveat',cursive;font-size:21px;color:#4A3520;line-height:1.3}
+/* the picker's question, written across the scrapbook page in their hand */
+.night-q{
+  margin-top:8px;font-size:12.5px;font-weight:800;line-height:1.4;
+  color:var(--amber);font-style:italic;
+}
+.sp-asked{
+  font-family:'Caveat',cursive;font-size:25px;line-height:1.25;color:#4A3520;
+  text-align:center;padding:6px 10px 2px;
+}
 /* comic speech-bubble quotes on the scrapbook page */
 .sp-comic-wrap{margin-top:16px}
 .sp-comic{
@@ -1105,6 +1255,14 @@ footer{
 <div class="toast" id="toast"></div>
 
 <script>
+/* ===== fmn/core.js ===== */
+/* Family Movie Night — fmn/core.js
+   Storage, Arizona time, theme and motion, the cast, TMDB and OMDb lookups.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
+
 'use strict';
 /* =====================================================================
    FAMILY MOVIE NIGHT — Ortiz Family · v1.3
@@ -1312,7 +1470,7 @@ function tmdbSearch(query){
 function tmdbDetails(tmdbId){
   var cred = loadTmdbCred();
   if (!cred || !tmdbId) return Promise.reject(new Error('NO_KEY'));
-  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates';
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates,watch/providers';
   var headers = {};
   if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
   else url += '&api_key=' + encodeURIComponent(cred.value);
@@ -1320,6 +1478,27 @@ function tmdbDetails(tmdbId){
     if (!res.ok) throw new Error('TMDB ' + res.status);
     return res.json();
   });
+}
+/* Where the family can actually watch it tonight. TMDB relays JustWatch
+   data; we only want US, and only the names — logos would mean more
+   requests and more layout. Streaming is what matters, so rent/buy is a
+   fallback, not a headline. */
+function usWatchFrom(details){
+  try {
+    var wp = details['watch/providers'];
+    var us = wp && wp.results && wp.results.US;
+    if (!us) return null;
+    function names(list){
+      return (list || []).map(function(p){ return p.provider_name; }).slice(0, 4);
+    }
+    var out = {
+      link: us.link || null,
+      stream: names(us.flatrate),
+      rent: names(us.rent).concat(names(us.buy)).slice(0, 3)
+    };
+    if (!out.stream.length && !out.rent.length) return null;
+    return out;
+  } catch(e){ return null; }
 }
 function usCertFrom(details){
   try {
@@ -1368,6 +1547,7 @@ function buildFacts(tmdbId, fallbackTitle){
         runtime: d.runtime || null,
         tmdbScore: d.vote_average || null,
         imdbId: d.imdb_id || null,
+        watch: usWatchFrom(d),
         fetchedAt: Date.now()
       };
       return omdbScores(f.imdbId).then(function(sc){
@@ -1388,6 +1568,29 @@ function imdbGuideChip(f, cls){
   a.rel = 'noopener noreferrer';
   a.setAttribute('aria-label', 'IMDb parents guide for this film');
   return a;
+}
+/* the "where can we watch it" row */
+function watchRow(f){
+  if (!f || !f.watch) return null;
+  var w = f.watch;
+  var wrap = el('div','watch-row');
+  var lead = el('div','wr-lead', w.stream.length ? '📺 Streaming on' : '💵 Rent or buy');
+  wrap.appendChild(lead);
+  var pills = el('div','wr-pills');
+  var list = w.stream.length ? w.stream : w.rent;
+  list.forEach(function(name){ pills.appendChild(el('span','wr-pill', name)); });
+  if (w.stream.length && w.rent.length){
+    pills.appendChild(el('span','wr-pill muted', 'or rent: ' + w.rent[0]));
+  }
+  wrap.appendChild(pills);
+  if (w.link){
+    var a = el('a','wr-link','Where to watch ↗');
+    a.href = w.link;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    wrap.appendChild(a);
+  }
+  return wrap;
 }
 function factChips(f, cls){
   var wrap = el('div', cls || 'idea-facts');
@@ -1438,6 +1641,14 @@ function ensureNightFacts(night, onDone){
     if (onDone) onDone(f2);
   }).catch(function(){});
 }
+
+/* ===== fmn/data.js ===== */
+/* Family Movie Night — fmn/data.js
+   Records, family Gist sync, whose-turn-it-is, quote matching, sample data.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
 
 /* ---------- data ---------- */
 var data = Store.get('data', { records:{} });
@@ -1979,6 +2190,14 @@ function clearSample(quiet){
   if (!quiet) toast('Sample nights cleared — couch is all yours');
 }
 
+/* ===== fmn/ui.js ===== */
+/* Family Movie Night — fmn/ui.js
+   DOM helpers, stars, the modal shell, logging a night, reactions, deleting.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
+
 /* ---------- tiny DOM helpers ---------- */
 function el(tag, cls, text){
   var n = document.createElement(tag);
@@ -2303,6 +2522,28 @@ function openReaction(night, member){
       box.appendChild(why);
     }
 
+    /* the picker's own question — theirs to write, everyone else's to answer */
+    var askBox = null;
+    if (isPicker){
+      box.appendChild(el('div','f-label','❓ Your question for the family'));
+      askBox = el('input','f-input');
+      askBox.type = 'text';
+      askBox.placeholder = 'e.g. Who’s going to cry first?';
+      askBox.value = night.question || '';
+      box.appendChild(askBox);
+      box.appendChild(el('div','set-note','Ask one thing and everybody answers it in their own reaction. It gets its own page in the scrapbook.'));
+    }
+
+    /* ...and everybody's answer to it */
+    var answer = null;
+    if (night.question){
+      box.appendChild(el('div','f-label','❓ ' + night.question));
+      answer = el('textarea','f-area');
+      answer.placeholder = memberById(night.pickedBy).name + ' wants to know…';
+      answer.value = existing ? (existing.answer || '') : '';
+      box.appendChild(answer);
+    }
+
     box.appendChild(el('div','f-label','What did you think?'));
     var thought = el('textarea','f-area');
     thought.placeholder = 'Your two-sentence review…';
@@ -2403,8 +2644,18 @@ function openReaction(night, member){
         stars:stars, why: (isPicker && why) ? why.value.trim() : (existing ? existing.why || '' : ''),
         thought:thought.value.trim(), character:character.value.trim(), scene:scene.value.trim(),
         quotes:quotes, memories:memories, poll:poll,
+        answer: answer ? answer.value.trim() : (existing ? existing.answer || '' : ''),
         updatedAt: Date.now()
       };
+      // the picker's question lives on the night, not the reaction
+      if (askBox){
+        var q = askBox.value.trim();
+        var nrec = data.records[night.id];
+        if (nrec && !nrec.deleted && (nrec.question || '') !== q){
+          nrec.question = q;
+          nrec.updatedAt = Date.now();
+        }
+      }
       saveData();
       close();
       render();
@@ -2494,6 +2745,14 @@ function openEditNight(night){
     var hint = el('div','set-note','Moving this to a later date keeps everyone’s turn in order — the rest of the lineup shifts with it.');
     box.appendChild(hint);
 
+    box.appendChild(el('div','f-label','❓ Question for the family'));
+    var qInput = el('input','f-input');
+    qInput.type = 'text';
+    qInput.placeholder = 'e.g. Who’s going to cry first?';
+    qInput.value = night.question || '';
+    box.appendChild(qInput);
+    box.appendChild(el('div','set-note','The picker’s own question — everyone answers it in their reaction.'));
+
     box.appendChild(el('div','f-label','Whose pick?'));
     var chips = el('div','pick-chips');
     var picked = night.pickedBy;
@@ -2528,6 +2787,7 @@ function openEditNight(night){
       rec.year = Number(yInput.value) || null;
       rec.date = dInput.value || rec.date;
       rec.pickedBy = picked;
+      rec.question = qInput.value.trim();
       rec.updatedAt = Date.now();
       saveData();
       close();
@@ -2572,6 +2832,14 @@ function openNightMenu(night){
     box.appendChild(row);
   });
 }
+
+/* ===== fmn/keepsakes.js ===== */
+/* Family Movie Night — fmn/keepsakes.js
+   Scrapbook, Year in Review, the Complete Collection, Claude packs, backups.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
 
 /* ---------- KEEPSAKE BUILDERS (shared by scrapbook + yearbook) ---------- */
 function spTag(m){
@@ -2635,6 +2903,28 @@ function buildNightKeepsake(container, night){
       thoSec.appendChild(note);
     });
     container.appendChild(thoSec);
+  }
+
+  /* the picker's own question, and what everyone said back */
+  if (night.question){
+    var ansMembers = MEMBERS.filter(function(m){
+      var r = reactionFor(night.id, m.id);
+      return r && r.answer;
+    });
+    if (ansMembers.length){
+      var qaSec = spSection('❓ ' + memberById(night.pickedBy).name + ' asked');
+      var asked = el('div','sp-asked', night.question);
+      qaSec.appendChild(asked);
+      ansMembers.forEach(function(m, i){
+        var r = reactionFor(night.id, m.id);
+        var note = el('div','sp-note');
+        note.appendChild(spTag(m));
+        note.appendChild(document.createTextNode(' ' + r.answer));
+        note.style.transform = 'rotate(' + (rots[(i+1) % 4] * 0.5) + 'deg)';
+        qaSec.appendChild(note);
+      });
+      container.appendChild(qaSec);
+    }
   }
 
   /* favorite characters */
@@ -3365,6 +3655,14 @@ function importBackup(file){
   reader.readAsText(file);
 }
 
+/* ===== fmn/games.js ===== */
+/* Family Movie Night — fmn/games.js
+   The trivia question banks and the game engines.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
+
 /* ---------- TRIVIA ---------- */
 var TRIVIA_CATS = [
   { id:'pixar',    label:'🧸 Pixar' },
@@ -3451,7 +3749,6 @@ var WHO_SAID = [
   { q:'"I’ll be back."', opts:['Rocky','The Terminator','Die Hard','Predator'], a:1 },
   { q:'"We’re gonna need a bigger boat."', opts:['Titanic','Jaws','The Perfect Storm','Master and Commander'], a:1 }
 ];
-var trivia = { order:null, idx:0, score:0, answered:false, lastPick:-1 };
 function shuffledOrder(n){
   var arr = [];
   for (var i=0;i<n;i++) arr.push(i);
@@ -3461,6 +3758,14 @@ function shuffledOrder(n){
   }
   return arr;
 }
+
+/* ===== fmn/home.js ===== */
+/* Family Movie Night — fmn/home.js
+   The header, the projector screen, Coming Attractions, the night cards.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
 
 /* ---------- RENDER: shared ---------- */
 var view = 'home';
@@ -3524,6 +3829,18 @@ function renderHome(app){
   inner.appendChild(el('div','showdate', booked
     ? AZ.prettyLong(upNext.date)
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
+  /* where to find it — right where you look on the way to the couch */
+  if (booked){
+    var wWrap = el('div','screen-watch');
+    inner.appendChild(wWrap);
+    var paintWatch = function(f){
+      while (wWrap.firstChild) wWrap.removeChild(wWrap.firstChild);
+      var wr = watchRow(f);
+      if (wr) wWrap.appendChild(wr);
+    };
+    paintWatch(booked.facts);
+    ensureNightFacts(booked, paintWatch);
+  }
   var rot = el('div','rotation');
   MEMBERS.forEach(function(m, i){
     var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
@@ -3632,9 +3949,21 @@ function renderHome(app){
     app.appendChild(qw);
   }
 
+  /* awards season, once it's close enough to matter */
+  renderOrtizzleCountdown(app);
+
   var logBtn = el('button','log-btn','🍿 Log a Movie Night');
   logBtn.addEventListener('click', openAddNight);
   app.appendChild(logBtn);
+
+  /* an open vote sits right under the button — you can't miss it, and it
+     needs no notification permission to reach anybody */
+  if (openVote()) renderVoteBanner(app);
+  else {
+    var voteBtn = el('button','vote-start','🗳 Can’t decide? Put it to a vote');
+    voteBtn.addEventListener('click', openStartVote);
+    app.appendChild(voteBtn);
+  }
 
   /* memory book */
   var list = nights();
@@ -3698,6 +4027,7 @@ function renderHome(app){
     ticket.appendChild(tnm);
     ht.appendChild(ticket);
     if (n.sample) ht.appendChild(el('span','sampletag','sample'));
+    if (n.question) ht.appendChild(el('div','night-q', '❓ ' + memberById(n.pickedBy).name + ' asks: ' + n.question));
     head.appendChild(ht);
     card.appendChild(head);
 
@@ -3754,9 +4084,17 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.6'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.0'));
   app.appendChild(footer);
 }
+
+/* ===== fmn/ideas.js ===== */
+/* Family Movie Night — fmn/ideas.js
+   The Ideas tab: shelves, recommendations, shortlist, idea detail.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
 
 /* ---------- RENDER: ideas ----------
    Three sources, best-first: Claude ("For us", needs a key), TMDB
@@ -3925,15 +4263,42 @@ function toggleShortlist(it){
     overview:it.overview || '', cert:it.cert || null, score:it.score || null,
     updatedAt: Date.now()
   };
+  // saving something is a deliberate "we want this", so it clears an older
+  // "already watched" or "not interested" — a mis-tap or a wanted rewatch
+  // shouldn't leave the movie stuck off the shelves
+  var sid = seenId(it), pid = passId(it);
+  if (data.records[sid] && !data.records[sid].deleted){
+    data.records[sid] = { id:sid, type:'seen', deleted:true, updatedAt: Date.now() };
+  }
+  if (data.records[pid] && !data.records[pid].deleted){
+    data.records[pid] = { id:pid, type:'pass', deleted:true, updatedAt: Date.now() };
+  }
   saveData();
   return true;
 }
+function seenId(it){
+  return 'seen_' + normQuote(it.title).replace(/\s+/g,'_').slice(0, 60);
+}
+function isSeen(it){
+  var r = data.records[seenId(it)];
+  return !!(r && !r.deleted);
+}
 function markSeen(it){
-  var id = 'seen_' + normQuote(it.title).replace(/\s+/g,'_').slice(0, 60);
+  var id = seenId(it);
   data.records[id] = {
     id:id, type:'seen', title:it.title, year:it.year || null, updatedAt: Date.now()
   };
   saveData();
+}
+/* marked by mistake, or we want another go at it */
+function unmarkSeen(it){
+  var id = seenId(it);
+  if (!data.records[id]) return;
+  data.records[id] = { id:id, type:'seen', deleted:true, updatedAt: Date.now() };
+  saveData();
+}
+function seenTitles(){
+  return liveRecords('seen').sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
 }
 /* "not interested" — a real signal, not just a hide. Passed titles drop off
    every shelf and get handed to Claude as things not to suggest again. */
@@ -4209,8 +4574,12 @@ function openIdeaDetail(it){
     hero.appendChild(poster);
     var side = el('div','side');
     var facts = el('div','idea-facts');
+    var watchWrap = el('div','watch-wrap');
     function paintIdeaFacts(f){
       while (facts.firstChild) facts.removeChild(facts.firstChild);
+      while (watchWrap.firstChild) watchWrap.removeChild(watchWrap.firstChild);
+      var wr = watchRow(f);
+      if (wr) watchWrap.appendChild(wr);
       var cert = (f && f.cert) || it.cert;
       if (cert) facts.appendChild(el('span','idea-fact cert', cert));
       var rel = (f && f.released) || null;
@@ -4235,6 +4604,8 @@ function openIdeaDetail(it){
     hero.appendChild(side);
     box.appendChild(hero);
 
+    box.appendChild(watchWrap);
+
     box.appendChild(el('div','f-label','What it’s about'));
     box.appendChild(el('div','idea-syn', it.overview || 'No synopsis available for this one yet — but the title alone might be enough.'));
 
@@ -4248,8 +4619,17 @@ function openIdeaDetail(it){
     });
     box.appendChild(saveBtn);
 
-    var seenBtn = el('button','idea-refresh','✓ We’ve already seen this one');
+    var seenBtn = el('button','idea-refresh' + (isSeen(it) ? ' on' : ''),
+      isSeen(it) ? '✓ Marked as watched — tap to undo' : '✓ We’ve already seen this one');
     seenBtn.addEventListener('click', function(){
+      if (isSeen(it)){
+        unmarkSeen(it);
+        seenBtn.textContent = '✓ We’ve already seen this one';
+        seenBtn.classList.remove('on');
+        render();
+        toast('Not watched after all — back in the mix');
+        return;
+      }
       markSeen(it);
       close();
       render();
@@ -4424,7 +4804,9 @@ function renderIdeas(app){
 
   // re-filter on every render, not just on load, so a title logged from
   // this tab disappears the moment you come back to it
-  var visible = notWatched(ideas.items || []);
+  // the shortlist is an explicit keep-list: a movie you deliberately saved
+  // stays visible even if it's been watched, so rewatches survive
+  var visible = (ideas.cat === 'shortlist') ? (ideas.items || []) : notWatched(ideas.items || []);
   if (visible.length){
     var grid = el('div','idea-grid');
     visible.forEach(function(it){
@@ -4472,6 +4854,615 @@ function renderIdeas(app){
   foot.appendChild(el('div', null, 'Tap any poster for the story · already-watched titles are hidden'));
   app.appendChild(foot);
 }
+
+/* ===== fmn/vote.js ===== */
+/* Family Movie Night — fmn/vote.js
+   "Can't decide? Put it to a vote" — the picker shortlists a few, everyone
+   votes, the picker books the winner.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
+
+/* ---------- the open vote ----------
+   Only one vote runs at a time — a family of four doesn't need a queue, and
+   one open question is easier to answer than three. The vote record holds
+   the options; each ballot is its own record so two phones voting at once
+   merge cleanly instead of overwriting each other's choices. */
+function openVote(){
+  var r = data.records['vote_open'];
+  return (r && !r.deleted && r.options && r.options.length) ? r : null;
+}
+function ballotId(member){ return 'ballot_' + member + '_' + (openVote() ? openVote().round : 0); }
+function ballotFor(memberId){
+  var v = openVote();
+  if (!v) return null;
+  var r = data.records['ballot_' + memberId + '_' + v.round];
+  return (r && !r.deleted) ? r : null;
+}
+function castBallot(memberId, choice){
+  var v = openVote();
+  if (!v) return;
+  var id = 'ballot_' + memberId + '_' + v.round;
+  data.records[id] = {
+    id:id, type:'ballot', round:v.round, member:memberId,
+    choice:choice, updatedAt: Date.now()
+  };
+  saveData();
+}
+function voteTally(){
+  var v = openVote();
+  if (!v) return [];
+  var counts = v.options.map(function(o){ return { option:o, voters:[] }; });
+  MEMBERS.forEach(function(m){
+    var b = ballotFor(m.id);
+    if (b && typeof b.choice === 'number' && counts[b.choice]) counts[b.choice].voters.push(m);
+  });
+  return counts;
+}
+function votesIn(){
+  return MEMBERS.filter(function(m){ return !!ballotFor(m.id); }).length;
+}
+/* the leaders — plural, because a four-person family ties constantly */
+function voteLeaders(){
+  var t = voteTally();
+  var top = 0;
+  t.forEach(function(c){ if (c.voters.length > top) top = c.voters.length; });
+  if (!top) return [];
+  return t.filter(function(c){ return c.voters.length === top; });
+}
+function startVote(options, openedBy){
+  var prev = data.records['vote_open'];
+  var round = (prev && prev.round ? prev.round : 0) + 1;
+  data.records['vote_open'] = {
+    id:'vote_open', type:'vote', round:round, options:options,
+    openedBy: openedBy, openedAt: Date.now(), updatedAt: Date.now()
+  };
+  saveData();
+}
+function closeVote(){
+  var v = openVote();
+  if (!v) return;
+  data.records['vote_open'] = {
+    id:'vote_open', type:'vote', round:v.round, deleted:true, updatedAt: Date.now()
+  };
+  saveData();
+}
+
+/* ---------- the banner on the Nights tab ----------
+   This is the "nudge" that actually works: no notification permission, no
+   service worker, no silent failure. If a vote is open and you haven't
+   voted, you see it the moment you open the app. */
+function renderVoteBanner(app){
+  var v = openVote();
+  if (!v) return;
+  var me = whoAmI();
+  var mine = me ? ballotFor(me.id) : null;
+  var card = el('div','vote-card');
+
+  var head = el('div','vote-head');
+  head.appendChild(el('span','vc-ico','🗳'));
+  var opener = memberById(v.openedBy);
+  head.appendChild(el('span','vc-title', opener
+    ? opener.name + ' can’t decide — help pick!'
+    : 'Help pick the movie!'));
+  card.appendChild(head);
+
+  card.appendChild(el('div','vote-sub', votesIn() + ' of ' + MEMBERS.length + ' voted'
+    + (me ? (mine ? ' · you voted' : ' · not you yet') : ' · set who’s on this phone in Settings to vote')));
+
+  var tally = voteTally();
+  tally.forEach(function(c, i){
+    var row = el('button','vote-opt' + (mine && mine.choice === i ? ' mine' : ''));
+    row.type = 'button';
+    var main = el('div','vo-main');
+    main.appendChild(el('div','vo-title', c.option.title + (c.option.year ? ' (' + c.option.year + ')' : '')));
+    var who = el('div','vo-voters');
+    c.voters.forEach(function(m){
+      var d = el('span','vo-dot', m.name.charAt(0));
+      d.style.background = m.color;
+      who.appendChild(d);
+    });
+    if (!c.voters.length) who.appendChild(el('span','vo-none','no votes yet'));
+    main.appendChild(who);
+    row.appendChild(main);
+    row.appendChild(el('span','vo-count', String(c.voters.length)));
+    row.addEventListener('click', function(){
+      var voter = whoAmI();
+      if (!voter){ openWhoAmIPrompt(); return; }
+      castBallot(voter.id, i);
+      render();
+      toast(voter.name + ' voted for ' + c.option.title + ' 🗳');
+    });
+    card.appendChild(row);
+  });
+
+  // only the person who called the vote closes it
+  if (me && me.id === v.openedBy){
+    var lead = voteLeaders();
+    var done = el('button','vote-close', lead.length === 1
+      ? '🍿 Book ' + lead[0].option.title
+      : (lead.length ? '🤝 It’s a tie — you decide' : '✕ Cancel the vote'));
+    done.addEventListener('click', function(){
+      if (!lead.length){ closeVote(); render(); toast('Vote cancelled'); return; }
+      if (lead.length === 1){ bookVoteWinner(lead[0].option); return; }
+      openTieBreak(lead);
+    });
+    card.appendChild(done);
+  } else if (me) {
+    card.appendChild(el('div','vote-foot', memberById(v.openedBy).name + ' books the winner once everyone’s in.'));
+  }
+  app.appendChild(card);
+}
+function openWhoAmIPrompt(){
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, 'Who’s voting?'));
+    box.appendChild(el('div','msub','Tap your name — this phone remembers it'));
+    var chips = el('div','pick-chips');
+    MEMBERS.forEach(function(m){
+      var c = el('button','pick-chip', m.name);
+      c.type = 'button';
+      c.addEventListener('click', function(){
+        Store.set('me', m.id);
+        close();
+        render();
+        toast('This phone is ' + m.name + '’s 🙋');
+      });
+      chips.appendChild(c);
+    });
+    box.appendChild(chips);
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Cancel');
+    cancel.addEventListener('click', close);
+    row.appendChild(cancel);
+    box.appendChild(row);
+  });
+}
+function openTieBreak(leaders){
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, '🤝 It’s a tie'));
+    box.appendChild(el('div','msub','You called the vote, so you get the casting vote'));
+    leaders.forEach(function(c){
+      var b = el('button','set-btn', '🍿 ' + c.option.title);
+      b.addEventListener('click', function(){ close(); bookVoteWinner(c.option); });
+      box.appendChild(b);
+    });
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Not yet');
+    cancel.addEventListener('click', close);
+    row.appendChild(cancel);
+    box.appendChild(row);
+  });
+}
+function bookVoteWinner(opt){
+  var v = openVote();
+  var picker = v ? memberById(v.openedBy) : nextPicker();
+  var id = 'night_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+  data.records[id] = {
+    id:id, type:'night', title:opt.title, year:opt.year || null,
+    date: nextOpenFriday(), pickedBy: picker.id,
+    tmdbId: opt.tmdbId || null, posterPath: opt.posterPath || null,
+    updatedAt: Date.now()
+  };
+  closeVote();          // also saves
+  saveData();
+  view = 'home';
+  render();
+  window.scrollTo(0, 0);
+  confettiBurst();
+  toast(opt.title + ' won the vote — it’s on the calendar 🍿');
+}
+
+/* ---------- starting one ----------
+   Candidates come from the shortlist first, since that's where the family
+   already parked the maybes, plus anything on the current Ideas shelf. */
+function voteCandidates(){
+  var out = [], seen = {};
+  function add(it){
+    var k = normQuote(it.title);
+    if (!k || seen[k]) return;
+    seen[k] = true;
+    out.push({ title:it.title, year:it.year || null, tmdbId:it.tmdbId || null,
+               posterPath:it.posterPath || null });
+  }
+  shortlisted().forEach(add);
+  notWatched(ideas.items || []).forEach(add);
+  return out;
+}
+function openStartVote(){
+  var picked = [];
+  var candidates = voteCandidates();
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, '🗳 Put it to a vote'));
+    box.appendChild(el('div','msub','Pick two to four, and let everyone choose'));
+
+    if (!candidates.length){
+      box.appendChild(el('div','set-note','Nothing to vote on yet — save a few movies to the shortlist from the Ideas tab first, then come back.'));
+      var row0 = el('div','modal-buttons');
+      var c0 = el('button','btn-secondary','Close');
+      c0.addEventListener('click', close);
+      row0.appendChild(c0);
+      box.appendChild(row0);
+      return;
+    }
+
+    var count = el('div','set-note','');
+    var list = el('div','vote-picklist');
+    candidates.slice(0, 20).forEach(function(it){
+      var b = el('button','vote-pick');
+      b.type = 'button';
+      b.appendChild(el('span','vp-title', it.title + (it.year ? ' (' + it.year + ')' : '')));
+      var mark = el('span','vp-mark','');
+      b.appendChild(mark);
+      b.addEventListener('click', function(){
+        var at = -1;
+        for (var i=0;i<picked.length;i++) if (picked[i].title === it.title) at = i;
+        if (at !== -1){ picked.splice(at, 1); }
+        else {
+          if (picked.length >= 4){ toast('Four is plenty — deselect one first'); return; }
+          picked.push(it);
+        }
+        b.classList.toggle('on', at === -1);
+        mark.textContent = at === -1 ? '✓' : '';
+        paintCount();
+      });
+      list.appendChild(b);
+    });
+    function paintCount(){
+      count.textContent = picked.length < 2
+        ? 'Choose at least two'
+        : picked.length + ' on the ballot';
+      go.disabled = picked.length < 2;
+    }
+    box.appendChild(count);
+    box.appendChild(list);
+
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Cancel');
+    cancel.addEventListener('click', close);
+    var go = el('button','btn-primary','🗳 Open the vote');
+    go.addEventListener('click', function(){
+      var me = whoAmI() || nextPicker();
+      startVote(picked, me.id);
+      close();
+      view = 'home';
+      render();
+      window.scrollTo(0, 0);
+      toast('Vote is open — everyone gets a say 🗳');
+    });
+    row.appendChild(cancel); row.appendChild(go);
+    box.appendChild(row);
+    paintCount();
+  });
+}
+
+/* ===== fmn/awards.js ===== */
+/* Family Movie Night — fmn/awards.js
+   The Ortizzle — the family's year-end awards, plus the countdown to
+   ceremony night.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
+
+/* ---------- when the ceremony is ----------
+   A Friday the family picks, in the new year. Default: the second Friday
+   of January, far enough in that the holidays are over. */
+function secondFridayOfJan(year){
+  var d = new Date(year, 0, 1);
+  var add = (5 - d.getDay() + 7) % 7;      // first Friday
+  d.setDate(d.getDate() + add + 7);        // ...then the next one
+  var mm = String(d.getMonth()+1).padStart(2,'0');
+  var dd = String(d.getDate()).padStart(2,'0');
+  return d.getFullYear() + '-' + mm + '-' + dd;
+}
+function ortizzleDate(){
+  var r = data.records['settings_ortizzle'];
+  if (r && !r.deleted && r.date) return r.date;
+  return secondFridayOfJan(Number(AZ.today().slice(0,4)) + 1);
+}
+function ortizzleYear(){
+  // the awards honour the year that just ended
+  return Number(ortizzleDate().slice(0,4)) - 1;
+}
+function setOrtizzleDate(date){
+  data.records['settings_ortizzle'] = {
+    id:'settings_ortizzle', type:'setting', key:'ortizzle', date:date, updatedAt: Date.now()
+  };
+  saveData();
+}
+function daysToOrtizzle(){
+  return AZ.daysBetween(AZ.today(), ortizzleDate());
+}
+
+/* ---------- the awards themselves ----------
+   Most are settled by the year's own record — the family already voted,
+   one star at a time. A few are genuinely a matter of taste, and those go
+   to a ballot on the night. */
+function nightHasReactions(n){
+  return reactionsFor(n.id).some(rxHasContent);
+}
+/* only nights the family actually wrote something about can win anything */
+function nightsInYear(year){
+  return nights().filter(function(n){
+    return n.date.slice(0,4) === String(year) && nightHasReactions(n);
+  });
+}
+function pollCount(nightId, key){
+  return reactionsFor(nightId).filter(function(r){
+    return r && r.poll && r.poll[key];
+  }).length;
+}
+function ratingSpread(nightId){
+  var vals = reactionsFor(nightId)
+    .filter(function(r){ return r && r.stars; })
+    .map(function(r){ return r.stars; });
+  if (vals.length < 2) return null;
+  return Math.max.apply(null, vals) - Math.min.apply(null, vals);
+}
+function quoteCount(nightId){
+  return reactionsFor(nightId).reduce(function(t, r){ return t + rxQuotes(r).length; }, 0);
+}
+/* pick the night that maximises `score`; null when nothing qualifies */
+function topNight(list, score){
+  var best = null, bestVal = null;
+  list.forEach(function(n){
+    var v = score(n);
+    if (v === null || v === undefined) return;
+    if (bestVal === null || v > bestVal){ bestVal = v; best = n; }
+  });
+  return best ? { night:best, value:bestVal } : null;
+}
+function computedAwards(year){
+  var list = nightsInYear(year);
+  var out = [];
+  function add(icon, name, blurb, hit, fmt){
+    if (!hit) return;
+    out.push({
+      icon:icon, name:name, blurb:blurb, night:hit.night,
+      detail: fmt ? fmt(hit.value, hit.night) : null
+    });
+  }
+  add('🏆', 'Best Picture', 'Highest family average, all four votes counted',
+      topNight(list, function(n){ return familyAvg(n.id); }),
+      function(v){ return starText(Math.round(v*2)/2) + ' average'; });
+  add('😂', 'Achievement in Making Us Laugh', 'The one that got the most of us',
+      topNight(list, function(n){ var c = pollCount(n.id,'laughed'); return c ? c : null; }),
+      function(v){ return v + ' of us laughed'; });
+  add('😢', 'The Tissue Award', 'Nobody was cutting onions',
+      topNight(list, function(n){ var c = pollCount(n.id,'cried'); return c ? c : null; }),
+      function(v){ return v + (v === 1 ? ' of us cried' : ' of us cried'); });
+  add('🔁', 'Most Rewatchable', 'The one we’d all happily start again',
+      topNight(list, function(n){ var c = pollCount(n.id,'rewatch'); return c ? c : null; }),
+      function(v){ return v + ' would see it again'; });
+  add('💬', 'Most Quotable', 'Lines we kept',
+      topNight(list, function(n){ var c = quoteCount(n.id); return c ? c : null; }),
+      function(v){ return v + ' quote' + (v === 1 ? '' : 's') + ' saved'; });
+  add('🥊', 'Biggest Disagreement', 'The widest gap between the highest and lowest star',
+      topNight(list, function(n){ return ratingSpread(n.id); }),
+      function(v){ return v + ' star' + (v === 1 ? '' : 's') + ' apart'; });
+  add('🎁', 'Best Surprise', 'Highest rated among the ones none of us had seen',
+      topNight(list, function(n){
+        if (pollCount(n.id, 'seenBefore')) return null;
+        return familyAvg(n.id);
+      }),
+      function(v){ return starText(Math.round(v*2)/2) + ', sight unseen'; });
+  return out;
+}
+/* each person's own best night of the year, from the films they chose */
+function pickerAwards(year){
+  var list = nightsInYear(year);
+  var out = [];
+  MEMBERS.forEach(function(m){
+    var mine = list.filter(function(n){ return n.pickedBy === m.id; });
+    var hit = topNight(mine, function(n){ return familyAvg(n.id); });
+    if (!hit) return;
+    out.push({
+      icon:'🎬', name: m.name + '’s Pick of the Year', member:m,
+      blurb: mine.length + ' pick' + (mine.length === 1 ? '' : 's') + ' this year',
+      night: hit.night,
+      detail: starText(Math.round(hit.value*2)/2) + ' from the family'
+    });
+  });
+  return out;
+}
+
+/* ---------- the categories worth arguing about ----------
+   Nominees come from the year's data; the winner is whatever the family
+   says on the night. Ballots reuse the same one-record-per-person shape as
+   the movie vote, so two phones can't clobber each other. */
+var ORTIZZLE_VOTED = [
+  { key:'character', icon:'🌟', name:'Character of the Year',
+    blurb:'Everyone’s favourite characters, head to head' },
+  { key:'memory',    icon:'📌', name:'Movie Night Moment of the Year',
+    blurb:'Not the film — the night' },
+  { key:'quote',     icon:'💬', name:'The Line We’ll Still Be Saying in Ten Years',
+    blurb:'One quote to rule them all' }
+];
+function ortizzleNominees(year, key){
+  var list = nightsInYear(year);
+  var out = [], seen = {};
+  list.forEach(function(n){
+    MEMBERS.forEach(function(m){
+      var r = reactionFor(n.id, m.id);
+      if (!r) return;
+      var vals = key === 'character' ? (r.character ? [r.character] : [])
+               : key === 'memory'    ? rxMemories(r)
+               :                       rxQuotes(r);
+      vals.forEach(function(v){
+        var k = normQuote(v);
+        if (!k || seen[k]) return;
+        seen[k] = true;
+        out.push({ text:v, by:m, night:n });
+      });
+    });
+  });
+  return out;
+}
+function ortizzleBallot(year, key, memberId){
+  var r = data.records['oballot_' + year + '_' + key + '_' + memberId];
+  return (r && !r.deleted) ? r : null;
+}
+function castOrtizzleBallot(year, key, memberId, text){
+  var id = 'oballot_' + year + '_' + key + '_' + memberId;
+  data.records[id] = {
+    id:id, type:'oballot', year:year, category:key, member:memberId,
+    text:text, updatedAt: Date.now()
+  };
+  saveData();
+}
+function ortizzleWinner(year, key){
+  var counts = {}, best = null;
+  MEMBERS.forEach(function(m){
+    var b = ortizzleBallot(year, key, m.id);
+    if (!b || !b.text) return;
+    var k = normQuote(b.text);
+    counts[k] = counts[k] || { text:b.text, voters:[] };
+    counts[k].voters.push(m);
+  });
+  for (var k in counts){
+    if (!best || counts[k].voters.length > best.voters.length) best = counts[k];
+  }
+  return best;
+}
+
+/* ---------- the countdown on the Nights tab ---------- */
+function renderOrtizzleCountdown(app){
+  var away = daysToOrtizzle();
+  if (away < 0 || away > 120) return;      // only once it's in sight
+  var card = el('button','ortiz-card');
+  card.type = 'button';
+  var left = el('div','oc-left');
+  left.appendChild(el('div','oc-ico','🏆'));
+  card.appendChild(left);
+  var body = el('div','oc-body');
+  body.appendChild(el('div','oc-name','The Ortizzle'));
+  body.appendChild(el('div','oc-sub', away === 0 ? 'Tonight! 🎉'
+    : away === 1 ? 'Tomorrow night'
+    : away + ' days away · ' + AZ.prettyLong(ortizzleDate())));
+  card.appendChild(body);
+  card.appendChild(el('span','oc-go','›'));
+  card.addEventListener('click', function(){ openOrtizzle(ortizzleYear()); });
+  app.appendChild(card);
+}
+
+/* ---------- ceremony night ----------
+   Built on the same keepsake page as the scrapbook, so it prints to the
+   same US Letter book page and slots into the family's shelf. */
+function openOrtizzle(year){
+  var overlay = keepsakeOverlay();
+  var page = el('div','scrap-page ortizzle');
+
+  function paint(){
+    while (page.firstChild) page.removeChild(page.firstChild);
+
+    page.appendChild(el('div','sp-kicker','Family Movie Night presents'));
+    page.appendChild(el('div','oz-title','The Ortizzle'));
+    page.appendChild(el('div','oz-sub',
+      'For achievement in entertaining the Ortiz family in the motion picture sciences'));
+    page.appendChild(el('div','sp-date', year + ' · awarded ' + AZ.prettyLong(ortizzleDate())));
+
+    var list = nightsInYear(year);
+    if (!list.length){
+      page.appendChild(el('div','oz-empty',
+        'No movie nights logged for ' + year + ' yet. Watch a few, write down what you thought, and the awards write themselves.'));
+      return;
+    }
+
+    page.appendChild(el('div','oz-count', list.length + ' movie night' + (list.length === 1 ? '' : 's') + ' considered'));
+
+    /* the ones the year already decided */
+    computedAwards(year).forEach(function(a){ page.appendChild(awardCard(a)); });
+
+    /* everyone's own pick of the year */
+    var pa = pickerAwards(year);
+    if (pa.length){
+      page.appendChild(el('div','oz-divider','· Picks of the Year ·'));
+      pa.forEach(function(a){ page.appendChild(awardCard(a)); });
+    }
+
+    /* and the ones worth arguing about */
+    page.appendChild(el('div','oz-divider','· Put to the family ·'));
+    ORTIZZLE_VOTED.forEach(function(cat){
+      page.appendChild(votedCard(year, cat, paint));
+    });
+
+    printButton(page);
+  }
+
+  function awardCard(a){
+    var card = el('div','oz-award');
+    var top = el('div','oz-top');
+    top.appendChild(el('span','oz-ico', a.icon));
+    var nm = el('span','oz-name', a.name);
+    if (a.member) nm.style.color = a.member.color;
+    top.appendChild(nm);
+    card.appendChild(top);
+    card.appendChild(el('div','oz-blurb', a.blurb));
+    var win = el('div','oz-winner', a.night.title + (a.night.year ? ' (' + a.night.year + ')' : ''));
+    card.appendChild(win);
+    if (a.detail) card.appendChild(el('div','oz-detail', a.detail));
+    return card;
+  }
+
+  function votedCard(year, cat, repaint){
+    var card = el('div','oz-award voted');
+    var top = el('div','oz-top');
+    top.appendChild(el('span','oz-ico', cat.icon));
+    top.appendChild(el('span','oz-name', cat.name));
+    card.appendChild(top);
+    card.appendChild(el('div','oz-blurb', cat.blurb));
+
+    var noms = ortizzleNominees(year, cat.key);
+    if (!noms.length){
+      card.appendChild(el('div','oz-detail','Nothing nominated yet — this one fills in as the family writes.'));
+      return card;
+    }
+    var win = ortizzleWinner(year, cat.key);
+    var me = whoAmI();
+    var mine = me ? ortizzleBallot(year, cat.key, me.id) : null;
+
+    if (win){
+      card.appendChild(el('div','oz-winner','“' + win.text + '”'));
+      card.appendChild(el('div','oz-detail',
+        win.voters.map(function(m){ return m.name; }).join(' & ') + '’s vote'
+        + (win.voters.length > 1 ? 's' : '')));
+    }
+
+    var noml = el('div','oz-noms');
+    noms.slice(0, 8).forEach(function(nom){
+      var b = el('button','oz-nom' + (mine && normQuote(mine.text) === normQuote(nom.text) ? ' on' : ''));
+      b.type = 'button';
+      b.appendChild(el('span','on-text','“' + nom.text + '”'));
+      var by = el('span','on-by', nom.by.name + ' · ' + nom.night.title);
+      by.style.color = nom.by.color;
+      b.appendChild(by);
+      b.addEventListener('click', function(){
+        var voter = whoAmI();
+        if (!voter){ openWhoAmIPrompt(); return; }
+        castOrtizzleBallot(year, cat.key, voter.id, nom.text);
+        repaint();
+        toast(voter.name + ' voted 🏆');
+      });
+      noml.appendChild(b);
+    });
+    card.appendChild(noml);
+    if (!me) card.appendChild(el('div','oz-detail','Set who’s on this phone in Settings to cast a vote.'));
+    return card;
+  }
+
+  paint();
+  overlay.appendChild(page);
+  document.body.appendChild(overlay);
+}
+
+/* ===== fmn/stats.js ===== */
+/* Family Movie Night — fmn/stats.js
+   The Stats tab and the game hub.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
 
 /* ---------- RENDER: stats ---------- */
 function memberStats(){
@@ -4842,6 +5833,14 @@ function renderTrivia(app){
   app.appendChild(quit);
 }
 
+/* ===== fmn/settings.js ===== */
+/* Family Movie Night — fmn/settings.js
+   Taste profiles, the Settings tab, and the master render switch.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
+
 /* ---------- taste profiles (drive per-person recommendations) ---------- */
 var GENRES = ['Animated','Adventure','Comedy','Fantasy','Sci-fi','Musical','Mystery','Action',
   'Drama','True stories','Historical','Sports','Spooky (a little)','Heartwarming'];
@@ -5190,6 +6189,53 @@ function renderSettings(app){
     });
   }
 
+  /* The Ortizzle */
+  var oz = collapsible(app, '🏆 The Ortizzle', { badge: String(ortizzleYear()) });
+  oz.appendChild(el('div','set-note','Our year-end awards, for achievement in entertaining the Ortiz family in the motion picture sciences. Most winners come straight from the year’s ratings and polls; three are put to the family on the night.'));
+  oz.appendChild(el('div','f-label','Ceremony night'));
+  var ozDate = el('input','f-input');
+  ozDate.type = 'date';
+  ozDate.value = ortizzleDate();
+  ozDate.addEventListener('change', function(){
+    if (!ozDate.value) return;
+    setOrtizzleDate(ozDate.value);
+    render();
+    toast('The Ortizzle is set for ' + AZ.prettyLong(ozDate.value) + ' 🏆');
+  });
+  oz.appendChild(ozDate);
+  var away = daysToOrtizzle();
+  oz.appendChild(el('div','set-note', away > 0
+    ? away + ' days to go. A countdown appears on the Nights tab once it’s within four months.'
+    : away === 0 ? 'That’s tonight. 🎉' : 'That date has passed — pick next year’s.'));
+  var ozOpen = el('button','set-btn','🏆 Open the ' + ortizzleYear() + ' Ortizzle');
+  ozOpen.addEventListener('click', function(){ openOrtizzle(ortizzleYear()); });
+  oz.appendChild(ozOpen);
+
+  /* marked-as-watched — undo lives here too */
+  var seenList = seenTitles();
+  if (seenList.length){
+    var sc = collapsible(app, '✓ Marked as watched', { badge: String(seenList.length) });
+    sc.appendChild(el('div','set-note','Movies somebody said we\u2019d already seen, so they stay off the Ideas shelves. Marked one by mistake, or want another go at it? Tap to put it back.'));
+    seenList.forEach(function(r){
+      var row = el('button','tp-row');
+      row.type = 'button';
+      var dot = el('span','tp-dot','\u2713');
+      dot.style.background = 'var(--line)';
+      row.appendChild(dot);
+      var body = el('span','tp-body');
+      body.appendChild(el('span','tp-name', r.title + (r.year ? ' (' + r.year + ')' : '')));
+      body.appendChild(el('span','tp-sum','Marked as watched \u2014 tap to undo'));
+      row.appendChild(body);
+      row.appendChild(el('span','tp-go','\u21ba'));
+      row.addEventListener('click', function(){
+        unmarkSeen(r);
+        render();
+        toast(r.title + ' is back in the mix');
+      });
+      sc.appendChild(row);
+    });
+  }
+
   /* taste profiles */
   var tp = collapsible(app, '🎭 Taste profiles', {
     badge: MEMBERS.filter(function(m){ return profileFilled(profileFor(m.id)); }).length + '/' + MEMBERS.length,
@@ -5437,7 +6483,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.6'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.0'));
   app.appendChild(foot);
 }
 
@@ -5454,6 +6500,14 @@ function render(){
   renderTabbar();
 }
 
+/* ===== fmn/boot.js ===== */
+/* Family Movie Night — fmn/boot.js
+   Startup: theme, seed data, first render, first sync. Must load last.
+
+   These files load in a fixed order from index.html and share one global
+   scope, exactly as the single inline script did. Order matters: boot.js
+   runs the startup calls and must stay last. */
+
 applyTheme();
 applyMotion();
 seedSample();
@@ -5461,6 +6515,5 @@ seedProfiles();
 seedRotation();
 render();
 pullSync(true); // pick up the family's latest entries on launch (no-op until sync is set up)
-</script>
-</body>
+</script></body>
 </html>
