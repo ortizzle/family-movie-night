@@ -891,6 +891,10 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .idea-fact.star{color:var(--star)}
 .idea-fact.rt{color:var(--coral)}
+.idea-fact.link,.sp-fact.link{text-decoration:none;cursor:pointer}
+.idea-fact.link{border-color:var(--star)}
+.sp-fact.link{border-color:#B8860B}
+.idea-refresh.on{border-style:solid;border-color:var(--sage);color:var(--sage)}
 .idea-fact.cert{color:var(--cream);border-color:var(--cream);font-weight:900;letter-spacing:.5px}
 .idea-hero .side{display:flex;flex-direction:column;justify-content:flex-start}
 /* facts printed on the scrapbook ticket stub area */
@@ -1360,13 +1364,24 @@ function buildFacts(tmdbId, fallbackTitle){
     });
   });
 }
+/* IMDb chip links straight to that film's Parents Guide */
+function imdbGuideChip(f, cls){
+  var label = 'IMDb ' + f.imdb;
+  if (!f.imdbId) return el('span', cls + ' star', label);
+  var a = el('a', cls + ' star link', label + ' ⓘ');
+  a.href = 'https://www.imdb.com/title/' + f.imdbId + '/parentalguide';
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.setAttribute('aria-label', 'IMDb parents guide for this film');
+  return a;
+}
 function factChips(f, cls){
   var wrap = el('div', cls || 'idea-facts');
   if (!f) return wrap;
   if (f.cert) wrap.appendChild(el('span','idea-fact cert', f.cert));
   if (f.released) wrap.appendChild(el('span','idea-fact', AZ.pretty(f.released).replace(/^\w+, /,'') + ', ' + f.released.slice(0,4)));
   if (f.runtime) wrap.appendChild(el('span','idea-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
-  if (f.imdb) wrap.appendChild(el('span','idea-fact star','IMDb ' + f.imdb));
+  if (f.imdb) wrap.appendChild(imdbGuideChip(f, 'idea-fact'));
   if (f.rt) wrap.appendChild(el('span','idea-fact rt','🍅 ' + f.rt));
   if (f.meta) wrap.appendChild(el('span','idea-fact','Metacritic ' + f.meta));
   if (!f.imdb && f.tmdbScore) wrap.appendChild(el('span','idea-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
@@ -2557,7 +2572,7 @@ function openScrapbook(night){
     if (f.cert) factsBox.appendChild(el('span','sp-fact cert', f.cert));
     if (f.released) factsBox.appendChild(el('span','sp-fact', f.released.slice(0,4)));
     if (f.runtime) factsBox.appendChild(el('span','sp-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
-    if (f.imdb) factsBox.appendChild(el('span','sp-fact star','IMDb ' + f.imdb));
+    if (f.imdb) factsBox.appendChild(imdbGuideChip(f, 'sp-fact'));
     if (f.rt) factsBox.appendChild(el('span','sp-fact rt','🍅 ' + f.rt));
     if (f.meta) factsBox.appendChild(el('span','sp-fact','Metacritic ' + f.meta));
     if (!f.imdb && f.tmdbScore) factsBox.appendChild(el('span','sp-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
@@ -3483,7 +3498,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.0.1'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.1'));
   app.appendChild(footer);
 }
 
@@ -3492,69 +3507,97 @@ function renderHome(app){
    discover (needs a key, gives real posters + synopses), and a curated
    built-in shelf so the tab is useful with no keys at all. Titles the
    family has already logged are filtered out. */
+/* Curated shelf, tuned for a 9- and 12-year-old across genres.
+   tags: kid = the everyday crowd-pleaser shelf, classic = older films
+   that still land with this age group, talk = worth discussing after
+   (this is where the tasteful PG-13/R titles live). */
 var CURATED = [
-  /* rating is the US certification; `talk` marks films we surface on the
-     discussion shelf rather than the all-ages one */
-  { title:'The Iron Giant', year:1999, cert:'PG', overview:'A boy in 1950s Maine befriends a giant metal robot fallen from space, and tries to hide him from a government agent determined to destroy him.' },
-  { title:'Paddington 2', year:2017, cert:'PG', overview:'Paddington takes on odd jobs to buy his aunt the perfect birthday present, then has to clear his name when the gift is stolen.' },
-  { title:'Spirited Away', year:2001, cert:'PG', overview:'A ten-year-old girl wanders into a world of spirits and must work in a bathhouse for the gods to win back her parents.' },
-  { title:'Coco', year:2017, cert:'PG', overview:'A boy who dreams of being a musician crosses into the Land of the Dead and uncovers the truth about his family’s history.' },
-  { title:'My Neighbor Totoro', year:1988, cert:'G', overview:'Two sisters move to the countryside while their mother is ill and befriend the gentle forest spirits living nearby.' },
-  { title:'E.T. the Extra-Terrestrial', year:1982, cert:'PG', overview:'A lonely boy hides a stranded alien in his suburban home and helps him find a way back to his own planet.' },
-  { title:'Back to the Future', year:1985, cert:'PG', overview:'A teenager is accidentally sent thirty years into the past in a time-travelling DeLorean and has to make sure his parents still fall in love.' },
-  { title:'WALL·E', year:2008, cert:'G', overview:'A small trash-compacting robot, left alone on an abandoned Earth, follows a visiting probe across the galaxy.' },
-  { title:'The Incredibles', year:2004, cert:'PG', overview:'A family of undercover superheroes is pulled back into action when a new villain targets them.' },
-  { title:'Moana', year:2016, cert:'PG', overview:'A chief’s daughter sails beyond her island’s reef with a stubborn demigod to return a stolen relic and save her people.' },
-  { title:'How to Train Your Dragon', year:2010, cert:'PG', overview:'A Viking teenager who is supposed to kill dragons instead befriends an injured one and changes his village forever.' },
-  { title:'Ratatouille', year:2007, cert:'G', overview:'A rat with a remarkable palate teams up with a clumsy kitchen worker to cook in one of Paris’s great restaurants.' },
-  { title:'Up', year:2009, cert:'PG', overview:'An elderly widower ties thousands of balloons to his house and flies to South America, with an eager boy scout accidentally aboard.' },
-  { title:'Zootopia', year:2016, cert:'PG', overview:'A rookie rabbit police officer and a con-artist fox uncover a conspiracy in a city where predators and prey live side by side.' },
-  { title:'Kiki’s Delivery Service', year:1989, cert:'G', overview:'A young witch moves to a seaside town for a year on her own and starts a flying delivery service.' },
-  { title:'Big Hero 6', year:2014, cert:'PG', overview:'A boy genius and a soft inflatable healthcare robot assemble a team of friends to solve a mystery in San Fransokyo.' },
-  { title:'Encanto', year:2021, cert:'PG', overview:'The only girl in a magical family born without a gift may be the one who has to save their enchanted house.' },
-  { title:'Home Alone', year:1990, cert:'PG', overview:'An eight-year-old accidentally left behind at Christmas defends the family house against two determined burglars.' },
+  /* ---- animated & family adventure ---- */
+  { title:'Spider-Man: Across the Spider-Verse', year:2023, cert:'PG', kid:true, overview:'Miles Morales is thrown across the multiverse and comes up against a whole society of Spider-People who think his story has to end one way.' },
+  { title:'Puss in Boots: The Last Wish', year:2022, cert:'PG', kid:true, overview:'Down to his last life, a swashbuckling cat sets out to find a wishing star — chased by a wolf who is Death himself.' },
+  { title:'The Mitchells vs. the Machines', year:2021, cert:'PG', kid:true, overview:'A gloriously odd family road trip turns into the last stand of humankind when the robots take over.' },
+  { title:'Big Hero 6', year:2014, cert:'PG', kid:true, overview:'A boy genius and a soft inflatable healthcare robot build a superhero team to solve his brother’s death.' },
+  { title:'Zootopia', year:2016, cert:'PG', kid:true, overview:'A rookie rabbit cop and a con-artist fox uncover a conspiracy in a city where predator and prey live side by side.' },
+  { title:'Inside Out', year:2015, cert:'PG', kid:true, overview:'Inside an eleven-year-old’s head, Joy and Sadness get lost and have to find their way back before she falls apart.' },
+  { title:'Coco', year:2017, cert:'PG', kid:true, overview:'A boy who dreams of being a musician crosses into the Land of the Dead and uncovers the truth about his family.' },
+  { title:'Encanto', year:2021, cert:'PG', kid:true, overview:'The only girl in a magical family born without a gift may be the one who has to save their enchanted house.' },
+  { title:'Moana', year:2016, cert:'PG', kid:true, overview:'A chief’s daughter sails beyond the reef with a stubborn demigod to return a stolen relic and save her island.' },
+  { title:'How to Train Your Dragon', year:2010, cert:'PG', kid:true, overview:'A Viking teenager who is supposed to kill dragons instead befriends an injured one and changes his village forever.' },
+  { title:'Klaus', year:2019, cert:'PG', kid:true, overview:'A spoiled postman posted to a bitter frozen town befriends a reclusive toymaker and accidentally invents a legend.' },
+  { title:'Luca', year:2021, cert:'PG', kid:true, overview:'Two sea monsters spend a summer on the Italian Riviera passing as human boys, chasing a Vespa and a friendship.' },
+  { title:'Turning Red', year:2022, cert:'PG', kid:true, overview:'A thirteen-year-old turns into a giant red panda whenever she gets excited — which, at thirteen, is constantly.' },
+  { title:'Raya and the Last Dragon', year:2021, cert:'PG', kid:true, overview:'A lone warrior hunts the last dragon to reunite a broken land that has forgotten how to trust.' },
+  { title:'The Bad Guys', year:2022, cert:'PG', kid:true, overview:'A crew of animal criminals pretends to go good — and one of them starts to mean it.' },
+  { title:'Wreck-It Ralph', year:2012, cert:'PG', kid:true, overview:'An arcade villain leaves his own game to prove he can be a hero, and nearly breaks the arcade doing it.' },
+  { title:'Kung Fu Panda', year:2008, cert:'PG', kid:true, overview:'A noodle-shop panda is accidentally chosen as the Dragon Warrior and has to become one for real.' },
+  { title:'Ratatouille', year:2007, cert:'G', kid:true, overview:'A rat with a remarkable palate teams up with a clumsy kitchen worker to cook in a great Paris restaurant.' },
+  { title:'WALL·E', year:2008, cert:'G', kid:true, overview:'A small trash-compacting robot alone on an abandoned Earth follows a visiting probe across the galaxy.' },
+  { title:'The Incredibles', year:2004, cert:'PG', kid:true, overview:'A family of undercover superheroes is pulled back into action when a new villain targets them.' },
+  { title:'The Iron Giant', year:1999, cert:'PG', kid:true, overview:'A boy in 1950s Maine befriends a giant metal robot from space and hides him from a government agent.' },
+  { title:'My Neighbor Totoro', year:1988, cert:'G', kid:true, overview:'Two sisters move to the countryside while their mother is ill and befriend the forest spirits nearby.' },
+  { title:'Kiki’s Delivery Service', year:1989, cert:'G', kid:true, overview:'A young witch moves to a seaside town for a year on her own and starts a flying delivery service.' },
+  { title:'Castle in the Sky', year:1986, cert:'PG', kid:true, overview:'A girl with a mysterious pendant and a boy in a mining town race sky pirates to a legendary floating city.' },
+  { title:'Paddington 2', year:2017, cert:'PG', kid:true, overview:'Paddington takes odd jobs to buy his aunt a birthday present, then must clear his name when it is stolen.' },
 
-  /* classics worth showing kids */
-  { title:'Singin’ in the Rain', year:1952, cert:'G', classic:true, overview:'As Hollywood lurches from silent films to talkies, a matinee idol and his friends try to rescue a disastrous production with song and dance.' },
+  /* ---- live-action adventure, comedy & mystery ---- */
+  { title:'Enola Holmes', year:2020, cert:'PG-13', kid:true, overview:'Sherlock’s much sharper younger sister runs away to London and solves a case her brothers cannot.' },
+  { title:'Jumanji: The Next Level', year:2019, cert:'PG-13', kid:true, overview:'The friends are pulled back into the game, only this time the avatars are scrambled and the desert is trying to kill them.' },
+  { title:'Sonic the Hedgehog', year:2020, cert:'PG', kid:true, overview:'A super-fast blue alien hedgehog hides out in small-town Montana with a government scientist on his tail.' },
+  { title:'Detective Pikachu', year:2019, cert:'PG', kid:true, overview:'A boy who can somehow understand a caffeine-addled Pikachu investigates his father’s disappearance.' },
+  { title:'Night at the Museum', year:2006, cert:'PG', kid:true, overview:'A night guard discovers the museum exhibits come alive after dark — all of them, at once.' },
+  { title:'School of Rock', year:2003, cert:'PG-13', kid:true, overview:'A failed guitarist fakes his way into substitute teaching and turns a class of ten-year-olds into a rock band.' },
+  { title:'Holes', year:2003, cert:'PG', kid:true, overview:'A boy sent to a brutal desert camp digs holes all day and slowly uncovers why.' },
+  { title:'Hugo', year:2011, cert:'PG', kid:true, overview:'An orphan living in a Paris train station repairs a mechanical man and stumbles into the birth of cinema.' },
+  { title:'Matilda', year:1996, cert:'PG', kid:true, overview:'A brilliant girl with awful parents and a monstrous headmistress discovers she can move things with her mind.' },
+  { title:'The Sandlot', year:1993, cert:'PG', kid:true, classic:true, overview:'A new kid falls in with a neighbourhood baseball crew and their summer becomes legend.' },
+  { title:'Cool Runnings', year:1993, cert:'PG', kid:true, overview:'Four Jamaican sprinters and a disgraced coach take a bobsled to the Winter Olympics.' },
+  { title:'The Karate Kid', year:1984, cert:'PG', kid:true, classic:true, overview:'A bullied teenager is taught karate — and rather more than karate — by his apartment handyman.' },
+  { title:'The Goonies', year:1985, cert:'PG', kid:true, classic:true, overview:'A gang of kids follow a pirate map under their town to save their neighbourhood.' },
+  { title:'Free Guy', year:2021, cert:'PG-13', kid:true, overview:'A background character in a video game realises he is one, and decides to become the hero instead.' },
+  { title:'The Greatest Showman', year:2017, cert:'PG', kid:true, overview:'P.T. Barnum builds a spectacle out of the people everyone else turned away, and nearly loses his family to it.' },
+  { title:'Sing', year:2016, cert:'PG', kid:true, overview:'A desperate koala theatre owner stages a singing competition, and every contestant has something to prove.' },
+
+  /* ---- classics that still land with this age group ---- */
+  { title:'E.T. the Extra-Terrestrial', year:1982, cert:'PG', classic:true, kid:true, overview:'A lonely boy hides a stranded alien in his home and helps him find a way back to his planet.' },
+  { title:'Back to the Future', year:1985, cert:'PG', classic:true, kid:true, overview:'A teenager is sent thirty years into the past and has to make sure his parents still fall in love.' },
+  { title:'The Princess Bride', year:1987, cert:'PG', classic:true, kid:true, overview:'A farm boy turned pirate storms a castle to rescue his true love, with fencing, giants and revenge along the way.' },
   { title:'The Wizard of Oz', year:1939, cert:'G', classic:true, overview:'A Kansas farm girl is swept by a tornado into a technicolor land and follows a yellow brick road home.' },
-  { title:'It’s a Wonderful Life', year:1946, cert:'PG', classic:true, overview:'On Christmas Eve, a despairing small-town man is shown what his community would have become if he had never been born.' },
-  { title:'To Kill a Mockingbird', year:1962, cert:'NR', classic:true, talk:true, overview:'A small-town Alabama lawyer defends a Black man falsely accused of rape, watched by his young daughter Scout.' },
-  { title:'Some Like It Hot', year:1959, cert:'NR', classic:true, overview:'Two musicians witness a mob killing and flee Chicago disguised as members of an all-women band.' },
-  { title:'Modern Times', year:1936, cert:'G', classic:true, overview:'Chaplin’s Little Tramp struggles to survive the machinery and mass production of the industrial age.' },
   { title:'Mary Poppins', year:1964, cert:'G', classic:true, overview:'A magical nanny arrives on the east wind to look after two neglected London children — and their father.' },
-  { title:'12 Angry Men', year:1957, cert:'NR', classic:true, talk:true, overview:'One juror refuses to vote guilty, forcing eleven others to re-examine a murder case in a sweltering deliberation room.' },
-  { title:'Casablanca', year:1942, cert:'PG', classic:true, overview:'A cynical nightclub owner in wartime Morocco must choose between the woman he loves and the resistance cause.' },
-  { title:'Jaws', year:1975, cert:'PG', classic:true, overview:'A police chief, an oceanographer and a grizzled shark hunter set out to kill a great white terrorising a beach town.' },
-  { title:'Raiders of the Lost Ark', year:1981, cert:'PG', classic:true, overview:'An archaeologist races Nazi agents across the globe to find the Ark of the Covenant.' },
+  { title:'The Sound of Music', year:1965, cert:'G', classic:true, overview:'A would-be nun becomes governess to seven children in Austria as the country slides toward war.' },
+  { title:'Singin’ in the Rain', year:1952, cert:'G', classic:true, overview:'As Hollywood lurches from silent films to talkies, a matinee idol and his friends rescue a disastrous production.' },
+  { title:'Home Alone', year:1990, cert:'PG', classic:true, kid:true, overview:'An eight-year-old left behind at Christmas defends the house against two determined burglars.' },
+  { title:'Mrs. Doubtfire', year:1993, cert:'PG-13', classic:true, overview:'A divorced actor disguises himself as an elderly nanny to spend time with his own children.' },
 
-  /* films worth talking about afterwards — includes tasteful PG-13/R */
-  { title:'Billy Elliot', year:2000, cert:'R', talk:true, overview:'During the 1984 miners’ strike, a boxing-class boy in a County Durham mining town discovers he would rather dance ballet — and has to win over his grieving father.' },
-  { title:'Dead Poets Society', year:1989, cert:'PG', talk:true, overview:'An unorthodox English teacher at a strict boys’ boarding school inspires his students to think for themselves.' },
-  { title:'Hidden Figures', year:2016, cert:'PG', talk:true, overview:'Three Black women mathematicians at NASA fight segregation while helping put an astronaut into orbit.' },
+  /* ---- worth discussing afterwards ---- */
   { title:'Wonder', year:2017, cert:'PG', talk:true, overview:'A boy with a facial difference starts fifth grade at a mainstream school and slowly changes everyone around him.' },
+  { title:'Hidden Figures', year:2016, cert:'PG', talk:true, overview:'Three Black women mathematicians at NASA fight segregation while helping put an astronaut into orbit.' },
   { title:'Remember the Titans', year:2000, cert:'PG', talk:true, overview:'A newly integrated Virginia high school football team learns to play — and live — together in 1971.' },
-  { title:'October Sky', year:1999, cert:'PG', talk:true, overview:'A coal miner’s son in 1950s West Virginia builds rockets against his father’s wishes and aims for a science scholarship.' },
-  { title:'Life Is Beautiful', year:1997, cert:'PG-13', talk:true, overview:'An Italian Jewish father uses humour and invention to shield his young son from the horror of a concentration camp.' },
+  { title:'Queen of Katwe', year:2016, cert:'PG', talk:true, overview:'A girl selling maize in a Kampala slum discovers chess and plays her way toward a different life.' },
+  { title:'McFarland, USA', year:2015, cert:'PG', talk:true, overview:'A coach in a farmworking California town builds a cross-country team out of kids who run before dawn to pick crops.' },
+  { title:'October Sky', year:1999, cert:'PG', talk:true, overview:'A coal miner’s son in 1950s West Virginia builds rockets against his father’s wishes.' },
+  { title:'Billy Elliot', year:2000, cert:'R', talk:true, overview:'During the 1984 miners’ strike, a boxing-class boy in a mining town discovers he would rather dance ballet — and must win over his grieving father.' },
+  { title:'Dead Poets Society', year:1989, cert:'PG', talk:true, overview:'An unorthodox English teacher at a strict boys’ boarding school inspires his students to think for themselves.' },
+  { title:'A Monster Calls', year:2016, cert:'PG-13', talk:true, overview:'A boy whose mother is dying is visited each night by a giant yew tree that tells him three stories.' },
   { title:'The Blind Side', year:2009, cert:'PG-13', talk:true, overview:'A well-off Memphis family takes in a homeless teenager who becomes an All-American football player.' },
-  { title:'Good Will Hunting', year:1997, cert:'R', talk:true, overview:'A young janitor at MIT with a genius for mathematics is pushed to face his past by a therapist who has his own grief.' },
-  { title:'A Beautiful Mind', year:2001, cert:'PG-13', talk:true, overview:'Nobel-winning mathematician John Nash battles schizophrenia while doing groundbreaking work.' },
-  { title:'The Pursuit of Happyness', year:2006, cert:'PG-13', talk:true, overview:'A struggling salesman takes an unpaid stockbroking internship while homeless with his young son.' },
   { title:'Selma', year:2014, cert:'PG-13', talk:true, overview:'Dr. Martin Luther King Jr. leads the 1965 voting-rights march from Selma to Montgomery.' },
-  { title:'Schindler’s List', year:1993, cert:'R', talk:true, overview:'A German industrialist gradually risks everything to save more than a thousand Jewish workers from the Holocaust.' },
-  { title:'Whale Rider', year:2002, cert:'PG-13', talk:true, overview:'A Māori girl fights her grandfather’s tradition that only a firstborn boy can lead their people.' },
+  { title:'Life Is Beautiful', year:1997, cert:'PG-13', talk:true, overview:'An Italian Jewish father uses humour and invention to shield his young son from a concentration camp.' },
   { title:'Bend It Like Beckham', year:2002, cert:'PG-13', talk:true, overview:'A London teenager secretly joins a women’s football team against her traditional Punjabi family’s wishes.' },
-  { title:'Stand by Me', year:1986, cert:'R', talk:true, overview:'Four boys hike into the Oregon woods to find a missing body, and grow up somewhere along the way.' }
+  { title:'Whale Rider', year:2002, cert:'PG-13', talk:true, overview:'A Māori girl fights her grandfather’s tradition that only a firstborn boy can lead their people.' },
+  { title:'12 Angry Men', year:1957, cert:'NR', talk:true, classic:true, overview:'One juror refuses to vote guilty, forcing eleven others to re-examine a murder case in a sweltering room.' },
+  { title:'To Kill a Mockingbird', year:1962, cert:'NR', talk:true, classic:true, overview:'A small-town Alabama lawyer defends a Black man falsely accused, watched by his young daughter Scout.' }
 ];
 var IDEA_CATS = [
+  { id:'shortlist',label:'🔖 Our shortlist', local:true },
   { id:'curated',  label:'🍿 Crowd pleasers' },
+  { id:'toprated', label:'⭐ Top rated', genres:'', cert:'PG-13', minVotes:4000, since:'1990-01-01' },
   { id:'talk',     label:'💬 Worth discussing' },
   { id:'classics', label:'🏛 Classics' },
-  { id:'family',   label:'👨‍👩‍👧 Family', genres:'10751', cert:'PG-13' },
-  { id:'animated', label:'🎨 Animated', genres:'16', cert:'PG-13' },
-  { id:'adventure',label:'🗺 Adventure', genres:'12', cert:'PG-13' },
-  { id:'funny',    label:'😂 Funny', genres:'35', cert:'PG-13' },
+  { id:'family',   label:'👨‍👩‍👧 Family', genres:'10751', cert:'PG', since:'1995-01-01' },
+  { id:'animated', label:'🎨 Animated', genres:'16', cert:'PG', since:'1995-01-01' },
+  { id:'adventure',label:'🗺 Adventure', genres:'12', cert:'PG-13', since:'1990-01-01' },
+  { id:'funny',    label:'😂 Funny', genres:'35', cert:'PG-13', since:'1990-01-01' },
+  { id:'fantasy',  label:'🐉 Fantasy & sci-fi', genres:'14,878', cert:'PG-13', since:'1990-01-01' },
   { id:'drama',    label:'🎭 Great drama', genres:'18', cert:'R' },
-  { id:'oldies',   label:'📽 Before 1980', genres:'', before:'1980-01-01', cert:'R' },
   { id:'ai',       label:'✨ For us', ai:true }
 ];
 /* shelves shown in the Ideas tab: the fixed ones, plus one per family
@@ -3574,6 +3617,33 @@ function watchedTitleSet(){
   nights().forEach(function(n){ set[normQuote(n.title)] = true; });
   liveRecords('seen').forEach(function(r){ set[normQuote(r.title)] = true; });
   return set;
+}
+function shortlisted(){
+  return liveRecords('shortlist').sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+}
+function shortlistId(it){
+  return 'short_' + normQuote(it.title).replace(/\s+/g,'_').slice(0, 60);
+}
+function isShortlisted(it){
+  var r = data.records[shortlistId(it)];
+  return !!(r && !r.deleted);
+}
+function toggleShortlist(it){
+  var id = shortlistId(it);
+  var existing = data.records[id];
+  if (existing && !existing.deleted){
+    data.records[id] = { id:id, type:'shortlist', deleted:true, updatedAt: Date.now() };
+    saveData();
+    return false;
+  }
+  data.records[id] = {
+    id:id, type:'shortlist', title:it.title, year:it.year || null,
+    tmdbId:it.tmdbId || null, posterPath:it.posterPath || null,
+    overview:it.overview || '', cert:it.cert || null, score:it.score || null,
+    updatedAt: Date.now()
+  };
+  saveData();
+  return true;
 }
 function markSeen(it){
   var id = 'seen_' + normQuote(it.title).replace(/\s+/g,'_').slice(0, 60);
@@ -3602,10 +3672,11 @@ function tmdbDiscover(cat, page){
   var url = 'https://api.themoviedb.org/3/discover/movie'
     + '?include_adult=false&language=en-US'
     + '&certification_country=US&certification.lte=' + encodeURIComponent(cat.cert || 'PG-13')
-    + '&sort_by=vote_average.desc&vote_count.gte=700'
+    + '&sort_by=vote_average.desc&vote_count.gte=' + (cat.minVotes || 900)
     + (cat.genres ? '&with_genres=' + encodeURIComponent(cat.genres) : '')
     + '&page=' + (page || 1);
   if (cat.before) url += '&primary_release_date.lte=' + cat.before;
+  if (cat.since) url += '&primary_release_date.gte=' + cat.since;
   var headers = {};
   if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
   else url += '&api_key=' + encodeURIComponent(cred.value);
@@ -3639,11 +3710,15 @@ function aiIdeasFor(member){
   if (prof.avoids) taste.push('Not for them: ' + prof.avoids);
   if (prof.night) taste.push('A great movie night for them: ' + prof.night);
   var system = 'You recommend movies for a family movie night. The family: Chris and Kat (parents), '
-    + 'Sedona and River (kids). Everything must be appropriate to watch together as a family. '
+    + 'Sedona (12) and River (9). Everything must genuinely work for a 9- and 12-year-old watching '
+    + 'with their parents — engaging for kids that age, not just technically permitted. Favour films '
+    + 'made in the last 25 years unless an older one is a true all-ages classic. '
     + 'Never recommend a film in the watched list.';
   var prompt = 'Recommend 6 movies chosen specifically for ' + member.name + ', but that the whole family can enjoy together.\n\n'
     + member.name + '’s taste:\n' + (taste.length ? taste.join('\n') : '(no profile yet — use their ratings below)')
     + '\n\nWhat the family has watched:\n' + (history || '(nothing yet)')
+    + (shortlisted().length ? '\n\nOn the family shortlist already (do not repeat these):\n'
+        + shortlisted().slice(0, 10).map(function(r){ return '- ' + r.title; }).join('\n') : '')
     + '\n\nRespond with ONLY valid JSON, no markdown fences:\n'
     + '{"picks":[{"title":"","year":2000,"why":"one warm sentence on why ' + member.name + ' specifically would love it","synopsis":"two spoiler-free sentences"}]}';
   return askClaude(prompt, { system: system, maxTokens: 1500 }).then(function(text){
@@ -3662,10 +3737,17 @@ function aiIdeas(){
     return '- ' + n.title + (n.year ? ' (' + n.year + ')' : '') + (avg !== null ? ' — family rated ' + avg.toFixed(1) + '/5' : '');
   }).join('\n');
   var system = 'You recommend movies for a family movie night. The family: Chris and Kat (parents), '
-    + 'Sedona and River (kids). Recommend only family-appropriate films (roughly PG/PG-13). '
+    + 'Sedona (12) and River (9). Everything must genuinely work for a 9- and 12-year-old watching '
+    + 'with their parents — engaging for kids that age, not merely permitted. Favour films made in '
+    + 'the last 25 years unless an older one is a true all-ages classic. '
     + 'Never recommend a movie that appears in their watched list.';
+  var shortlistLine = shortlisted().length
+    ? '\n\nAlready on their shortlist (they like the look of these — suggest things in a similar spirit, but do not repeat them):\n'
+      + shortlisted().slice(0, 10).map(function(r){ return '- ' + r.title; }).join('\n')
+    : '';
   var prompt = 'Movies this family has already watched together:\n'
     + (history || '(none yet)')
+    + shortlistLine
     + '\n\nRecommend 6 movies they would love next. Respond with ONLY valid JSON, no markdown fences:\n'
     + '{"picks":[{"title":"","year":2000,"why":"one warm sentence on why THIS family","synopsis":"two spoiler-free sentences"}]}';
   return askClaude(prompt, { system: system, maxTokens: 1400 }).then(function(text){
@@ -3712,8 +3794,14 @@ function loadIdeas(force){
         return enrichFromTmdb(picks);
       });
     }
+  } else if (cat.id === 'shortlist'){
+    var saved = shortlisted().map(function(r){
+      return { title:r.title, year:r.year, tmdbId:r.tmdbId, posterPath:r.posterPath,
+               overview:r.overview, cert:r.cert, score:r.score };
+    });
+    job = saved.length ? enrichFromTmdb(saved) : Promise.resolve([]);
   } else if (cat.id === 'curated'){
-    job = enrichFromTmdb(shuffleWithSeed(CURATED.filter(function(c){ return !c.talk && !c.classic; }), ideas.seed).slice(0, 12));
+    job = enrichFromTmdb(shuffleWithSeed(CURATED.filter(function(c){ return c.kid; }), ideas.seed).slice(0, 12));
   } else if (cat.id === 'talk'){
     job = enrichFromTmdb(shuffleWithSeed(CURATED.filter(function(c){ return c.talk; }), ideas.seed).slice(0, 12));
   } else if (cat.id === 'classics'){
@@ -3723,10 +3811,14 @@ function loadIdeas(force){
   }
 
   job.then(function(items){
-    var fresh = notWatched(items);
-    ideas.items = fresh.slice(0, 18);
+    var fresh = (cat.id === 'shortlist') ? items : notWatched(items);
+    ideas.items = fresh.slice(0, 24);
     ideas.loading = false;
-    if (!ideas.items.length) ideas.note = 'You’ve seen everything here! Try another shelf or shuffle.';
+    if (!ideas.items.length){
+      ideas.note = (cat.id === 'shortlist')
+        ? 'Nothing saved yet — tap any movie idea and choose “Save to our shortlist” to keep it here for later.'
+        : 'You’ve seen everything here! Try another shelf or shuffle.';
+    }
     render();
   }).catch(function(e){
     ideas.loading = false;
@@ -3774,7 +3866,7 @@ function openIdeaDetail(it){
       var rel = (f && f.released) || null;
       facts.appendChild(el('span','idea-fact', rel ? rel.slice(0,4) : (it.year ? String(it.year) : 'Movie')));
       if (f && f.runtime) facts.appendChild(el('span','idea-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
-      if (f && f.imdb) facts.appendChild(el('span','idea-fact star','IMDb ' + f.imdb));
+      if (f && f.imdb) facts.appendChild(imdbGuideChip(f, 'idea-fact'));
       if (f && f.rt) facts.appendChild(el('span','idea-fact rt','🍅 ' + f.rt));
       if (f && f.meta) facts.appendChild(el('span','idea-fact','Metacritic ' + f.meta));
       var ts = (f && f.tmdbScore) || it.score;
@@ -3795,6 +3887,16 @@ function openIdeaDetail(it){
 
     box.appendChild(el('div','f-label','What it’s about'));
     box.appendChild(el('div','idea-syn', it.overview || 'No synopsis available for this one yet — but the title alone might be enough.'));
+
+    var saveBtn = el('button','idea-refresh' + (isShortlisted(it) ? ' on' : ''),
+      isShortlisted(it) ? '🔖 Saved to our shortlist — tap to remove' : '🔖 Save to our shortlist');
+    saveBtn.addEventListener('click', function(){
+      var added = toggleShortlist(it);
+      saveBtn.textContent = added ? '🔖 Saved to our shortlist — tap to remove' : '🔖 Save to our shortlist';
+      saveBtn.classList.toggle('on', added);
+      toast(added ? 'Saved for later 🔖' : 'Removed from the shortlist');
+    });
+    box.appendChild(saveBtn);
 
     var seenBtn = el('button','idea-refresh','✓ We’ve already seen this one');
     seenBtn.addEventListener('click', function(){
@@ -4693,7 +4795,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.0.1'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.1'));
   app.appendChild(foot);
 }
 
