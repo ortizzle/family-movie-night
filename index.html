@@ -346,8 +346,14 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .rx-row:active,.rx-row:focus-visible{border-color:var(--line)}
 .rx-row .who{font-size:13px;font-weight:900;width:64px;flex-shrink:0}
-.rx-row .stars{font-size:14px;color:var(--star);flex-shrink:0;letter-spacing:1.5px}
-.rx-row .stars .off{color:var(--star-off)}
+/* half-star primitive: outline glyph with a width-clipped filled glyph on top */
+.st{position:relative;display:inline-block;letter-spacing:0;margin-right:1.5px}
+.st > .fill{
+  position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;
+  width:0;pointer-events:none;
+}
+.rx-row .stars{font-size:14px;color:var(--star-off);flex-shrink:0;letter-spacing:0}
+.rx-row .stars .fill{color:var(--star)}
 .rx-row .snippet{
   flex:1;font-size:12.5px;color:var(--dim);font-style:italic;font-weight:600;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
@@ -475,9 +481,10 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 .sp-polaroid .cap{font-family:'Caveat',cursive;font-size:17px;text-align:center;margin-top:7px;color:#5E4326}
 .sp-headside{display:flex;flex-direction:column;gap:12px;align-items:center;padding-top:14px}
 .sp-avg{
-  font-size:22px;color:#E2A93B;letter-spacing:2px;text-shadow:0 1px 0 rgba(74,53,32,.2);
+  font-size:22px;color:#D8C7A8;letter-spacing:0;text-shadow:0 1px 0 rgba(74,53,32,.2);
   transform:rotate(1.5deg);font-weight:900;
 }
+.sp-avg .fill{color:#E2A93B}
 .sp-avg small{display:block;font-family:'Caveat',cursive;font-size:16px;color:#8A6A44;letter-spacing:0;text-align:center}
 
 /* by-question sections */
@@ -501,7 +508,8 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   background:#FFFDF6;border-radius:8px;padding:8px 11px;box-shadow:0 4px 10px rgba(74,53,32,.18);
   font-weight:900;font-size:12px;display:flex;align-items:center;
 }
-.sp-rate .stars{color:#E2A93B;letter-spacing:1px;font-size:13px}
+.sp-rate .stars{color:#D8C7A8;letter-spacing:0;font-size:13px}
+.sp-rate .stars .fill{color:#E2A93B}
 .sp-note{
   margin-top:12px;background:#FFFDF6;border-radius:3px;padding:12px 15px;
   box-shadow:0 5px 14px rgba(74,53,32,.22);font-size:14.5px;font-weight:600;line-height:1.55;
@@ -750,10 +758,14 @@ input[type="date"].f-input{min-height:50px;-webkit-appearance:none;appearance:no
 
 .starpick{display:flex;justify-content:center;gap:2px}
 .starpick button{
-  background:none;border:none;font-size:34px;min-width:48px;min-height:52px;line-height:1;
-  color:var(--star-off);transition:transform .12s, color .12s;
+  background:none;border:none;font-size:36px;min-width:58px;min-height:54px;line-height:1;
+  color:var(--star-off);transition:transform .12s;padding:0;
 }
-.starpick button.on{color:var(--star);transform:scale(1.1);text-shadow:0 0 16px rgba(255,201,74,.5)}
+.starpick button .st{margin-right:0}
+/* drop-shadow (not text-shadow) so the glow follows the clipped half-star
+   silhouette instead of the clipping box */
+.starpick button .fill{color:var(--star);filter:drop-shadow(0 0 5px rgba(255,201,74,.55))}
+.starpick button.on{transform:scale(1.06)}
 .starpick-hint{text-align:center;font-size:11px;color:var(--dim);margin-top:6px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
 
 .pick-chips{display:flex;gap:8px;flex-wrap:wrap}
@@ -1284,7 +1296,7 @@ function seedSample(){
     { title:'The Princess Bride', year:1987, date:'2026-07-10', pickedBy:'chris', grad:'linear-gradient(160deg,#8A6A2E,#3A2A0E)',
       rx: {
         chris:  { stars:5, why:'You can’t officially be an Ortiz kid until you’ve seen it. It was time.', thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', character:'Inigo Montoya', scene:'The Cliffs of Insanity duel. Two masters fencing left-handed out of pure respect, switching hands mid-fight. Best sword fight ever put on film.', quotes:['Hello. My name is Inigo Montoya.'], memories:['All four of us saying the Montoya speech together by the end.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:true} },
-        kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', character:'Westley', quotes:['As you wish.'], memories:['River gasping at the shrieking eels.'], poll:{laughed:true, cried:true, rewatch:true, seenBefore:true} },
+        kat:    { stars:4.5, thought:'Holds up better than almost anything from the 80s.', character:'Westley', quotes:['As you wish.'], memories:['River gasping at the shrieking eels.'], poll:{laughed:true, cried:true, rewatch:true, seenBefore:true} },
         sedona: { stars:4, thought:'The sword fight was actually so good?', character:'Inigo Montoya', quotes:['Inconceivable!'], memories:['Dad quoting every line 2 seconds early.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
         river:  { stars:5, thought:'THE ROUS ARE REAL.', character:'Fezzik', quotes:['Anybody want a peanut?','Have fun storming the castle!'], memories:['Popcorn flew everywhere during the eel jump-scare.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
       } },
@@ -1297,7 +1309,7 @@ function seedSample(){
       } },
     { title:'Jumanji: Welcome to the Jungle', year:2017, date:'2026-07-24', pickedBy:'sedona', grad:'linear-gradient(160deg,#2E5E4A,#0E2A1E)',
       rx: {
-        chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', character:'Dr. Smolder Bravestone', quotes:['I have a fanny pack full of gains.'], memories:['Kat crying laughing at the cake scene.'], poll:{laughed:true, cried:false, rewatch:false, seenBefore:true} },
+        chris:  { stars:3.5, thought:'Fun, loud, forgettable. Great pick for pizza night though.', character:'Dr. Smolder Bravestone', quotes:['I have a fanny pack full of gains.'], memories:['Kat crying laughing at the cake scene.'], poll:{laughed:true, cried:false, rewatch:false, seenBefore:true} },
         kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', character:'Professor Shelly Oberon', scene:'The cake scene. One bite, one beat of pure silence, and then the loudest explosion of the whole movie. I had to pause it to breathe.', quotes:['I can’t even with this place.'], memories:['The cake scene. I had to pause it.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
         sedona: { stars:4, why:'We needed a loud, funny one after a long week. Mission accomplished.', thought:'Good pick, me. The video-game lives idea is clever.', character:'Ruby Roundhouse', quotes:['Strengths: none. Weaknesses: cake.'], memories:['River checking his own "strengths and weaknesses" after.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
         river:  { stars:5, thought:'CAKE. BOOM.', character:'Franklin "Mouse" Finbar', quotes:['Weaknesses: cake.'], memories:['We all listed our video game strengths at breakfast.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
@@ -1354,16 +1366,37 @@ function toast(msg){
   clearTimeout(toast._t);
   toast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600);
 }
-function starString(n){
-  var s = '';
-  for (var i=1;i<=5;i++) s += (i<=n ? '★' : '☆');
-  return s;
+/* ---------- stars (supports halves) ----------
+   Ratings are stored as numbers in 0.5 steps. Whole-number ratings saved
+   by earlier versions stay valid. Each star is an outline glyph with a
+   filled glyph layered on top, clipped to 0 / 50 / 100% width. */
+function clampStars(n){
+  n = Math.round((Number(n) || 0) * 2) / 2;
+  return Math.max(0, Math.min(5, n));
 }
-function starsNode(n){
-  var span = el('span','stars');
-  for (var i=1;i<=5;i++){
-    span.appendChild(el('span', i<=n ? '' : 'off', i<=n ? '★' : '☆'));
-  }
+function starFillPct(rating, position){
+  if (rating >= position) return 100;
+  if (rating >= position - 0.5) return 50;
+  return 0;
+}
+/* "3½" — for toasts and hints */
+function starText(n){
+  n = clampStars(n);
+  var whole = Math.floor(n);
+  return (n - whole >= 0.5) ? (whole + '½') : String(whole);
+}
+function starUnit(pct){
+  var st = el('span','st');
+  st.appendChild(document.createTextNode('☆'));
+  var fill = el('span','fill','★');
+  fill.style.width = pct + '%';
+  st.appendChild(fill);
+  return st;
+}
+function starsNode(n, cls){
+  n = clampStars(n);
+  var span = el('span', cls || 'stars');
+  for (var i=1;i<=5;i++) span.appendChild(starUnit(starFillPct(n, i)));
   return span;
 }
 function confettiBurst(count){
@@ -1588,17 +1621,29 @@ function openReaction(night, member){
     var hint = el('div','starpick-hint','');
     function paintStars(){
       starBtns.forEach(function(b, i){
-        b.textContent = (i < stars) ? '★' : '☆';
-        b.className = (i < stars) ? 'on' : '';
+        var pct = starFillPct(stars, i + 1);
+        b.querySelector('.fill').style.width = pct + '%';
+        b.classList.toggle('on', pct > 0);
       });
-      hint.textContent = stars ? stars + ' out of 5 stars' : 'Tap the stars!';
+      hint.textContent = stars
+        ? starText(stars) + ' out of 5 · tap again to clear'
+        : 'Tap the stars — left half of a star for a ½';
     }
     for (var i=1;i<=5;i++){
       (function(n){
-        var b = el('button', null, '☆');
+        var b = el('button');
         b.type = 'button';
-        b.setAttribute('aria-label', n + ' star' + (n>1?'s':''));
-        b.addEventListener('click', function(){ stars = n; paintStars(); });
+        b.setAttribute('aria-label', n + ' stars (left half for ' + (n - 0.5) + ')');
+        b.appendChild(starUnit(0));
+        b.addEventListener('click', function(e){
+          // left half of the glyph = half star; keyboard activation (no
+          // pointer coords) always takes the whole star
+          var rect = b.getBoundingClientRect();
+          var viaPointer = e.clientX || e.clientY;
+          var picked = (viaPointer && (e.clientX - rect.left) < rect.width / 2) ? n - 0.5 : n;
+          stars = (picked === stars) ? 0 : picked; // tapping the same value clears it
+          paintStars();
+        });
         starBtns.push(b);
         sp.appendChild(b);
       })(i);
@@ -1723,7 +1768,7 @@ function openReaction(night, member){
       close();
       render();
       if (stars === 5) confettiBurst();
-      toast(stars ? member.name + ' gave it ' + starString(stars) : 'Saved ' + member.name + '’s reaction');
+      toast(stars ? member.name + ' gave it ' + starText(stars) + ' stars' : 'Saved ' + member.name + '’s reaction');
     });
     row.appendChild(cancel); row.appendChild(save);
     box.appendChild(row);
@@ -1789,7 +1834,7 @@ function buildNightKeepsake(container, night){
       var r = reactionFor(night.id, m.id);
       var box = el('div','sp-rate');
       box.appendChild(spTag(m));
-      box.appendChild(el('span','stars', starString(r.stars)));
+      box.appendChild(starsNode(r.stars));
       rates.appendChild(box);
     });
     rateSec.appendChild(rates);
@@ -1965,7 +2010,8 @@ function openScrapbook(night){
   var side = el('div','sp-headside');
   var avg = familyAvg(night.id);
   if (avg !== null){
-    var av = el('div','sp-avg', starString(Math.round(avg)));
+    var av = el('div','sp-avg');
+    av.appendChild(starsNode(avg));
     av.appendChild(el('small', null, 'family score: ' + avg.toFixed(1) + ' / 5'));
     side.appendChild(av);
   }
@@ -2599,7 +2645,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.5'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.6'));
   app.appendChild(footer);
 }
 
@@ -3081,7 +3127,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.5'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.6'));
   app.appendChild(foot);
 }
 
