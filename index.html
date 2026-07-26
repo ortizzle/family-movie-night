@@ -635,6 +635,15 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 .set-btn.warn{color:var(--coral)}
 .set-row{display:flex;gap:10px;margin-top:12px}
 .set-row .f-input{margin-top:0}
+.gist-id-row{
+  margin-top:12px;background:var(--card-2);border:2px solid var(--line);border-radius:14px;
+  padding:12px 14px;
+}
+.gist-id-row .lbl{font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;font-weight:900}
+.gist-id-text{
+  display:block;margin-top:6px;font-family:'Courier Prime',monospace;font-size:14px;
+  color:var(--cream);word-break:break-all;-webkit-user-select:all;user-select:all;
+}
 .set-save{
   flex-shrink:0;min-width:88px;min-height:50px;border:none;border-radius:14px;
   background:linear-gradient(135deg,var(--amber),#FF9350);color:#3A2410;
@@ -2522,7 +2531,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.3'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.3.1'));
   app.appendChild(footer);
 }
 
@@ -2855,6 +2864,39 @@ function renderSettings(app){
   });
   rowg.appendChild(gSave);
   sy.appendChild(rowg);
+
+  if (Sync.gistId()){
+    var idRow = el('div','gist-id-row');
+    idRow.appendChild(el('div','lbl','Family gist ID — send this to the other phones'));
+    idRow.appendChild(el('code','gist-id-text', Sync.gistId()));
+    sy.appendChild(idRow);
+
+    var copyBtn = el('button','set-btn','📋 Copy gist ID');
+    copyBtn.addEventListener('click', function(){
+      var id = Sync.gistId();
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(id)
+          .then(function(){ toast('Gist ID copied ✓'); })
+          .catch(function(){ toast('Couldn’t copy — tap the ID above to select it'); });
+      } else {
+        toast('Tap the ID above, then copy the selection');
+      }
+    });
+    sy.appendChild(copyBtn);
+
+    if (navigator.share){
+      var shareBtn = el('button','set-btn','📤 Share with family');
+      shareBtn.addEventListener('click', function(){
+        navigator.share({
+          title: 'Family Movie Night sync',
+          text: 'Family Movie Night gist ID: ' + Sync.gistId()
+            + '\n\nIn the app: Settings → Family sync → paste this, plus the token I sent you separately.'
+        }).catch(function(){});
+      });
+      sy.appendChild(shareBtn);
+    }
+  }
+
   if (Sync.token() && !Sync.gistId()){
     var cg = el('button','set-btn','✨ Create the family gist (first phone only)');
     cg.addEventListener('click', function(){
@@ -2971,7 +3013,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.3'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.3.1'));
   app.appendChild(foot);
 }
 
