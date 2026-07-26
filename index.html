@@ -218,6 +218,10 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   margin:6px 0 4px;
 }
 .lineup .lu-head.second{margin-top:16px}
+.lu-later{
+  text-align:center;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;
+  font-weight:900;color:var(--muted);padding:9px 0 3px;
+}
 .lu-row{
   display:flex;align-items:center;gap:10px;min-height:46px;
   border-bottom:2px dashed #453648;padding:6px 2px;
@@ -1702,24 +1706,89 @@ function nightsSinceAnchor(){
   if (!a) return past;
   return past.filter(function(n){ return n.date >= a.date; });
 }
-/* who is up next — the person whose night is already on the calendar,
-   otherwise whoever follows the last night that happened, otherwise
-   whoever the restart says goes first */
-function nextPicker(){
-  var sched = scheduledNights();
-  if (sched.length) return memberById(sched[0].pickedBy);
-  var past = nightsSinceAnchor();
-  if (past.length) return rotationNext(past[0].pickedBy);
+/* where the order picks back up when nothing is booked yet — the last night
+   that happened since the restart, else the restart itself, else the top */
+function rotationBase(){
+  var since = nightsSinceAnchor();
+  if (since.length) return rotationNext(since[0].pickedBy);
   var a = rotationAnchor();
   if (a) return memberById(a.member);
+  var past = happenedNights();
+  if (past.length) return rotationNext(past[0].pickedBy);
   return MEMBERS[0];
 }
-/* default picker when logging a brand-new night — continue past anything
-   already on the calendar so two people don't get booked into one slot */
-function pickerForNewNight(){
+/* The upcoming calendar, one row per Friday. Every Friday gets a slot, so a
+   movie booked a month out no longer swallows the open Fridays in front of
+   it — those still belong to whoever's turn they are. A booked night claims
+   the Friday it lands on (within a few days, for the Saturdays), and the
+   rotation continues from whoever the previous slot went to. Keeps going
+   past `count` if it has to, so nothing already booked falls off the end. */
+function rotationOrderFrom(member){
+  var out = [], start = 0;
+  for (var i=0;i<MEMBERS.length;i++) if (MEMBERS[i].id === member.id) start = i;
+  for (var j=0;j<MEMBERS.length;j++) out.push(MEMBERS[(start + j) % MEMBERS.length]);
+  return out;
+}
+function lineupSlots(count){
   var sched = scheduledNights();
-  if (sched.length) return rotationNext(sched[sched.length - 1].pickedBy);
-  return nextPicker();
+  var placed = {}, slots = [];
+  var cursor = nextOpenFriday();
+  if (sched.length && sched[0].date < cursor) cursor = sched[0].date;
+  /* Everybody still owed a turn this time around. Booking a Friday that
+     wasn't yours takes your name off the list rather than shunting the
+     person you bumped off the end of it — so nobody loses a turn when a
+     night gets claimed out of order. */
+  var order = rotationOrderFrom(rotationBase());
+  var cycle = order.slice();
+  function take(memberId){
+    for (var k=0;k<cycle.length;k++){
+      if (cycle[k].id === memberId){ cycle.splice(k, 1); break; }
+    }
+    if (!cycle.length) cycle = order.slice();
+  }
+  while (slots.length < count){
+    var hit = null;
+    for (var i=0;i<sched.length;i++){
+      if (placed[sched[i].id]) continue;
+      if (Math.abs(AZ.daysBetween(cursor, sched[i].date)) <= 3){ hit = sched[i]; break; }
+    }
+    if (hit){
+      placed[hit.id] = true;
+      take(hit.pickedBy);
+      slots.push({ date:hit.date, member:memberById(hit.pickedBy), title:hit.title, night:hit });
+    } else {
+      var who = cycle[0];
+      take(who.id);
+      slots.push({ date: cursor, title: null, night: null, member: who });
+    }
+    cursor = AZ.addDays(cursor, 7);
+  }
+  // anything booked past the end of the window still gets a slot of its own
+  sched.forEach(function(n){
+    if (placed[n.id]) return;
+    slots.push({ date:n.date, member:memberById(n.pickedBy), title:n.title, night:n });
+  });
+  return slots;
+}
+/* who is up next — whoever owns the very next slot on the calendar */
+function nextPicker(){
+  return lineupSlots(1)[0].member;
+}
+/* default picker when logging a brand-new night — the first Friday nobody
+   has booked yet, so two people don't get booked into one slot */
+function pickerForNewNight(){
+  var slots = lineupSlots(8);
+  for (var i=0;i<slots.length;i++) if (!slots[i].night) return slots[i].member;
+  return rotationNext(slots[slots.length-1].member.id);
+}
+/* whose Friday a given date is, if it's one we're projecting */
+function pickerForDate(date){
+  if (!date) return null;
+  var slots = lineupSlots(12);
+  for (var i=0;i<slots.length;i++){
+    if (Math.abs(AZ.daysBetween(slots[i].date, date)) <= 3) return slots[i].member;
+  }
+  return null;
 }
 /* ---------- quote matching ----------
    When two people save the same line (or one saves a longer version of
@@ -2100,7 +2169,7 @@ function openAddNight(){
     var pickWrap = el('div');
     pickWrap.appendChild(el('div','f-label','Whose pick was it?'));
     var chips = el('div','pick-chips');
-    var picked = pickerForNewNight().id;
+    var picked = (pickerForDate(AZ.today()) || pickerForNewNight()).id;
     MEMBERS.forEach(function(m){
       var c = el('button','pick-chip', m.name);
       c.type = 'button';
@@ -2119,16 +2188,17 @@ function openAddNight(){
     repaintAll();
     pickWrap.appendChild(chips);
     /* Booking a night that hasn't happened yet is almost always someone
-       claiming their own turn, so default to whoever this phone belongs to.
-       Logging a night that already happened is usually one person writing it
-       up for the family, so the rotation guess stays. Either way the chips
-       are right there. */
+       claiming a Friday, so follow the calendar: whoever's turn that date is
+       gets preselected. Past the end of the projected lineup we fall back to
+       whoever's holding the phone. Either way the chips are right there. */
     var touchedPicker = false;
     chips.addEventListener('click', function(){ touchedPicker = true; });
     dInput.addEventListener('change', function(){
       if (touchedPicker) return;
-      var me = whoAmI();
-      picked = (me && dInput.value > AZ.today()) ? me.id : pickerForNewNight().id;
+      // the calendar knows whose Friday this is; fall back to whoever's
+      // holding the phone only for a date the lineup doesn't reach
+      var owner = pickerForDate(dInput.value), me = whoAmI();
+      picked = (owner || (me && dInput.value > AZ.today() ? me : pickerForNewNight())).id;
       repaintAll();
     });
 
@@ -3434,7 +3504,9 @@ function renderHome(app){
   var b2 = el('span','burn b2'); b2.setAttribute('aria-hidden','true');
   screen.appendChild(b1); screen.appendChild(b2);
   var inner = el('div','screen-inner');
-  var booked = scheduledNights()[0];
+  // the very next slot on the calendar, booked or not
+  var upNext = lineupSlots(1)[0];
+  var booked = upNext.night;
   inner.appendChild(el('div','label', booked ? 'Coming up…' : 'Up next…'));
   var pn = el('div','pickname', booked
     ? np.name + '’s pick 🍿'
@@ -3443,8 +3515,8 @@ function renderHome(app){
   inner.appendChild(pn);
   if (booked) inner.appendChild(el('div','booked-title', booked.title));
   inner.appendChild(el('div','showdate', booked
-    ? AZ.prettyLong(booked.date)
-    : 'Next movie night · ' + AZ.prettyLong(nextOpenFriday())));
+    ? AZ.prettyLong(upNext.date)
+    : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
   var rot = el('div','rotation');
   MEMBERS.forEach(function(m, i){
     var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
@@ -3466,24 +3538,14 @@ function renderHome(app){
   var lineup = el('div','lineup');
   lineup.appendChild(el('div','lu-head','📅 Coming Attractions'));
   var today = AZ.today();
-  var nf = nextOpenFriday();
-  var sched = scheduledNights();
-  var slots = [];
-  // whatever is already booked keeps its own date and picker
-  sched.forEach(function(n){
-    slots.push({ date:n.date, member:memberById(n.pickedBy), title:n.title, night:n });
-  });
-  // then keep the rotation going on the Fridays after the last booking
-  var cursor = slots.length ? slots[slots.length-1].date : AZ.addDays(nf, -7);
-  var who = slots.length ? memberById(slots[slots.length-1].member.id) : null;
-  while (slots.length < 4){
-    cursor = AZ.addDays(cursor, 7);
-    if (cursor < nf) cursor = nf;
-    who = who ? rotationNext(who.id) : nextPicker();
-    slots.push({ date:cursor, member:who, title:null });
-  }
-  slots.slice(0,4).forEach(function(slot, u){
-    var row = el('div','lu-row' + (u===3 ? ' last' : ''));
+  // the next four Fridays, plus anything booked further out than that so a
+  // movie already on the calendar never drops off the bottom
+  var projected = lineupSlots(4);
+  var slots = projected.slice(0, 4);
+  var later = projected.slice(4).filter(function(s){ return s.night; });
+  slots.concat(later).forEach(function(slot, u){
+    if (u === 4) lineup.appendChild(el('div','lu-later','· later on ·'));
+    var row = el('div','lu-row' + (u === slots.length + later.length - 1 ? ' last' : ''));
     var dt = el('div','lu-date');
     dt.appendChild(el('div','d1', AZ.monthDay(slot.date)));
     var away = AZ.daysBetween(today, slot.date);
@@ -3685,7 +3747,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.3'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.4'));
   app.appendChild(footer);
 }
 
@@ -5282,7 +5344,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.3'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.4'));
   app.appendChild(foot);
 }
 
