@@ -29,17 +29,40 @@
   --sky2:#8FB8DE;
   --star:#FFC94A;
   --paper:#F5E9D3;
+  --room-glow:#372638;
+  --tabbar-bg:rgba(28,20,27,.96);
+  --tape:rgba(255,239,217,.14);
+  --tape-line:rgba(255,239,217,.10);
+}
+:root[data-theme="light"]{
+  --room:#FAF3E8;
+  --room-2:#F3E9D8;
+  --card:#FFFFFF;
+  --card-2:#F3ECE0;
+  --line:#E2D5C0;
+  --cream:#2E2430;
+  --dim:#7C6B58;
+  --amber:#C97A1E;
+  --coral:#C24632;
+  --sage:#4E7A44;
+  --sky2:#33628F;
+  --star:#B87A15;
+  --room-glow:#FFF3DC;
+  --tabbar-bg:rgba(255,253,248,.96);
+  --tape:rgba(0,0,0,.05);
+  --tape-line:rgba(0,0,0,.04);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--room);
-  background-image:radial-gradient(ellipse 85% 45% at 50% -8%, #372638 0%, transparent 62%);
+  background-image:radial-gradient(ellipse 85% 45% at 50% -8%, var(--room-glow) 0%, transparent 62%);
   color:var(--cream);
   font-family:'Nunito',system-ui,sans-serif;
   min-height:100vh;
   padding-top:env(safe-area-inset-top);
   padding-bottom:calc(104px + env(safe-area-inset-bottom));
+  transition:background-color .2s, color .2s;
 }
 .wrap{max-width:720px;margin:0 auto;padding:0 20px}
 button{cursor:pointer;font:inherit;color:inherit}
@@ -121,13 +144,13 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
     radial-gradient(circle 1px at 71% 62%, rgba(74,58,50,.4) 0 1px, transparent 2px),
     radial-gradient(circle 1.5px at 48% 82%, rgba(74,58,50,.35) 0 1.5px, transparent 2.5px);
 }
-@media (prefers-reduced-motion: no-preference){
-  .screen-inner{animation:flicker 6.5s infinite}
-  .screen .pickname{animation:projjig .9s steps(2) infinite}
-  .burn.b1{animation:burnpop 11s 2.2s infinite}
-  .burn.b2{animation:burnpop 14s 7.6s infinite}
-  .dust{animation:dustdrift 5s steps(3) infinite}
-}
+/* projector animation state is JS-controlled (Settings > Appearance),
+   defaulting to the OS's prefers-reduced-motion at boot — see applyMotion() */
+html.motion-on .screen-inner{animation:flicker 6.5s infinite}
+html.motion-on .screen .pickname{animation:projjig .9s steps(2) infinite}
+html.motion-on .burn.b1{animation:burnpop 11s 2.2s infinite}
+html.motion-on .burn.b2{animation:burnpop 14s 7.6s infinite}
+html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 @keyframes flicker{
   0%,88%,100%{opacity:1}
   89%{opacity:.82} 90%{opacity:1} 91.5%{opacity:.9} 92%{opacity:1}
@@ -244,7 +267,7 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 }
 .night::before,.night::after{
   content:'';position:absolute;width:66px;height:20px;border-radius:2px;
-  background:rgba(255,239,217,.14);border:1px solid rgba(255,239,217,.10);
+  background:var(--tape);border:1px solid var(--tape-line);
   pointer-events:none;
 }
 .night::before{top:-9px;left:16px;transform:rotate(-5deg)}
@@ -311,7 +334,7 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 .ai-overlay{
   position:fixed;inset:0;z-index:1100;overflow-y:auto;-webkit-overflow-scrolling:touch;
   background:var(--room);
-  background-image:radial-gradient(ellipse 85% 45% at 50% -8%, #372638 0%, transparent 62%);
+  background-image:radial-gradient(ellipse 85% 45% at 50% -8%, var(--room-glow) 0%, transparent 62%);
   color:var(--cream);
   padding:calc(16px + env(safe-area-inset-top)) 0 calc(40px + env(safe-area-inset-bottom));
 }
@@ -621,7 +644,7 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 /* ============ TAB BAR ============ */
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:900;display:flex;gap:4px;
-  background:rgba(28,20,27,.96);border-top:2px solid var(--line);
+  background:var(--tabbar-bg);border-top:2px solid var(--line);
   padding:7px 10px calc(7px + env(safe-area-inset-bottom));
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
 }
@@ -671,10 +694,12 @@ input[type="date"].f-input{min-height:50px;-webkit-appearance:none;appearance:no
 .multi-list{display:flex;flex-direction:column;gap:8px}
 
 .poll-chips{display:flex;gap:8px;flex-wrap:wrap}
+.poll-chips.triple{flex-wrap:nowrap}
 .poll-chip{
   flex:1 1 44%;min-height:52px;border-radius:14px;border:2px solid var(--line);
   background:var(--card-2);font-weight:800;font-size:12.5px;color:var(--dim);line-height:1.3;
 }
+.poll-chips.triple .poll-chip{flex:1 1 0;font-size:12px;padding:6px 4px}
 .poll-chip.on{background:rgba(255,180,84,.14);border-color:var(--amber);color:var(--amber)}
 
 .starpick{display:flex;justify-content:center;gap:2px}
@@ -757,10 +782,14 @@ footer{
 <script>
 'use strict';
 /* =====================================================================
-   FAMILY MOVIE NIGHT — Ortiz Family · v1.2
+   FAMILY MOVIE NIGHT — Ortiz Family · v1.3
    v1.2: quotes render as comic speech bubbles (Comic Neue, alternating
-   tails); new "favorite scene" question rendered as a screenplay page
-   (Courier Prime, slugline + CUT TO:) in scrapbooks and yearbooks.
+   tails); "favorite scene" renders as a screenplay page (Courier
+   Prime, CUT TO: + slugline) in scrapbooks and yearbooks.
+   v1.3: Settings > Appearance — Light/Dark/Auto theme and a projector-
+   animations on/off/auto toggle. Keepsake pages (scrapbook, yearbook,
+   comic bubbles, screenplay excerpts) intentionally stay "paper"-
+   colored in both themes; only the app chrome re-themes.
    AI: optional Anthropic key (Settings) powers per-movie After-Credits
    packs — fun facts, trivia, discussion questions — stored as synced
    records so one phone generates and every phone gets them. The app is
@@ -836,6 +865,39 @@ var Store = {
   },
   remove: function(key){ localStorage.removeItem(this.ns + key); }
 };
+
+/* ---------- appearance: theme + motion (Settings > Appearance) ----------
+   Both default to 'auto' (follow the phone), and can be pinned to an
+   explicit value. Applied via attribute/class so plain CSS handles the
+   rest — no inline styles, no per-element JS. */
+function resolveTheme(){
+  var pref = Store.get('theme', 'auto');
+  if (pref === 'light' || pref === 'dark') return pref;
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+}
+function applyTheme(){
+  var resolved = resolveTheme();
+  document.documentElement.setAttribute('data-theme', resolved);
+  var mt = document.querySelector('meta[name="theme-color"]');
+  if (mt) mt.content = resolved === 'light' ? '#FAF3E8' : '#211820';
+}
+function resolveMotion(){
+  var pref = Store.get('motion', 'auto');
+  if (pref === 'on') return true;
+  if (pref === 'off') return false;
+  return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function applyMotion(){
+  document.documentElement.classList.toggle('motion-on', resolveMotion());
+}
+if (window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(){
+    if (Store.get('theme', 'auto') === 'auto') applyTheme();
+  });
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function(){
+    if (Store.get('motion', 'auto') === 'auto') applyMotion();
+  });
+}
 
 /* ---------- the cast ---------- */
 var MEMBERS = [
@@ -2460,7 +2522,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.2'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.3'));
   app.appendChild(footer);
 }
 
@@ -2689,6 +2751,45 @@ function renderSettings(app){
   app.appendChild(el('div','section-label','Settings & Keepsakes'));
   app.appendChild(el('div','section-sub','The projection booth ⚙️'));
 
+  /* appearance */
+  var ap = el('div','set-card');
+  ap.appendChild(el('div','set-title','🎨 Appearance'));
+  ap.appendChild(el('div','set-note','Pick a look, or leave it on Auto to follow your phone’s setting.'));
+
+  ap.appendChild(el('div','f-label','Theme'));
+  var themeRow = el('div','poll-chips triple');
+  var curTheme = Store.get('theme', 'auto');
+  [['light','☀️ Light'],['dark','🌙 Dark'],['auto','📱 Auto']].forEach(function(opt){
+    var b = el('button','poll-chip' + (curTheme === opt[0] ? ' on' : ''), opt[1]);
+    b.type = 'button';
+    b.addEventListener('click', function(){
+      Store.set('theme', opt[0]);
+      applyTheme();
+      render();
+      toast('Theme: ' + opt[1]);
+    });
+    themeRow.appendChild(b);
+  });
+  ap.appendChild(themeRow);
+
+  ap.appendChild(el('div','f-label','Projector animations'));
+  var motionRow = el('div','poll-chips triple');
+  var curMotion = Store.get('motion', 'auto');
+  [['on','🎬 On'],['off','🛑 Off'],['auto','📱 Auto']].forEach(function(opt){
+    var b = el('button','poll-chip' + (curMotion === opt[0] ? ' on' : ''), opt[1]);
+    b.type = 'button';
+    b.addEventListener('click', function(){
+      Store.set('motion', opt[0]);
+      applyMotion();
+      render();
+      toast('Projector animations: ' + opt[1]);
+    });
+    motionRow.appendChild(b);
+  });
+  ap.appendChild(motionRow);
+  ap.appendChild(el('div','set-note','Flicker, film burns, and drifting dust on the “Up next…” screen. Turn them off for calmer viewing or to save battery.'));
+  app.appendChild(ap);
+
   /* keepsakes */
   var ks = el('div','set-card');
   ks.appendChild(el('div','set-title','📕 Year in Review keepsakes'));
@@ -2870,7 +2971,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.2'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.3'));
   app.appendChild(foot);
 }
 
@@ -2886,6 +2987,8 @@ function render(){
   renderTabbar();
 }
 
+applyTheme();
+applyMotion();
 seedSample();
 render();
 pullSync(true); // pick up the family's latest entries on launch (no-op until sync is set up)
