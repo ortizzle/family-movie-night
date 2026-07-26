@@ -272,7 +272,7 @@ function openScrapbook(night){
     if (f.released) factsBox.appendChild(el('span','sp-fact', f.released.slice(0,4)));
     if (f.runtime) factsBox.appendChild(el('span','sp-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
     if (f.imdb) factsBox.appendChild(imdbGuideChip(f, 'sp-fact'));
-    if (f.rt) factsBox.appendChild(el('span','sp-fact rt','🍅 ' + f.rt));
+    if (f.rt) factsBox.appendChild(rtChip(f, night.title, 'sp-fact'));
     if (f.meta) factsBox.appendChild(el('span','sp-fact','Metacritic ' + f.meta));
     if (!f.imdb && f.tmdbScore) factsBox.appendChild(el('span','sp-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
   }

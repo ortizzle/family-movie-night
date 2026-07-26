@@ -495,7 +495,7 @@ function openIdeaDetail(it){
       facts.appendChild(el('span','idea-fact', rel ? rel.slice(0,4) : (it.year ? String(it.year) : 'Movie')));
       if (f && f.runtime) facts.appendChild(el('span','idea-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
       if (f && f.imdb) facts.appendChild(imdbGuideChip(f, 'idea-fact'));
-      if (f && f.rt) facts.appendChild(el('span','idea-fact rt','🍅 ' + f.rt));
+      if (f && f.rt) facts.appendChild(rtChip(f, it.title, 'idea-fact'));
       if (f && f.meta) facts.appendChild(el('span','idea-fact','Metacritic ' + f.meta));
       var ts = (f && f.tmdbScore) || it.score;
       if (ts && !(f && f.imdb)) facts.appendChild(el('span','idea-fact star','★ ' + Number(ts).toFixed(1) + ' TMDB'));

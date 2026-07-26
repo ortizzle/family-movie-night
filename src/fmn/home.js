@@ -232,8 +232,17 @@ function renderHome(app){
     app.appendChild(voteBtn);
   }
 
-  /* memory book */
-  var list = nights();
+  /* memory book.
+     nights() is newest-first, which is right for memories but backwards for
+     things that haven't happened: it puts the furthest-off booking above the
+     one coming this week. So upcoming nights run soonest-first at the top,
+     then the memories run most-recent-first below. Both chronological, each
+     in the direction that reads correctly. */
+  var all = nights();
+  var upcoming = all.filter(function(n){ return !nightHappened(n); })
+    .sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  var past = all.filter(nightHappened);
+  var list = upcoming.concat(past);
   var divider = el('div','film-divider');
   divider.setAttribute('aria-hidden','true');
   app.appendChild(divider);
@@ -246,7 +255,11 @@ function renderHome(app){
     es.appendChild(el('div', null, 'Log your first Friday movie and start filling it up.'));
     app.appendChild(es);
   }
-  list.forEach(function(n){
+  list.forEach(function(n, ni){
+    // a quiet line where the calendar turns into the scrapbook
+    if (upcoming.length && past.length && ni === upcoming.length){
+      app.appendChild(el('div','book-split','· already watched ·'));
+    }
     var picker = memberById(n.pickedBy);
     var card = el('article','night');
 
@@ -288,7 +301,7 @@ function renderHome(app){
     var ticket = el('span','ticket');
     var adm = el('span','admit','🎟');
     adm.style.background = picker.color;
-    var tnm = el('span','tname', isBonus(n) ? 'Family bonus' : picker.name + '’s pick');
+    var tnm = el('span','tname', isBonus(n) ? picker.name + '’s find' : picker.name + '’s pick');
     tnm.style.background = picker.color;
     ticket.appendChild(adm);
     ticket.appendChild(tnm);
@@ -353,6 +366,6 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.0'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.2'));
   app.appendChild(footer);
 }

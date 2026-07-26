@@ -311,6 +311,19 @@ function imdbGuideChip(f, cls){
   a.setAttribute('aria-label', 'IMDb parents guide for this film');
   return a;
 }
+/* RT gives us a score through OMDb but no link, so we send people to Rotten
+   Tomatoes' search for the title. Guessing the /m/<slug> URL is a coin flip
+   on remakes and sequels, and a 404 is worse than one extra tap. */
+function rtChip(f, title, cls){
+  var label = '🍅 ' + f.rt;
+  if (!title) return el('span', cls + ' rt', label);
+  var a = el('a', cls + ' rt link', label + ' ↗');
+  a.href = 'https://www.rottentomatoes.com/search?search=' + encodeURIComponent(title);
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.setAttribute('aria-label', 'Rotten Tomatoes reviews for ' + title);
+  return a;
+}
 /* the "where can we watch it" row */
 function watchRow(f){
   if (!f || !f.watch) return null;
@@ -334,14 +347,14 @@ function watchRow(f){
   }
   return wrap;
 }
-function factChips(f, cls){
+function factChips(f, cls, title){
   var wrap = el('div', cls || 'idea-facts');
   if (!f) return wrap;
   if (f.cert) wrap.appendChild(el('span','idea-fact cert', f.cert));
   if (f.released) wrap.appendChild(el('span','idea-fact', AZ.pretty(f.released).replace(/^\w+, /,'') + ', ' + f.released.slice(0,4)));
   if (f.runtime) wrap.appendChild(el('span','idea-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
   if (f.imdb) wrap.appendChild(imdbGuideChip(f, 'idea-fact'));
-  if (f.rt) wrap.appendChild(el('span','idea-fact rt','🍅 ' + f.rt));
+  if (f.rt) wrap.appendChild(rtChip(f, title, 'idea-fact'));
   if (f.meta) wrap.appendChild(el('span','idea-fact','Metacritic ' + f.meta));
   if (!f.imdb && f.tmdbScore) wrap.appendChild(el('span','idea-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
   return wrap;

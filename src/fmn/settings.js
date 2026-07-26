@@ -647,7 +647,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.0'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.2'));
   app.appendChild(foot);
 }
 

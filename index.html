@@ -283,6 +283,11 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .log-btn:active{transform:scale(.98)}
 
+.book-split{
+  text-align:center;font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;
+  font-weight:900;color:var(--muted);margin:26px 0 4px;
+}
+
 /* ---- bonus nights ---- */
 .bonustag{
   display:inline-block;margin-left:7px;padding:3px 9px;border-radius:99px;
@@ -1583,6 +1588,19 @@ function imdbGuideChip(f, cls){
   a.setAttribute('aria-label', 'IMDb parents guide for this film');
   return a;
 }
+/* RT gives us a score through OMDb but no link, so we send people to Rotten
+   Tomatoes' search for the title. Guessing the /m/<slug> URL is a coin flip
+   on remakes and sequels, and a 404 is worse than one extra tap. */
+function rtChip(f, title, cls){
+  var label = '🍅 ' + f.rt;
+  if (!title) return el('span', cls + ' rt', label);
+  var a = el('a', cls + ' rt link', label + ' ↗');
+  a.href = 'https://www.rottentomatoes.com/search?search=' + encodeURIComponent(title);
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.setAttribute('aria-label', 'Rotten Tomatoes reviews for ' + title);
+  return a;
+}
 /* the "where can we watch it" row */
 function watchRow(f){
   if (!f || !f.watch) return null;
@@ -1606,14 +1624,14 @@ function watchRow(f){
   }
   return wrap;
 }
-function factChips(f, cls){
+function factChips(f, cls, title){
   var wrap = el('div', cls || 'idea-facts');
   if (!f) return wrap;
   if (f.cert) wrap.appendChild(el('span','idea-fact cert', f.cert));
   if (f.released) wrap.appendChild(el('span','idea-fact', AZ.pretty(f.released).replace(/^\w+, /,'') + ', ' + f.released.slice(0,4)));
   if (f.runtime) wrap.appendChild(el('span','idea-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
   if (f.imdb) wrap.appendChild(imdbGuideChip(f, 'idea-fact'));
-  if (f.rt) wrap.appendChild(el('span','idea-fact rt','🍅 ' + f.rt));
+  if (f.rt) wrap.appendChild(rtChip(f, title, 'idea-fact'));
   if (f.meta) wrap.appendChild(el('span','idea-fact','Metacritic ' + f.meta));
   if (!f.imdb && f.tmdbScore) wrap.appendChild(el('span','idea-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
   return wrap;
@@ -3227,7 +3245,7 @@ function openScrapbook(night){
     if (f.released) factsBox.appendChild(el('span','sp-fact', f.released.slice(0,4)));
     if (f.runtime) factsBox.appendChild(el('span','sp-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
     if (f.imdb) factsBox.appendChild(imdbGuideChip(f, 'sp-fact'));
-    if (f.rt) factsBox.appendChild(el('span','sp-fact rt','🍅 ' + f.rt));
+    if (f.rt) factsBox.appendChild(rtChip(f, night.title, 'sp-fact'));
     if (f.meta) factsBox.appendChild(el('span','sp-fact','Metacritic ' + f.meta));
     if (!f.imdb && f.tmdbScore) factsBox.appendChild(el('span','sp-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
   }
@@ -4121,8 +4139,17 @@ function renderHome(app){
     app.appendChild(voteBtn);
   }
 
-  /* memory book */
-  var list = nights();
+  /* memory book.
+     nights() is newest-first, which is right for memories but backwards for
+     things that haven't happened: it puts the furthest-off booking above the
+     one coming this week. So upcoming nights run soonest-first at the top,
+     then the memories run most-recent-first below. Both chronological, each
+     in the direction that reads correctly. */
+  var all = nights();
+  var upcoming = all.filter(function(n){ return !nightHappened(n); })
+    .sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  var past = all.filter(nightHappened);
+  var list = upcoming.concat(past);
   var divider = el('div','film-divider');
   divider.setAttribute('aria-hidden','true');
   app.appendChild(divider);
@@ -4135,7 +4162,11 @@ function renderHome(app){
     es.appendChild(el('div', null, 'Log your first Friday movie and start filling it up.'));
     app.appendChild(es);
   }
-  list.forEach(function(n){
+  list.forEach(function(n, ni){
+    // a quiet line where the calendar turns into the scrapbook
+    if (upcoming.length && past.length && ni === upcoming.length){
+      app.appendChild(el('div','book-split','· already watched ·'));
+    }
     var picker = memberById(n.pickedBy);
     var card = el('article','night');
 
@@ -4177,7 +4208,7 @@ function renderHome(app){
     var ticket = el('span','ticket');
     var adm = el('span','admit','🎟');
     adm.style.background = picker.color;
-    var tnm = el('span','tname', isBonus(n) ? 'Family bonus' : picker.name + '’s pick');
+    var tnm = el('span','tname', isBonus(n) ? picker.name + '’s find' : picker.name + '’s pick');
     tnm.style.background = picker.color;
     ticket.appendChild(adm);
     ticket.appendChild(tnm);
@@ -4242,7 +4273,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.0'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.2'));
   app.appendChild(footer);
 }
 
@@ -4744,7 +4775,7 @@ function openIdeaDetail(it){
       facts.appendChild(el('span','idea-fact', rel ? rel.slice(0,4) : (it.year ? String(it.year) : 'Movie')));
       if (f && f.runtime) facts.appendChild(el('span','idea-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
       if (f && f.imdb) facts.appendChild(imdbGuideChip(f, 'idea-fact'));
-      if (f && f.rt) facts.appendChild(el('span','idea-fact rt','🍅 ' + f.rt));
+      if (f && f.rt) facts.appendChild(rtChip(f, it.title, 'idea-fact'));
       if (f && f.meta) facts.appendChild(el('span','idea-fact','Metacritic ' + f.meta));
       var ts = (f && f.tmdbScore) || it.score;
       if (ts && !(f && f.imdb)) facts.appendChild(el('span','idea-fact star','★ ' + Number(ts).toFixed(1) + ' TMDB'));
@@ -6641,7 +6672,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.0'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.2'));
   app.appendChild(foot);
 }
 
