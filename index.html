@@ -1599,6 +1599,14 @@ function nightQuoteGroups(nightId){
   });
   return groupQuotes(entries);
 }
+/* note beside a quote several people saved — they chose the line, they
+   didn't say it, and there may be more than two of them */
+function sharedQuoteNote(count){
+  if (count >= MEMBERS.length) return '— all of us picked this one!';
+  if (count === 2) return '— both picked this one';
+  if (count === 3) return '— all three picked this one';
+  return '— ' + count + ' of us picked this one';
+}
 function memberNames(list){
   var names = list.map(function(m){ return m.name; });
   if (names.length <= 1) return names.join('');
@@ -2299,7 +2307,7 @@ function buildNightKeepsake(container, night){
       wrap.appendChild(bubble);
       var tags = el('div','sp-tags');
       g.members.forEach(function(m){ tags.appendChild(spTag(m)); });
-      if (g.members.length > 1) tags.appendChild(el('span','sp-both','— both said it!'));
+      if (g.members.length > 1) tags.appendChild(el('span','sp-both', sharedQuoteNote(g.members.length)));
       wrap.appendChild(tags);
       qSec.appendChild(wrap);
     });
@@ -3306,7 +3314,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.9'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.9.1'));
   app.appendChild(footer);
 }
 
@@ -4197,7 +4205,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.9'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.9.1'));
   app.appendChild(foot);
 }
 
