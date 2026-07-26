@@ -1565,6 +1565,12 @@ var syncBusy = false;
 function overlaysOpen(){
   return !!document.querySelector('.modal-overlay') || !!document.querySelector('.scrap-overlay');
 }
+/* don't repaint out from under someone mid-keystroke — a background sync
+   landing while a token is half-typed would wipe the field */
+function userIsTyping(){
+  var a = document.activeElement;
+  return !!(a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA'));
+}
 function adoptMerged(merged){
   var changed = JSON.stringify(merged) !== JSON.stringify(data);
   data = merged;
@@ -1574,7 +1580,7 @@ function adoptMerged(merged){
     clearSample(true);
     return true;
   }
-  if (changed && !overlaysOpen()) render();
+  if (changed && !overlaysOpen() && !userIsTyping()) render();
   return changed;
 }
 function scheduleSync(){
@@ -3747,7 +3753,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.4'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.5'));
   app.appendChild(footer);
 }
 
@@ -4942,6 +4948,10 @@ function openProfileEditor(member){
   });
 }
 /* collapsible settings section */
+/* Which Settings sections are open, remembered across renders — otherwise a
+   background sync landing (or any re-render) slams every section shut while
+   somebody is halfway through typing in one. */
+var collState = {};
 function collapsible(app, title, opts){
   opts = opts || {};
   var card = el('div','set-card');
@@ -4951,13 +4961,13 @@ function collapsible(app, title, opts){
   if (opts.badge) head.appendChild(el('span','set-badge' + (opts.badgeOn ? ' on' : ''), opts.badge));
   head.appendChild(el('span','chev','›'));
   var body = el('div','set-body');
-  var open = !!opts.open;
+  if (!(title in collState)) collState[title] = !!opts.open;
   function paint(){
-    body.style.display = open ? 'block' : 'none';
-    head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    body.style.display = collState[title] ? 'block' : 'none';
+    head.setAttribute('aria-expanded', collState[title] ? 'true' : 'false');
   }
   paint();
-  head.addEventListener('click', function(){ open = !open; paint(); });
+  head.addEventListener('click', function(){ collState[title] = !collState[title]; paint(); });
   card.appendChild(head);
   card.appendChild(body);
   app.appendChild(card);
@@ -5344,7 +5354,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.4'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.5'));
   app.appendChild(foot);
 }
 
