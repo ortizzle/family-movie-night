@@ -1673,23 +1673,53 @@ function scheduledNights(){           // soonest first
   return nights().filter(function(n){ return !nightHappened(n); })
     .sort(function(a,b){ return a.date < b.date ? -1 : 1; });
 }
+/* The rotation anchor restarts the order without anyone having to log a
+   movie for it: "from this Friday on, it's Kat's turn." It only decides
+   where the order picks back up — once a night actually happens on or
+   after the anchor date, the real nights take over again, so a skipped
+   Friday never costs anybody their turn. */
+function rotationAnchor(){
+  var r = data.records['rotation_anchor'];
+  return (r && !r.deleted && r.date && memberById(r.member)) ? r : null;
+}
+function setRotationAnchor(date, memberId){
+  data.records['rotation_anchor'] = {
+    id:'rotation_anchor', type:'rotation', date:date, member:memberId,
+    updatedAt: Date.now()
+  };
+  saveData();
+}
+/* the next open slot on the calendar — normally the coming Friday, but a
+   restart dated further out means the family is taking a break until then */
+function nextOpenFriday(){
+  var a = rotationAnchor(), nf = AZ.nextFriday();
+  return (a && a.date > nf) ? a.date : nf;
+}
+/* nights that count toward the running order — everything since the restart */
+function nightsSinceAnchor(){
+  var a = rotationAnchor();
+  var past = happenedNights();
+  if (!a) return past;
+  return past.filter(function(n){ return n.date >= a.date; });
+}
 /* who is up next — the person whose night is already on the calendar,
-   otherwise whoever follows the last night that happened */
+   otherwise whoever follows the last night that happened, otherwise
+   whoever the restart says goes first */
 function nextPicker(){
   var sched = scheduledNights();
   if (sched.length) return memberById(sched[0].pickedBy);
-  var past = happenedNights();
-  if (!past.length) return MEMBERS[0];
-  return rotationNext(past[0].pickedBy);
+  var past = nightsSinceAnchor();
+  if (past.length) return rotationNext(past[0].pickedBy);
+  var a = rotationAnchor();
+  if (a) return memberById(a.member);
+  return MEMBERS[0];
 }
 /* default picker when logging a brand-new night — continue past anything
    already on the calendar so two people don't get booked into one slot */
 function pickerForNewNight(){
   var sched = scheduledNights();
   if (sched.length) return rotationNext(sched[sched.length - 1].pickedBy);
-  var past = happenedNights();
-  if (!past.length) return MEMBERS[0];
-  return rotationNext(past[0].pickedBy);
+  return nextPicker();
 }
 /* ---------- quote matching ----------
    When two people save the same line (or one saves a longer version of
@@ -3414,7 +3444,7 @@ function renderHome(app){
   if (booked) inner.appendChild(el('div','booked-title', booked.title));
   inner.appendChild(el('div','showdate', booked
     ? AZ.prettyLong(booked.date)
-    : 'Next movie night · ' + AZ.prettyLong(AZ.nextFriday())));
+    : 'Next movie night · ' + AZ.prettyLong(nextOpenFriday())));
   var rot = el('div','rotation');
   MEMBERS.forEach(function(m, i){
     var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
@@ -3436,7 +3466,7 @@ function renderHome(app){
   var lineup = el('div','lineup');
   lineup.appendChild(el('div','lu-head','📅 Coming Attractions'));
   var today = AZ.today();
-  var nf = AZ.nextFriday();
+  var nf = nextOpenFriday();
   var sched = scheduledNights();
   var slots = [];
   // whatever is already booked keeps its own date and picker
@@ -3477,8 +3507,9 @@ function renderHome(app){
     lineup.appendChild(row);
   });
   lineup.appendChild(el('div','lu-head second','🍿 Recent Fridays'));
+  var lastFri = AZ.nextFriday();   // look back from the calendar, not from a break
   for (var p=1; p<=4; p++){
-    var pf = AZ.addDays(nf, -7*p);
+    var pf = AZ.addDays(lastFri, -7*p);
     var night = nightNearDate(pf);
     var prow = el('div','lu-row' + (p===4 ? ' last' : ''));
     var pdt = el('div','lu-date');
@@ -3654,7 +3685,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.2'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.3'));
   app.appendChild(footer);
 }
 
@@ -4119,7 +4150,7 @@ function openIdeaDetail(it){
       var id = 'night_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
       data.records[id] = {
         id:id, type:'night', title:it.title, year:it.year || null,
-        date: AZ.nextFriday(), pickedBy: np.id,
+        date: nextOpenFriday(), pickedBy: np.id,
         tmdbId: it.tmdbId || null, posterPath: it.posterPath || null,
         updatedAt: Date.now()
       };
@@ -4735,6 +4766,20 @@ var STARTER_PROFILES = {
     avoids:'Sad animal movies, anything too scary',
     night:'Big, funny, and loud — with popcorn.' }
 };
+/* Where the order restarts. Chris took the weekend of July 26, 2026, so the
+   next Friday belongs to Kat, and it runs Kat → Sedona → River → Chris from
+   there. Written once, with a fixed timestamp so every phone agrees; change
+   it any time from Settings and that edit wins everywhere. */
+var ANCHOR_SEED = { date:'2026-07-31', member:'kat', at: 1753500000000 };
+function seedRotation(){
+  if (data.records['rotation_anchor']) return;   // includes tombstones
+  data.records['rotation_anchor'] = {
+    id:'rotation_anchor', type:'rotation',
+    date: ANCHOR_SEED.date, member: ANCHOR_SEED.member,
+    updatedAt: ANCHOR_SEED.at
+  };
+  saveData();
+}
 function seedProfiles(){
   var wrote = false;
   MEMBERS.forEach(function(m){
@@ -4938,6 +4983,57 @@ function renderSettings(app){
     meChips.appendChild(c);
   });
   wm.appendChild(meChips);
+
+  /* restart the turn order */
+  var anch = rotationAnchor();
+  var ro = collapsible(app, '🔁 Whose turn is next?', {
+    badge: nextPicker().name, badgeOn: true
+  });
+  ro.appendChild(el('div','set-note','Set who takes the next Friday and the order runs on from there. Use this after a break, or any time you want to start the rotation over — you don’t have to log a movie for it.'));
+  var roDate = el('input','f-input');
+  roDate.type = 'date';
+  roDate.value = (anch && anch.date > AZ.today()) ? anch.date : AZ.nextFriday();
+  ro.appendChild(el('div','f-label','Starting which Friday?'));
+  ro.appendChild(roDate);
+  ro.appendChild(el('div','f-label','Whose pick is that one?'));
+  var roPicked = anch ? anch.member : nextPicker().id;
+  var roChips = el('div','pick-chips');
+  function roPaint(){
+    var kids = roChips.children;
+    for (var i=0;i<kids.length;i++){
+      var on = kids[i]._mid === roPicked;
+      kids[i].classList.toggle('on', on);
+      kids[i].style.background = on ? memberById(kids[i]._mid).color : '';
+    }
+  }
+  MEMBERS.forEach(function(m){
+    var c = el('button','pick-chip', m.name);
+    c.type = 'button';
+    c._mid = m.id;
+    c.addEventListener('click', function(){ roPicked = m.id; roPaint(); roPreview(); });
+    roChips.appendChild(c);
+  });
+  roPaint();
+  ro.appendChild(roChips);
+  var roOrder = el('div','set-note');
+  function roPreview(){
+    var bits = [], who = memberById(roPicked), d = roDate.value || AZ.nextFriday();
+    for (var i=0;i<4;i++){
+      bits.push(AZ.monthDay(AZ.addDays(d, 7*i)) + ' — ' + who.name);
+      who = rotationNext(who.id);
+    }
+    roOrder.textContent = 'Then: ' + bits.join(' · ');
+  }
+  roDate.addEventListener('change', roPreview);
+  roPreview();
+  ro.appendChild(roOrder);
+  var roSave = el('button','set-btn','🔁 Restart the order');
+  roSave.addEventListener('click', function(){
+    setRotationAnchor(roDate.value || AZ.nextFriday(), roPicked);
+    render();
+    toast(memberById(roPicked).name + ' is up next 🔁');
+  });
+  ro.appendChild(roSave);
 
   /* taste profiles */
   var tp = collapsible(app, '🎭 Taste profiles', {
@@ -5186,7 +5282,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.2'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.3'));
   app.appendChild(foot);
 }
 
@@ -5207,6 +5303,7 @@ applyTheme();
 applyMotion();
 seedSample();
 seedProfiles();
+seedRotation();
 render();
 pullSync(true); // pick up the family's latest entries on launch (no-op until sync is set up)
 </script>
