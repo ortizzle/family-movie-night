@@ -811,6 +811,7 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 .tp-name{display:block;font-weight:900;font-size:15px}
 .tp-sum{display:block;font-size:12px;color:var(--dim);font-weight:700;margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.idea-refresh.pass{color:var(--muted)}
 .tp-starter{display:block;font-size:10.5px;color:var(--amber);font-weight:900;
   letter-spacing:.4px;text-transform:uppercase;margin-top:3px}
 .tp-go{color:var(--muted);font-size:19px;font-weight:900}
@@ -3753,7 +3754,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.5'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.6'));
   app.appendChild(footer);
 }
 
@@ -3934,9 +3935,53 @@ function markSeen(it){
   };
   saveData();
 }
+/* "not interested" — a real signal, not just a hide. Passed titles drop off
+   every shelf and get handed to Claude as things not to suggest again. */
+function passId(it){
+  return 'pass_' + normQuote(it.title).replace(/\s+/g,'_').slice(0, 60);
+}
+function isPassed(it){
+  var r = data.records[passId(it)];
+  return !!(r && !r.deleted);
+}
+function markPassed(it){
+  var me = whoAmI();
+  data.records[passId(it)] = {
+    id: passId(it), type:'pass', title: it.title, year: it.year || null,
+    by: me ? me.id : null, updatedAt: Date.now()
+  };
+  // saying no to something you'd saved is a change of mind — clear it
+  var sid = shortlistId(it);
+  if (data.records[sid] && !data.records[sid].deleted){
+    data.records[sid] = { id:sid, type:'shortlist', deleted:true, updatedAt: Date.now() };
+  }
+  saveData();
+}
+function unpass(rec){
+  data.records[rec.id] = { id:rec.id, type:'pass', deleted:true, updatedAt: Date.now() };
+  saveData();
+}
+/* what the family has already turned down — the strongest taste signal we
+   have, because somebody looked at it and said no */
+function passedPromptBlock(){
+  var p = passedTitles();
+  if (!p.length) return '';
+  return '\n\nThe family looked at these and said "not interested" — do not '
+    + 'suggest them again, and read them as a signal about what to avoid:\n'
+    + p.slice(0, 15).map(function(r){
+        return '- ' + r.title + (r.year ? ' (' + r.year + ')' : '');
+      }).join('\n');
+}
+function passedTitles(){
+  return liveRecords('pass').sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+}
 function notWatched(items){
-  var seen = watchedTitleSet();
-  return items.filter(function(it){ return !seen[normQuote(it.title)]; });
+  var seen = watchedTitleSet(), passed = {};
+  passedTitles().forEach(function(r){ passed[normQuote(r.title)] = true; });
+  return items.filter(function(it){
+    var k = normQuote(it.title);
+    return !seen[k] && !passed[k];
+  });
 }
 function shuffleWithSeed(arr, seed){
   var a = arr.slice();
@@ -4003,6 +4048,7 @@ function aiIdeasFor(member){
     + '\n\nWhat the family has watched:\n' + (history || '(nothing yet)')
     + (shortlisted().length ? '\n\nOn the family shortlist already (do not repeat these):\n'
         + shortlisted().slice(0, 10).map(function(r){ return '- ' + r.title; }).join('\n') : '')
+    + passedPromptBlock()
     + '\n\nRespond with ONLY valid JSON, no markdown fences:\n'
     + '{"picks":[{"title":"","year":2000,"why":"one warm sentence on why ' + member.name + ' specifically would love it","synopsis":"two spoiler-free sentences"}]}';
   return askClaude(prompt, { system: system, maxTokens: 1500 }).then(function(text){
@@ -4033,6 +4079,7 @@ function aiIdeas(){
   var prompt = 'Movies this family has already watched together:\n'
     + (history || '(none yet)')
     + shortlistLine
+    + passedPromptBlock()
     + '\n\nRecommend 6 movies they would love next. Respond with ONLY valid JSON, no markdown fences:\n'
     + '{"picks":[{"title":"","year":2000,"why":"one warm sentence on why THIS family","synopsis":"two spoiler-free sentences"}]}';
   return askClaude(prompt, { system: system, maxTokens: 1400 }).then(function(text){
@@ -4105,10 +4152,11 @@ function loadIdeas(force){
   }
 
   job.then(function(items){
-    var fresh = (cat.id === 'shortlist') ? items : notWatched(items);
-    ideas.items = fresh.slice(0, 24);
+    // keep the raw list — watched/passed filtering happens at render time, so
+    // undoing a pass puts the movie straight back on the shelf
+    ideas.items = items.slice(0, 30);
     ideas.loading = false;
-    if (!ideas.items.length){
+    if (!notWatched(ideas.items).length){
       ideas.note = (cat.id === 'shortlist')
         ? 'Nothing saved yet — tap any movie idea and choose “Save to our shortlist” to keep it here for later.'
         : 'You’ve seen everything here! Try another shelf or shuffle.';
@@ -4208,6 +4256,15 @@ function openIdeaDetail(it){
       toast('Marked as watched — we won’t suggest it again');
     });
     box.appendChild(seenBtn);
+
+    var passBtn = el('button','idea-refresh pass','🚫 Not interested');
+    passBtn.addEventListener('click', function(){
+      markPassed(it);
+      close();
+      render();
+      toast('Passed — and we’ll steer recommendations away from it');
+    });
+    box.appendChild(passBtn);
 
     var row = el('div','modal-buttons');
     var cancel = el('button','btn-secondary','Close');
@@ -5107,6 +5164,32 @@ function renderSettings(app){
   });
   ro.appendChild(roSave);
 
+  /* passed-on movies — undo lives here */
+  var passes = passedTitles();
+  if (passes.length){
+    var pc = collapsible(app, '🚫 Not interested', { badge: String(passes.length) });
+    pc.appendChild(el('div','set-note','Movies somebody passed on. They stay off the Ideas shelves and Claude steers away from them. Changed your mind? Tap one to put it back.'));
+    passes.forEach(function(r){
+      var row = el('button','tp-row');
+      row.type = 'button';
+      var who = r.by ? memberById(r.by) : null;
+      var dot = el('span','tp-dot', who ? who.name.charAt(0) : '🚫');
+      dot.style.background = who ? who.color : 'var(--line)';
+      row.appendChild(dot);
+      var body = el('span','tp-body');
+      body.appendChild(el('span','tp-name', r.title + (r.year ? ' (' + r.year + ')' : '')));
+      body.appendChild(el('span','tp-sum', who ? who.name + ' passed — tap to undo' : 'Passed — tap to undo'));
+      row.appendChild(body);
+      row.appendChild(el('span','tp-go','↺'));
+      row.addEventListener('click', function(){
+        unpass(r);
+        render();
+        toast(r.title + ' is back in the mix');
+      });
+      pc.appendChild(row);
+    });
+  }
+
   /* taste profiles */
   var tp = collapsible(app, '🎭 Taste profiles', {
     badge: MEMBERS.filter(function(m){ return profileFilled(profileFor(m.id)); }).length + '/' + MEMBERS.length,
@@ -5354,7 +5437,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.5'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.6'));
   app.appendChild(foot);
 }
 
