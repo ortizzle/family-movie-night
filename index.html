@@ -761,16 +761,85 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;
 }
 
+/* ============ IDEAS ============ */
+.idea-chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;margin-top:16px;-webkit-overflow-scrolling:touch}
+.idea-chips::-webkit-scrollbar{display:none}
+.idea-chip{
+  flex:0 0 auto;min-height:42px;border-radius:99px;border:2px solid var(--line);
+  background:var(--card);color:var(--dim);font-weight:800;font-size:13px;padding:0 15px;
+}
+.idea-chip.on{background:var(--btn-bg);border-color:transparent;color:var(--btn-ink)}
+.idea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-top:6px}
+.idea-card{
+  background:var(--card);border:2px solid var(--line);border-radius:16px;overflow:hidden;
+  text-align:left;padding:0;display:flex;flex-direction:column;
+}
+.idea-card:active{border-color:var(--amber)}
+.idea-poster{
+  width:100%;aspect-ratio:2/3;background:var(--card-2);position:relative;overflow:hidden;
+  display:flex;align-items:flex-end;padding:8px;
+}
+.idea-poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.idea-poster .ph{
+  position:relative;font-size:11px;font-weight:900;color:var(--cream);line-height:1.2;
+  text-transform:uppercase;letter-spacing:.3px;
+}
+.idea-score{
+  position:absolute;top:7px;right:7px;background:rgba(24,16,23,.86);color:#FFC94A;
+  font-size:11px;font-weight:900;border-radius:99px;padding:3px 8px;z-index:2;
+}
+.idea-meta{padding:9px 11px 11px}
+.idea-meta .t{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:14px;line-height:1.2;color:var(--cream)}
+.idea-meta .y{font-size:11px;color:var(--dim);font-weight:800;margin-top:3px;letter-spacing:.5px}
+.idea-note{
+  font-size:12.5px;color:var(--dim);font-weight:700;line-height:1.5;margin-top:14px;
+  text-align:center;font-style:italic;
+}
+.idea-loading{text-align:center;margin-top:44px}
+.idea-loading .reel{font-size:40px;display:inline-block;animation:reelspin 1.6s linear infinite}
+.idea-loading .msg{margin-top:12px;color:var(--dim);font-weight:800;font-size:14px}
+.idea-refresh{
+  display:block;width:100%;margin-top:18px;min-height:48px;border-radius:99px;
+  border:2px dashed var(--line);background:none;color:var(--amber);font-weight:800;font-size:14px;
+}
+/* detail sheet */
+.idea-hero{display:flex;gap:14px;margin-top:14px}
+.idea-hero .poster{
+  width:96px;aspect-ratio:2/3;border-radius:10px;flex-shrink:0;overflow:hidden;background:var(--card-2);
+  border:2px solid var(--line);display:flex;align-items:flex-end;padding:6px;
+}
+.idea-hero .poster img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.idea-hero .side{flex:1;min-width:0}
+.idea-facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.idea-fact{
+  font-size:11px;font-weight:800;background:var(--card-2);border:1px solid var(--line);
+  border-radius:99px;padding:4px 10px;color:var(--dim);
+}
+.idea-fact.star{color:var(--star)}
+.idea-syn{
+  margin-top:14px;background:var(--card-2);border-radius:14px;padding:13px 15px;
+  font-size:14.5px;line-height:1.6;color:var(--cream);font-weight:600;
+}
+.idea-why{
+  margin-top:10px;border-left:4px solid var(--sage);background:rgba(168,198,134,.10);
+  border-radius:10px;padding:11px 13px;font-size:13.5px;line-height:1.5;
+  color:var(--cream);font-weight:700;font-style:italic;
+}
+.idea-seen{
+  margin-top:10px;text-align:center;font-size:12px;color:var(--sage);font-weight:800;
+}
+
 /* ============ TAB BAR ============ */
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:900;display:flex;gap:4px;
   background:var(--tabbar-bg);border-top:2px solid var(--line);
-  padding:7px 10px calc(7px + env(safe-area-inset-bottom));
+  padding:7px 6px calc(7px + env(safe-area-inset-bottom));
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
 }
 .tabbar button{
-  flex:1;min-height:54px;border:none;background:none;color:var(--dim);
-  font-weight:900;font-size:10px;letter-spacing:1px;text-transform:uppercase;border-radius:14px;
+  flex:1;min-width:0;min-height:54px;border:none;background:none;color:var(--dim);
+  font-weight:900;font-size:9.5px;letter-spacing:.4px;text-transform:uppercase;border-radius:14px;
+  padding:0 2px;
 }
 .tabbar button .ico{display:block;font-size:20px;margin-bottom:3px}
 .tabbar button.active{color:var(--amber);background:rgba(255,180,84,.1)}
@@ -2750,6 +2819,7 @@ function renderTabbar(){
   while (bar.firstChild) bar.removeChild(bar.firstChild);
   [
     { id:'home',     ico:'🍿', label:'Nights' },
+    { id:'ideas',    ico:'💡', label:'Ideas' },
     { id:'stats',    ico:'🏆', label:'Stats' },
     { id:'trivia',   ico:'🎯', label:'Trivia' },
     { id:'settings', ico:'⚙️', label:'Settings' }
@@ -2989,8 +3059,311 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.7'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.8'));
   app.appendChild(footer);
+}
+
+/* ---------- RENDER: ideas ----------
+   Three sources, best-first: Claude ("For us", needs a key), TMDB
+   discover (needs a key, gives real posters + synopses), and a curated
+   built-in shelf so the tab is useful with no keys at all. Titles the
+   family has already logged are filtered out. */
+var CURATED = [
+  { title:'The Iron Giant', year:1999, overview:'A boy in 1950s Maine befriends a giant metal robot fallen from space, and tries to hide him from a government agent determined to destroy him.' },
+  { title:'Paddington 2', year:2017, overview:'Paddington takes on odd jobs to buy his aunt the perfect birthday present, then has to clear his name when the gift is stolen.' },
+  { title:'Spirited Away', year:2001, overview:'A ten-year-old girl wanders into a world of spirits and must work in a bathhouse for the gods to win back her parents.' },
+  { title:'Coco', year:2017, overview:'A boy who dreams of being a musician crosses into the Land of the Dead and uncovers the truth about his family’s history.' },
+  { title:'My Neighbor Totoro', year:1988, overview:'Two sisters move to the countryside while their mother is ill and befriend the gentle forest spirits living nearby.' },
+  { title:'E.T. the Extra-Terrestrial', year:1982, overview:'A lonely boy hides a stranded alien in his suburban home and helps him find a way back to his own planet.' },
+  { title:'Back to the Future', year:1985, overview:'A teenager is accidentally sent thirty years into the past in a time-travelling DeLorean and has to make sure his parents still fall in love.' },
+  { title:'WALL·E', year:2008, overview:'A small trash-compacting robot, left alone on an abandoned Earth, follows a visiting probe across the galaxy.' },
+  { title:'The Incredibles', year:2004, overview:'A family of undercover superheroes is pulled back into action when a new villain targets them.' },
+  { title:'Moana', year:2016, overview:'A chief’s daughter sails beyond her island’s reef with a stubborn demigod to return a stolen relic and save her people.' },
+  { title:'How to Train Your Dragon', year:2010, overview:'A Viking teenager who is supposed to kill dragons instead befriends an injured one and changes his village forever.' },
+  { title:'Ratatouille', year:2007, overview:'A rat with a remarkable palate teams up with a clumsy kitchen worker to cook in one of Paris’s great restaurants.' },
+  { title:'Up', year:2009, overview:'An elderly widower ties thousands of balloons to his house and flies to South America, with an eager boy scout accidentally aboard.' },
+  { title:'Finding Nemo', year:2003, overview:'An anxious clownfish crosses the ocean, helped by a forgetful blue tang, to find the son who was taken from the reef.' },
+  { title:'Zootopia', year:2016, overview:'A rookie rabbit police officer and a con-artist fox uncover a conspiracy in a city where predators and prey live side by side.' },
+  { title:'The Lego Movie', year:2014, overview:'An utterly ordinary minifigure is mistaken for the prophesied hero destined to save the universe.' },
+  { title:'Kiki’s Delivery Service', year:1989, overview:'A young witch moves to a seaside town for a year on her own and starts a flying delivery service.' },
+  { title:'Big Hero 6', year:2014, overview:'A boy genius and a soft inflatable healthcare robot assemble a team of friends to solve a mystery in San Fransokyo.' },
+  { title:'Encanto', year:2021, overview:'The only girl in a magical family born without a gift may be the one who has to save their enchanted house.' },
+  { title:'Home Alone', year:1990, overview:'An eight-year-old accidentally left behind at Christmas defends the family house against two determined burglars.' }
+];
+var IDEA_CATS = [
+  { id:'curated', label:'🍿 Crowd pleasers' },
+  { id:'family',  label:'👨‍👩‍👧 Family', genres:'10751' },
+  { id:'animated',label:'🎨 Animated', genres:'16' },
+  { id:'adventure',label:'🗺 Adventure', genres:'12' },
+  { id:'funny',   label:'😂 Funny', genres:'35,10751' },
+  { id:'classic', label:'📽 Classics', genres:'10751', before:'2001-01-01' },
+  { id:'ai',      label:'✨ For us', ai:true }
+];
+var ideas = { cat:'curated', items:null, loading:false, note:null, seed:1 };
+
+function watchedTitleSet(){
+  var set = {};
+  nights().forEach(function(n){ set[normQuote(n.title)] = true; });
+  return set;
+}
+function notWatched(items){
+  var seen = watchedTitleSet();
+  return items.filter(function(it){ return !seen[normQuote(it.title)]; });
+}
+function shuffleWithSeed(arr, seed){
+  var a = arr.slice();
+  var s = seed || 1;
+  for (var i = a.length - 1; i > 0; i--){
+    s = (s * 9301 + 49297) % 233280;
+    var j = Math.floor((s / 233280) * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function tmdbDiscover(cat, page){
+  var cred = loadTmdbCred();
+  if (!cred) return Promise.reject(new Error('NO_KEY'));
+  var url = 'https://api.themoviedb.org/3/discover/movie'
+    + '?include_adult=false&language=en-US'
+    + '&certification_country=US&certification.lte=PG-13'
+    + '&sort_by=vote_average.desc&vote_count.gte=700'
+    + '&with_genres=' + encodeURIComponent(cat.genres)
+    + '&page=' + (page || 1);
+  if (cat.before) url += '&primary_release_date.lte=' + cat.before;
+  var headers = {};
+  if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
+  else url += '&api_key=' + encodeURIComponent(cred.value);
+  return fetch(url, { headers: headers }).then(function(res){
+    if (!res.ok) throw new Error('TMDB ' + res.status);
+    return res.json();
+  }).then(function(d){
+    return (d.results || []).map(function(r){
+      return {
+        title: r.title,
+        year: Number((r.release_date || '').slice(0,4)) || null,
+        overview: r.overview || '',
+        posterPath: r.poster_path || null,
+        score: r.vote_average || null,
+        tmdbId: r.id
+      };
+    });
+  });
+}
+function aiIdeas(){
+  var list = nights();
+  var history = list.slice(0, 14).map(function(n){
+    var avg = familyAvg(n.id);
+    return '- ' + n.title + (n.year ? ' (' + n.year + ')' : '') + (avg !== null ? ' — family rated ' + avg.toFixed(1) + '/5' : '');
+  }).join('\n');
+  var system = 'You recommend movies for a family movie night. The family: Chris and Kat (parents), '
+    + 'Sedona and River (kids). Recommend only family-appropriate films (roughly PG/PG-13). '
+    + 'Never recommend a movie that appears in their watched list.';
+  var prompt = 'Movies this family has already watched together:\n'
+    + (history || '(none yet)')
+    + '\n\nRecommend 6 movies they would love next. Respond with ONLY valid JSON, no markdown fences:\n'
+    + '{"picks":[{"title":"","year":2000,"why":"one warm sentence on why THIS family","synopsis":"two spoiler-free sentences"}]}';
+  return askClaude(prompt, { system: system, maxTokens: 1400 }).then(function(text){
+    var t = text.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+    var obj = JSON.parse(t);
+    if (!obj || !obj.picks || !obj.picks.length) throw new Error('BAD_SHAPE');
+    return obj.picks.slice(0, 8).map(function(p){
+      return { title:p.title, year:p.year || null, overview:p.synopsis || '', why:p.why || '', posterPath:null, score:null };
+    });
+  });
+}
+/* fills in posters/synopses for AI or curated picks when a TMDB key exists */
+function enrichFromTmdb(items){
+  var cred = loadTmdbCred();
+  if (!cred) return Promise.resolve(items);
+  return Promise.all(items.map(function(it){
+    return tmdbSearch(it.title).then(function(d){
+      var hit = (d.results || [])[0];
+      if (!hit) return it;
+      it.posterPath = it.posterPath || hit.poster_path || null;
+      it.score = it.score || hit.vote_average || null;
+      it.tmdbId = it.tmdbId || hit.id;
+      if (!it.overview) it.overview = hit.overview || '';
+      if (!it.year) it.year = Number((hit.release_date || '').slice(0,4)) || null;
+      return it;
+    }).catch(function(){ return it; });
+  }));
+}
+function loadIdeas(force){
+  var cat = IDEA_CATS.filter(function(c){ return c.id === ideas.cat; })[0] || IDEA_CATS[0];
+  ideas.loading = true;
+  ideas.note = null;
+  render();
+
+  var job;
+  if (cat.ai){
+    var cached = Store.get('ai_ideas');
+    if (cached && cached.length && !force){
+      job = enrichFromTmdb(cached);
+    } else {
+      job = aiIdeas().then(function(picks){
+        Store.set('ai_ideas', picks);
+        return enrichFromTmdb(picks);
+      });
+    }
+  } else if (cat.id === 'curated'){
+    job = enrichFromTmdb(shuffleWithSeed(CURATED, ideas.seed).slice(0, 12));
+  } else {
+    job = tmdbDiscover(cat, 1 + (ideas.seed % 3));
+  }
+
+  job.then(function(items){
+    var fresh = notWatched(items);
+    ideas.items = fresh.slice(0, 18);
+    ideas.loading = false;
+    if (!ideas.items.length) ideas.note = 'You’ve seen everything here! Try another shelf or shuffle.';
+    render();
+  }).catch(function(e){
+    ideas.loading = false;
+    if (cat.ai && e && e.message === 'NO_KEY'){
+      ideas.items = null;
+      ideas.note = 'Add an Anthropic key in Settings and this shelf recommends movies based on what your family has actually loved.';
+    } else if (e && e.message === 'NO_KEY'){
+      // no TMDB key — fall back to the built-in shelf
+      ideas.cat = 'curated';
+      ideas.items = notWatched(shuffleWithSeed(CURATED, ideas.seed).slice(0, 12));
+      ideas.note = 'Add a TMDB key in Settings for posters and a much bigger catalogue.';
+    } else {
+      ideas.items = null;
+      ideas.note = 'Couldn’t load ideas just now — check your connection and try again.';
+    }
+    render();
+  });
+}
+function openIdeaDetail(it){
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, it.title));
+    box.appendChild(el('div','msub', (it.year ? it.year : 'Movie') + ' · Movie idea'));
+
+    var hero = el('div','idea-hero');
+    var poster = el('div','poster');
+    if (it.posterPath){
+      var img = document.createElement('img');
+      img.alt = ''; img.src = TMDB_IMG + it.posterPath;
+      poster.appendChild(img);
+    } else {
+      poster.appendChild(el('span','ph', it.title));
+    }
+    hero.appendChild(poster);
+    var side = el('div','side');
+    var facts = el('div','idea-facts');
+    if (it.score) facts.appendChild(el('span','idea-fact star', '★ ' + Number(it.score).toFixed(1) + ' TMDB'));
+    if (it.year) facts.appendChild(el('span','idea-fact', String(it.year)));
+    facts.appendChild(el('span','idea-fact', 'Not yet watched'));
+    side.appendChild(facts);
+    if (it.why) side.appendChild(el('div','idea-why', '“' + it.why + '”'));
+    hero.appendChild(side);
+    box.appendChild(hero);
+
+    box.appendChild(el('div','f-label','What it’s about'));
+    box.appendChild(el('div','idea-syn', it.overview || 'No synopsis available for this one yet — but the title alone might be enough.'));
+
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Close');
+    cancel.addEventListener('click', close);
+    var pick = el('button','btn-primary','🍿 Make this our pick');
+    pick.addEventListener('click', function(){
+      var np = nextPicker();
+      var id = 'night_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+      data.records[id] = {
+        id:id, type:'night', title:it.title, year:it.year || null,
+        date: AZ.nextFriday(), pickedBy: np.id,
+        tmdbId: it.tmdbId || null, posterPath: it.posterPath || null,
+        updatedAt: Date.now()
+      };
+      saveData();
+      close();
+      view = 'home';
+      render();
+      window.scrollTo(0, 0);
+      toast(it.title + ' is on the calendar for ' + np.name + '’s pick 🍿');
+    });
+    row.appendChild(cancel); row.appendChild(pick);
+    box.appendChild(row);
+  });
+}
+function renderIdeas(app){
+  app.appendChild(el('div','section-label','Movie Ideas'));
+  var np = nextPicker();
+  var sub = el('div','section-sub', 'Up next: ' + np.name + '’s pick 💡');
+  app.appendChild(sub);
+
+  var chips = el('div','idea-chips');
+  IDEA_CATS.forEach(function(c){
+    var b = el('button','idea-chip' + (ideas.cat === c.id ? ' on' : ''), c.label);
+    b.type = 'button';
+    b.addEventListener('click', function(){
+      ideas.cat = c.id;
+      ideas.items = null;
+      loadIdeas(false);
+    });
+    chips.appendChild(b);
+  });
+  app.appendChild(chips);
+
+  if (ideas.loading){
+    var ld = el('div','idea-loading');
+    var reel = el('div','reel','🎞️');
+    reel.setAttribute('aria-hidden','true');
+    ld.appendChild(reel);
+    ld.appendChild(el('div','msg','Finding something good…'));
+    app.appendChild(ld);
+    return;
+  }
+
+  if (ideas.items === null && !ideas.note){
+    // first visit to the tab
+    loadIdeas(false);
+    return;
+  }
+
+  // re-filter on every render, not just on load, so a title logged from
+  // this tab disappears the moment you come back to it
+  var visible = notWatched(ideas.items || []);
+  if (visible.length){
+    var grid = el('div','idea-grid');
+    visible.forEach(function(it){
+      var card = el('button','idea-card');
+      card.type = 'button';
+      var post = el('div','idea-poster');
+      if (it.posterPath){
+        var img = document.createElement('img');
+        img.alt = ''; img.loading = 'lazy'; img.src = TMDB_IMG + it.posterPath;
+        post.appendChild(img);
+      } else {
+        post.appendChild(el('span','ph', it.title));
+      }
+      if (it.score) post.appendChild(el('span','idea-score', '★ ' + Number(it.score).toFixed(1)));
+      card.appendChild(post);
+      var meta = el('div','idea-meta');
+      meta.appendChild(el('div','t', it.title));
+      meta.appendChild(el('div','y', it.year ? String(it.year) : 'Tap for the story'));
+      card.appendChild(meta);
+      card.addEventListener('click', function(){ openIdeaDetail(it); });
+      grid.appendChild(card);
+    });
+    app.appendChild(grid);
+  }
+
+  if (ideas.items && ideas.items.length && !visible.length && !ideas.note){
+    ideas.note = 'You’ve seen every one of these! Shuffle for more.';
+  }
+  if (ideas.note) app.appendChild(el('div','idea-note', ideas.note));
+
+  var refresh = el('button','idea-refresh','🔀 Show me different ones');
+  refresh.addEventListener('click', function(){
+    ideas.seed = (ideas.seed + 7) % 997;
+    loadIdeas(true);
+  });
+  app.appendChild(refresh);
+
+  var foot = el('footer');
+  foot.appendChild(el('div', null, 'Tap any poster for the story · already-watched titles are hidden'));
+  app.appendChild(foot);
 }
 
 /* ---------- RENDER: stats ---------- */
@@ -3474,7 +3847,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.7'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.8'));
   app.appendChild(foot);
 }
 
@@ -3484,6 +3857,7 @@ function render(){
   while (app.firstChild) app.removeChild(app.firstChild);
   renderHeader(app);
   if (view === 'home') renderHome(app);
+  else if (view === 'ideas') renderIdeas(app);
   else if (view === 'stats') renderStats(app);
   else if (view === 'trivia') renderTrivia(app);
   else renderSettings(app);
