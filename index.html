@@ -2547,7 +2547,8 @@ function openReaction(night, member){
     var h = el('h3', null, member.name + '’s Reaction');
     h.style.color = memberInk(member);
     box.appendChild(h);
-    box.appendChild(el('div','msub', night.title + ' · ' + AZ.pretty(night.date)));
+    box.appendChild(el('div','msub', night.title + ' · ' + AZ.pretty(night.date)
+      + (isBonus(night) ? ' · family bonus' + (night.venue === 'theater' ? ' at the theatre' : '') : '')));
 
     box.appendChild(el('div','f-label','Star rating'));
     var sp = el('div','starpick');
@@ -2586,12 +2587,16 @@ function openReaction(night, member){
     box.appendChild(sp);
     box.appendChild(hint);
 
-    /* director's intro — only for the picker */
+    /* director's intro — for whoever chose the film, bonus or not */
     var why = null;
     if (isPicker){
-      box.appendChild(el('div','f-label','🎬 Director’s intro — why this movie?'));
+      box.appendChild(el('div','f-label', isBonus(night)
+        ? '🎬 Director’s intro — why this one?'
+        : '🎬 Director’s intro — why this movie?'));
       why = el('textarea','f-area');
-      why.placeholder = 'Tell the family why you picked tonight’s film…';
+      why.placeholder = isBonus(night)
+        ? 'Tell the family why you brought this one home…'
+        : 'Tell the family why you picked tonight’s film…';
       why.value = existing ? (existing.why || '') : '';
       box.appendChild(why);
     }
@@ -2914,7 +2919,9 @@ function openEditNight(night){
 function openNightMenu(night){
   openModal(function(box, close){
     box.appendChild(el('h3', null, night.title));
-    box.appendChild(el('div','msub', AZ.pretty(night.date) + ' · ' + memberById(night.pickedBy).name + '’s pick'));
+    box.appendChild(el('div','msub', AZ.pretty(night.date) + ' · ' + (isBonus(night)
+      ? 'family bonus, ' + memberById(night.pickedBy).name + '’s find'
+      : memberById(night.pickedBy).name + '’s pick')));
     var list = el('div','menu-list');
     var open = el('button','menu-item');
     open.appendChild(el('span','mi','📖'));
@@ -3150,6 +3157,14 @@ function keepsakeOverlay(){
   overlay.appendChild(closeBtn);
   return overlay;
 }
+/* how a night is credited on a keepsake page — a bonus belongs to the whole
+   family, with the person who found it named alongside */
+function creditLine(n){
+  var picker = memberById(n.pickedBy);
+  return isBonus(n)
+    ? 'Family bonus · ' + picker.name + '’s find'
+    : picker.name + '’s pick';
+}
 function printButton(page){
   var pb = el('button','sp-print','🖨️ Save as PDF keepsake');
   pb.addEventListener('click', function(){ window.print(); });
@@ -3184,7 +3199,7 @@ function openScrapbook(night){
     ph.appendChild(document.createTextNode(night.title));
   }
   pol.appendChild(ph);
-  pol.appendChild(el('div','cap', picker.name + '’s pick 🍿'));
+  pol.appendChild(el('div','cap', isBonus(night) ? 'Family bonus 🎟️' : picker.name + '’s pick 🍿'));
   head.appendChild(pol);
 
   var side = el('div','sp-headside');
@@ -3304,7 +3319,7 @@ function openYearbook(year){
     sec.appendChild(el('div','sp-title', n.title));
     var avg = familyAvg(n.id);
     sec.appendChild(el('div','sp-date',
-      picker.name + '’s pick' + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
+      creditLine(n) + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
     buildNightKeepsake(sec, n);
     page.appendChild(sec);
   });
@@ -3520,7 +3535,7 @@ function openCollection(){
     sec.appendChild(el('div','sp-title', n.title));
     var avg = familyAvg(n.id);
     sec.appendChild(el('div','sp-date',
-      picker.name + '’s pick' + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
+      creditLine(n) + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
     buildNightKeepsake(sec, n);
     page.appendChild(sec);
   });
@@ -3944,18 +3959,22 @@ function renderHome(app){
     ? (soonestBonus.venue === 'theater' ? 'Bonus — at the theatre…' : 'Bonus movie…')
     : booked ? 'Coming up…' : 'Up next…'));
   var pn = el('div','pickname', showBonus
-    ? who.name + '’s bonus pick 🎟️'
+    ? 'Family bonus 🎟️'
     : booked ? np.name + '’s pick 🍿'
     : 'It’s ' + np.name + '’s turn to pick! 🍿');
-  pn.style.color = who.onWhite;
+  // a bonus belongs to everybody, so it doesn't wear anyone's colour
+  pn.style.color = showBonus ? '' : who.onWhite;
   inner.appendChild(pn);
   if (booked) inner.appendChild(el('div','booked-title', booked.title));
   inner.appendChild(el('div','showdate', booked
     ? AZ.prettyLong(upNext.date)
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
   if (showBonus){
-    inner.appendChild(el('div','screen-bonus',
-      'Nobody loses a turn — ' + np.name + ' still picks next'));
+    // don't name the same person twice when the finder is also up next
+    var finder = upNext.member;
+    inner.appendChild(el('div','screen-bonus', finder.id === np.id
+      ? finder.name + ' found this one · nobody loses a turn'
+      : finder.name + ' found this one · nobody loses a turn, ' + np.name + ' still picks next'));
   }
   /* where to find it — right where you look on the way to the couch */
   if (booked){
@@ -4016,9 +4035,9 @@ function renderHome(app){
     ld.style.background = slot.member.color;
     lp.appendChild(ld);
     var lname = el('span', null, slot.bonus
-      ? slot.member.name + '’s bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
+      ? 'Family bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
       : slot.member.name + '’s pick');
-    lname.style.color = memberInk(slot.member);
+    lname.style.color = slot.bonus ? 'var(--dim)' : memberInk(slot.member);
     lp.appendChild(lname);
     row.appendChild(lp);
     if (slot.title){
@@ -4158,14 +4177,14 @@ function renderHome(app){
     var ticket = el('span','ticket');
     var adm = el('span','admit','🎟');
     adm.style.background = picker.color;
-    var tnm = el('span','tname', picker.name + '’s pick');
+    var tnm = el('span','tname', isBonus(n) ? 'Family bonus' : picker.name + '’s pick');
     tnm.style.background = picker.color;
     ticket.appendChild(adm);
     ticket.appendChild(tnm);
     ht.appendChild(ticket);
     if (n.sample) ht.appendChild(el('span','sampletag','sample'));
     if (isBonus(n)) ht.appendChild(el('span','bonustag',
-      n.venue === 'theater' ? '🍿 bonus · at the theatre' : '🎟️ bonus night'));
+      n.venue === 'theater' ? '🍿 family bonus · at the theatre' : '🎟️ family bonus'));
     if (n.question) ht.appendChild(el('div','night-q', '❓ ' + memberById(n.pickedBy).name + ' asks: ' + n.question));
     head.appendChild(ht);
     card.appendChild(head);

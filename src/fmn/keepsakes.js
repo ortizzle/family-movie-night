@@ -202,6 +202,14 @@ function keepsakeOverlay(){
   overlay.appendChild(closeBtn);
   return overlay;
 }
+/* how a night is credited on a keepsake page — a bonus belongs to the whole
+   family, with the person who found it named alongside */
+function creditLine(n){
+  var picker = memberById(n.pickedBy);
+  return isBonus(n)
+    ? 'Family bonus · ' + picker.name + '’s find'
+    : picker.name + '’s pick';
+}
 function printButton(page){
   var pb = el('button','sp-print','🖨️ Save as PDF keepsake');
   pb.addEventListener('click', function(){ window.print(); });
@@ -236,7 +244,7 @@ function openScrapbook(night){
     ph.appendChild(document.createTextNode(night.title));
   }
   pol.appendChild(ph);
-  pol.appendChild(el('div','cap', picker.name + '’s pick 🍿'));
+  pol.appendChild(el('div','cap', isBonus(night) ? 'Family bonus 🎟️' : picker.name + '’s pick 🍿'));
   head.appendChild(pol);
 
   var side = el('div','sp-headside');
@@ -356,7 +364,7 @@ function openYearbook(year){
     sec.appendChild(el('div','sp-title', n.title));
     var avg = familyAvg(n.id);
     sec.appendChild(el('div','sp-date',
-      picker.name + '’s pick' + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
+      creditLine(n) + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
     buildNightKeepsake(sec, n);
     page.appendChild(sec);
   });
@@ -572,7 +580,7 @@ function openCollection(){
     sec.appendChild(el('div','sp-title', n.title));
     var avg = familyAvg(n.id);
     sec.appendChild(el('div','sp-date',
-      picker.name + '’s pick' + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
+      creditLine(n) + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
     buildNightKeepsake(sec, n);
     page.appendChild(sec);
   });

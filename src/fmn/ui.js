@@ -328,7 +328,8 @@ function openReaction(night, member){
     var h = el('h3', null, member.name + '’s Reaction');
     h.style.color = memberInk(member);
     box.appendChild(h);
-    box.appendChild(el('div','msub', night.title + ' · ' + AZ.pretty(night.date)));
+    box.appendChild(el('div','msub', night.title + ' · ' + AZ.pretty(night.date)
+      + (isBonus(night) ? ' · family bonus' + (night.venue === 'theater' ? ' at the theatre' : '') : '')));
 
     box.appendChild(el('div','f-label','Star rating'));
     var sp = el('div','starpick');
@@ -367,12 +368,16 @@ function openReaction(night, member){
     box.appendChild(sp);
     box.appendChild(hint);
 
-    /* director's intro — only for the picker */
+    /* director's intro — for whoever chose the film, bonus or not */
     var why = null;
     if (isPicker){
-      box.appendChild(el('div','f-label','🎬 Director’s intro — why this movie?'));
+      box.appendChild(el('div','f-label', isBonus(night)
+        ? '🎬 Director’s intro — why this one?'
+        : '🎬 Director’s intro — why this movie?'));
       why = el('textarea','f-area');
-      why.placeholder = 'Tell the family why you picked tonight’s film…';
+      why.placeholder = isBonus(night)
+        ? 'Tell the family why you brought this one home…'
+        : 'Tell the family why you picked tonight’s film…';
       why.value = existing ? (existing.why || '') : '';
       box.appendChild(why);
     }
@@ -695,7 +700,9 @@ function openEditNight(night){
 function openNightMenu(night){
   openModal(function(box, close){
     box.appendChild(el('h3', null, night.title));
-    box.appendChild(el('div','msub', AZ.pretty(night.date) + ' · ' + memberById(night.pickedBy).name + '’s pick'));
+    box.appendChild(el('div','msub', AZ.pretty(night.date) + ' · ' + (isBonus(night)
+      ? 'family bonus, ' + memberById(night.pickedBy).name + '’s find'
+      : memberById(night.pickedBy).name + '’s pick')));
     var list = el('div','menu-list');
     var open = el('button','menu-item');
     open.appendChild(el('span','mi','📖'));

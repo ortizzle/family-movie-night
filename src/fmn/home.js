@@ -70,18 +70,22 @@ function renderHome(app){
     ? (soonestBonus.venue === 'theater' ? 'Bonus — at the theatre…' : 'Bonus movie…')
     : booked ? 'Coming up…' : 'Up next…'));
   var pn = el('div','pickname', showBonus
-    ? who.name + '’s bonus pick 🎟️'
+    ? 'Family bonus 🎟️'
     : booked ? np.name + '’s pick 🍿'
     : 'It’s ' + np.name + '’s turn to pick! 🍿');
-  pn.style.color = who.onWhite;
+  // a bonus belongs to everybody, so it doesn't wear anyone's colour
+  pn.style.color = showBonus ? '' : who.onWhite;
   inner.appendChild(pn);
   if (booked) inner.appendChild(el('div','booked-title', booked.title));
   inner.appendChild(el('div','showdate', booked
     ? AZ.prettyLong(upNext.date)
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
   if (showBonus){
-    inner.appendChild(el('div','screen-bonus',
-      'Nobody loses a turn — ' + np.name + ' still picks next'));
+    // don't name the same person twice when the finder is also up next
+    var finder = upNext.member;
+    inner.appendChild(el('div','screen-bonus', finder.id === np.id
+      ? finder.name + ' found this one · nobody loses a turn'
+      : finder.name + ' found this one · nobody loses a turn, ' + np.name + ' still picks next'));
   }
   /* where to find it — right where you look on the way to the couch */
   if (booked){
@@ -142,9 +146,9 @@ function renderHome(app){
     ld.style.background = slot.member.color;
     lp.appendChild(ld);
     var lname = el('span', null, slot.bonus
-      ? slot.member.name + '’s bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
+      ? 'Family bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
       : slot.member.name + '’s pick');
-    lname.style.color = memberInk(slot.member);
+    lname.style.color = slot.bonus ? 'var(--dim)' : memberInk(slot.member);
     lp.appendChild(lname);
     row.appendChild(lp);
     if (slot.title){
@@ -284,14 +288,14 @@ function renderHome(app){
     var ticket = el('span','ticket');
     var adm = el('span','admit','🎟');
     adm.style.background = picker.color;
-    var tnm = el('span','tname', picker.name + '’s pick');
+    var tnm = el('span','tname', isBonus(n) ? 'Family bonus' : picker.name + '’s pick');
     tnm.style.background = picker.color;
     ticket.appendChild(adm);
     ticket.appendChild(tnm);
     ht.appendChild(ticket);
     if (n.sample) ht.appendChild(el('span','sampletag','sample'));
     if (isBonus(n)) ht.appendChild(el('span','bonustag',
-      n.venue === 'theater' ? '🍿 bonus · at the theatre' : '🎟️ bonus night'));
+      n.venue === 'theater' ? '🍿 family bonus · at the theatre' : '🎟️ family bonus'));
     if (n.question) ht.appendChild(el('div','night-q', '❓ ' + memberById(n.pickedBy).name + ' asks: ' + n.question));
     head.appendChild(ht);
     card.appendChild(head);
