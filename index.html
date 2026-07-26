@@ -1354,6 +1354,7 @@ function buildFacts(tmdbId, fallbackTitle){
       };
       return omdbScores(f.imdbId).then(function(sc){
         if (sc){ f.imdb = sc.imdb; f.rt = sc.rt; f.meta = sc.meta; }
+        if (omdbKey()) f.omdbTried = true;
         return f;
       });
     });
@@ -1371,17 +1372,41 @@ function factChips(f, cls){
   if (!f.imdb && f.tmdbScore) wrap.appendChild(el('span','idea-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
   return wrap;
 }
-/* ensure a night has cached facts; re-renders once they arrive */
+/* ensure a night has cached facts; re-renders once they arrive.
+   Facts cached before an OMDb key was added have no IMDb/RT scores, so
+   top them up once a key appears rather than leaving them blank forever. */
 function ensureNightFacts(night, onDone){
-  if (night.facts && night.facts.fetchedAt) { if (onDone) onDone(night.facts); return; }
+  var f = night.facts;
+  var haveCore = !!(f && f.fetchedAt);
+  var wantsOmdb = haveCore && !f.imdb && !f.omdbTried && !!omdbKey() && !!f.imdbId;
+
+  if (haveCore && !wantsOmdb){ if (onDone) onDone(f); return; }
+
+  if (wantsOmdb){
+    if (onDone) onDone(f);            // paint what we already have
+    omdbScores(f.imdbId).then(function(sc){
+      var rec = data.records[night.id];
+      if (!rec || rec.deleted) return;
+      var merged = {};
+      for (var k in f) merged[k] = f[k];
+      if (sc){ merged.imdb = sc.imdb; merged.rt = sc.rt; merged.meta = sc.meta; }
+      merged.omdbTried = true;
+      rec.facts = merged;
+      rec.updatedAt = Date.now();
+      saveData();
+      if (onDone) onDone(merged);
+    }).catch(function(){});
+    return;
+  }
+
   if (!loadTmdbCred()) return;
-  buildFacts(night.tmdbId, night.title + (night.year ? ' ' + night.year : '')).then(function(f){
+  buildFacts(night.tmdbId, night.title + (night.year ? ' ' + night.year : '')).then(function(f2){
     var rec = data.records[night.id];
     if (!rec || rec.deleted) return;
-    rec.facts = f;
+    rec.facts = f2;
     rec.updatedAt = Date.now();
     saveData();
-    if (onDone) onDone(f);
+    if (onDone) onDone(f2);
   }).catch(function(){});
 }
 
@@ -1515,6 +1540,12 @@ function overlaysOpen(){
 function adoptMerged(merged){
   var changed = JSON.stringify(merged) !== JSON.stringify(data);
   data = merged;
+  // a phone that just received the family's real nights (or their dismissal
+  // of the demo) shouldn't keep showing sample movies alongside them
+  if (hasSample() && (samplesDismissed() || hasRealNights())){
+    clearSample(true);
+    return true;
+  }
   if (changed && !overlaysOpen()) render();
   return changed;
 }
@@ -1706,8 +1737,18 @@ function pollTally(nightId){
 }
 
 /* ---------- sample data ---------- */
+/* the family has dismissed the demo data (synced, so it sticks on every phone) */
+function samplesDismissed(){
+  var r = data.records['settings_samples'];
+  return !!(r && !r.deleted && r.cleared);
+}
+function hasRealNights(){
+  return nights().some(function(n){ return !n.sample; });
+}
 function seedSample(){
-  if (Store.get('seeded') || nights().length) return;
+  // never re-seed once the family has dismissed the demo, once real nights
+  // exist, or on a phone that is already joined to family sync
+  if (samplesDismissed() || Store.get('seeded') || nights().length || Sync.configured()) return;
   var now = Date.now();
   var seeds = [
     { title:'The Princess Bride', year:1987, date:'2026-07-10', pickedBy:'chris', grad:'linear-gradient(160deg,#8A6A2E,#3A2A0E)',
@@ -1756,17 +1797,24 @@ function hasSample(){
   }
   return false;
 }
-function clearSample(){
+function clearSample(quiet){
   var now = Date.now();
   for (var id in data.records){
     var r = data.records[id];
     if (r && r.sample && !r.deleted){
-      data.records[id] = { id:r.id, type:r.type, deleted:true, sample:true, updatedAt:now };
+      // NOTE: no `sample` flag on the tombstone — records marked sample are
+      // stripped before upload, so a flagged tombstone would never reach the
+      // other phones and the demo nights would come back on their next sync
+      data.records[id] = { id:r.id, type:r.type, deleted:true, updatedAt:now };
     }
   }
+  data.records['settings_samples'] = {
+    id:'settings_samples', type:'setting', key:'samples', cleared:true, updatedAt: now
+  };
+  Store.set('seeded', true);
   saveData();
   render();
-  toast('Sample nights cleared — couch is all yours');
+  if (!quiet) toast('Sample nights cleared — couch is all yours');
 }
 
 /* ---------- tiny DOM helpers ---------- */
@@ -3435,7 +3483,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.0'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.0.1'));
   app.appendChild(footer);
 }
 
@@ -4583,6 +4631,12 @@ function renderSettings(app){
     if (!v) return;
     Store.remove('omdb_key');
     setSharedOmdbKey(v);
+    // let already-cached nights top up with IMDb / RT next time they're opened
+    nights().forEach(function(n){
+      var rec = data.records[n.id];
+      if (rec && rec.facts) { delete rec.facts.omdbTried; }
+    });
+    saveData();
     render();
     toast(Sync.configured() ? 'OMDb key saved & shared 🍅' : 'OMDb key saved 🍅');
   });
@@ -4639,7 +4693,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.0'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.0.1'));
   app.appendChild(foot);
 }
 
