@@ -470,6 +470,10 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   font-weight:800;font-size:16px;box-shadow:0 6px 18px rgba(74,53,32,.35);
 }
 .sp-print-hint{text-align:center;font-size:11px;color:#A3814F;font-weight:800;margin-bottom:6px}
+.sp-after{
+  display:block;width:100%;margin-top:14px;min-height:50px;border-radius:99px;
+  border:2px dashed #C0A87E;background:none;color:#7A5E33;font-weight:800;font-size:14px;
+}
 .sp-kicker{
   text-align:center;font-size:10px;letter-spacing:4px;text-transform:uppercase;font-weight:900;
   color:#A3814F;margin-top:8px;
@@ -742,12 +746,67 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 .tq-done .score-line{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:24px;margin-top:8px;color:var(--amber)}
 .tq-done p{color:var(--dim);font-weight:700;margin-top:8px;font-size:14px}
 .tq-intro{margin-top:8px;text-align:center;font-size:13px;color:var(--dim);font-weight:700;line-height:1.6}
+.tq-sub{font-size:12.5px;color:var(--dim);font-weight:800;margin-top:6px;letter-spacing:.5px}
+.tq-dunno{
+  display:block;width:100%;margin-top:10px;min-height:48px;border-radius:14px;
+  border:2px dashed var(--line);background:none;color:var(--dim);font-weight:800;font-size:14px;
+}
+.tq-dunno:active{border-color:var(--amber);color:var(--amber)}
+.rank-title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:18px;color:var(--cream);margin-top:4px}
+/* game picker cards */
+.game-card{
+  display:flex;align-items:center;gap:13px;width:100%;text-align:left;margin-top:12px;
+  background:var(--card);border:2px solid var(--line);border-radius:18px;padding:15px 16px;
+  min-height:76px;color:var(--cream);
+}
+.game-card:active{border-color:var(--amber)}
+.game-card.locked{opacity:.55}
+.game-card .g-ico{font-size:26px;flex-shrink:0}
+.game-card .g-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.game-card .g-name{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px}
+.game-card .g-desc{font-size:12.5px;color:var(--dim);font-weight:700;line-height:1.45}
+.game-card .g-go{color:var(--muted);font-size:20px;font-weight:900;flex-shrink:0}
 
 /* ============ SETTINGS ============ */
 .set-card{
   margin-top:16px;background:var(--card);border:2px solid var(--line);border-radius:18px;
   padding:16px;
 }
+.set-head{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;
+  border:none;padding:0;min-height:44px;color:var(--cream);
+}
+.set-head .set-title{flex:1;margin:0}
+.set-head .chev{color:var(--muted);font-size:15px;font-weight:900;transition:transform .18s}
+.set-head[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.set-body{margin-top:4px}
+.set-badge{
+  font-size:10px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;
+  border-radius:99px;padding:3px 9px;background:var(--card-2);color:var(--dim);
+}
+.set-badge.on{background:rgba(168,198,134,.18);color:var(--sage)}
+/* taste profiles */
+.tp-row{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;margin-top:10px;
+  background:var(--card-2);border:2px solid transparent;border-radius:14px;padding:11px 13px;
+  min-height:56px;color:var(--cream);
+}
+.tp-row:active{border-color:var(--line)}
+.tp-dot{
+  width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:#2A1B14;flex-shrink:0;
+}
+.tp-body{flex:1;min-width:0}
+.tp-name{font-weight:900;font-size:15px}
+.tp-sum{font-size:12px;color:var(--dim);font-weight:700;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-go{color:var(--muted);font-size:19px;font-weight:900}
+.genre-chips{display:flex;flex-wrap:wrap;gap:7px}
+.genre-chip{
+  min-height:42px;border-radius:99px;border:2px solid var(--line);background:var(--card-2);
+  color:var(--dim);font-weight:800;font-size:12.5px;padding:0 13px;
+}
+.genre-chip.on{background:var(--btn-bg);border-color:transparent;color:var(--btn-ink)}
 .set-title{
   font-size:11px;letter-spacing:3px;color:var(--amber);text-transform:uppercase;font-weight:900;
 }
@@ -986,7 +1045,7 @@ footer{
   html,body{background:#F8EEDC;padding:0;margin:0}
   .lights,.tabbar,.toast,#app{display:none !important}
   .scrap-overlay{position:static;inset:auto;overflow:visible;padding:0;background:#F8EEDC}
-  .scrap-close,.sp-print,.sp-print-hint,.no-print{display:none !important}
+  .scrap-close,.sp-print,.sp-print-hint,.sp-after,.no-print{display:none !important}
   .scrap-page{
     max-width:none;font-size:12.5px;
     padding:0.22in 0.82in;
@@ -2470,6 +2529,9 @@ function openScrapbook(night){
       'still waiting on ' + waiting.map(function(m){ return m.name; }).join(' & ') + ' … 🍿'));
   }
   printButton(page);
+  var ac = el('button','sp-after','✨ After-credits pack for this movie');
+  ac.addEventListener('click', function(){ overlay.remove(); openAfterCredits(night); });
+  page.appendChild(ac);
   page.appendChild(el('div','sp-foot','The Ortiz Family · est. Fridays'));
 
   overlay.appendChild(page);
@@ -3004,31 +3066,90 @@ function importBackup(file){
 }
 
 /* ---------- TRIVIA ---------- */
+var TRIVIA_CATS = [
+  { id:'pixar',    label:'🧸 Pixar' },
+  { id:'disney',   label:'🏰 Disney' },
+  { id:'classic',  label:'📽 Classic family' },
+  { id:'animation',label:'🎨 Animation' },
+  { id:'adventure',label:'🚀 Sci-fi & adventure' }
+];
 var TRIVIA = [
-  { q:'Who says "To infinity… and beyond!"?', opts:['Woody','Buzz Lightyear','Mr. Potato Head','Rex'], a:1, note:'Buzz Lightyear, Space Ranger, Toy Story.' },
-  { q:'Finish the quote: "Just keep ___" — Dory, Finding Nemo.', opts:['Floating','Paddling','Swimming','Smiling'], a:2, note:'"Just keep swimming, just keep swimming…"' },
-  { q:'What is Edna Mode\'s famous rule in The Incredibles?', opts:['No sidekicks','No capes','No masks','No gadgets'], a:1, note:'"NO CAPES!"' },
-  { q:'What is the name of Simba\'s father in The Lion King?', opts:['Scar','Rafiki','Zazu','Mufasa'], a:3, note:'Mufasa, king of the Pride Lands.' },
-  { q:'"Ohana means family. Family means…"', opts:['Nobody gets left behind','Everyone eats together','We stick like glue','Always saying aloha'], a:0, note:'"…nobody gets left behind or forgotten." — Lilo & Stitch' },
-  { q:'What job does Woody hold in Andy\'s room?', opts:['Space Ranger','Sheriff','Mayor','Doctor'], a:1, note:'There\'s a snake in my boot! Sheriff Woody.' },
-  { q:'In Up, what is the name of the talking dog?', opts:['Rocky','Dug','Buster','Alpha'], a:1, note:'"I have just met you, and I love you." — Dug' },
-  { q:'What can Elsa create with her powers in Frozen?', opts:['Fire','Plants','Ice and snow','Wind'], a:2, note:'The cold never bothered her anyway.' },
-  { q:'In Coco, Miguel dreams of playing which instrument?', opts:['Trumpet','Drums','Piano','Guitar'], a:3, note:'Just like his idol, Ernesto de la Cruz.' },
-  { q:'Shrek is what kind of creature?', opts:['Troll','Ogre','Giant','Goblin'], a:1, note:'Ogres are like onions — they have layers.' },
-  { q:'In Harry Potter, which platform does the Hogwarts Express leave from?', opts:['Platform 9¾','Platform 13','Platform 7½','Platform 12'], a:0, note:'Run straight at the wall between platforms 9 and 10.' },
-  { q:'What does the Iron Giant love to eat?', opts:['Rocks','Metal','Trees','Cars only'], a:1, note:'A giant robot with a giant appetite for metal.' },
-  { q:'Willy Wonka\'s famous factory makes what?', opts:['Toys','Fireworks','Chocolate','Bubblegum only'], a:2, note:'Golden tickets got you inside the chocolate factory.' },
-  { q:'In Jumanji: Welcome to the Jungle, what is Professor Oberon\'s fatal weakness?', opts:['Water','Heights','Mosquitoes','Cake'], a:3, note:'Weaknesses: CAKE. (A very important Ortiz movie night.)' },
-  { q:'"My name is Inigo Montoya. You killed my ___. Prepare to die."', opts:['Brother','Father','Teacher','King'], a:1, note:'The most quoted line in The Princess Bride.' },
-  { q:'In The Princess Bride, what does Westley really mean when he says "As you wish"?', opts:['Goodbye','I love you','Yes, boss','Leave me alone'], a:1, note:'That day, Buttercup was amazed to discover it.' },
-  { q:'What animal is Spider-Ham in Into the Spider-Verse?', opts:['A ham... ster','A pig','A raccoon','A capybara'], a:1, note:'Peter Porker, the Spectacular Spider-Ham.' },
-  { q:'What is the name of Moana\'s very confused chicken?', opts:['Pua','Tamatoa','Heihei','Maui'], a:2, note:'Sometimes the chicken lives inside the boat.' },
-  { q:'Finish the Encanto song: "We don\'t talk about ___"', opts:['Mirabel','Bruno','Abuela','Casita'], a:1, note:'No, no, no!' },
-  { q:'In Ratatouille, Remy the chef is what kind of animal?', opts:['Mouse','Possum','Rat','Ferret'], a:2, note:'Anyone can cook — even a rat in Paris.' },
-  { q:'"May the ___ be with you."', opts:['Speed','Luck','Force','Wind'], a:2, note:'Star Wars. Always.' },
-  { q:'In The Wizard of Oz, Dorothy repeats: "There\'s no place like ___"', opts:['Oz','Kansas','Home','The farm'], a:2, note:'Click your heels three times.' },
-  { q:'E.T. wants to do what?', opts:['Phone home','Ride bikes forever','Eat candy','Learn English'], a:0, note:'"E.T. phone home."' },
-  { q:'What is the name of Nemo\'s worried dad?', opts:['Gill','Bruce','Crush','Marlin'], a:3, note:'He crossed the whole ocean with Dory.' }
+  /* ---- Pixar ---- */
+  { cat:'pixar', q:'Who says "To infinity… and beyond!"?', opts:['Woody','Buzz Lightyear','Mr. Potato Head','Rex'], a:1, note:'Buzz Lightyear, Space Ranger, Toy Story.' },
+  { cat:'pixar', q:'Finish the quote: "Just keep ___" — Dory, Finding Nemo.', opts:['Floating','Paddling','Swimming','Smiling'], a:2, note:'"Just keep swimming, just keep swimming…"' },
+  { cat:'pixar', q:'What is Edna Mode’s famous rule in The Incredibles?', opts:['No sidekicks','No capes','No masks','No gadgets'], a:1, note:'"NO CAPES!"' },
+  { cat:'pixar', q:'What job does Woody hold in Andy’s room?', opts:['Space Ranger','Sheriff','Mayor','Doctor'], a:1, note:'There’s a snake in my boot! Sheriff Woody.' },
+  { cat:'pixar', q:'In Up, what is the name of the talking dog?', opts:['Rocky','Dug','Buster','Alpha'], a:1, note:'"I have just met you, and I love you." — Dug' },
+  { cat:'pixar', q:'In Coco, Miguel dreams of playing which instrument?', opts:['Trumpet','Drums','Piano','Guitar'], a:3, note:'Just like his idol, Ernesto de la Cruz.' },
+  { cat:'pixar', q:'In Ratatouille, Remy is what kind of animal?', opts:['Mouse','Possum','Rat','Ferret'], a:2, note:'Anyone can cook — even a rat in Paris.' },
+  { cat:'pixar', q:'What is the name of Nemo’s worried dad?', opts:['Gill','Bruce','Crush','Marlin'], a:3, note:'He crossed the whole ocean with Dory.' },
+  { cat:'pixar', q:'In WALL·E, what is the name of the sleek probe robot?', opts:['EVE','IRIS','NOVA','ADA'], a:0, note:'EVE — Extraterrestrial Vegetation Evaluator.' },
+  { cat:'pixar', q:'In Monsters, Inc., what powers the city of Monstropolis at the start?', opts:['Children’s laughter','Children’s screams','Sunlight','Dreams'], a:1, note:'Until they discover laughter is ten times more powerful.' },
+  { cat:'pixar', q:'In Inside Out, which emotion narrates most of the film?', opts:['Sadness','Fear','Joy','Anger'], a:2, note:'Joy runs headquarters — until she and Sadness get lost.' },
+  { cat:'pixar', q:'In Toy Story, who is the neighbour who breaks toys?', opts:['Sid','Al','Randy','Zurg'], a:0, note:'Sid Phillips, and his toys eventually get their revenge.' },
+
+  /* ---- Disney ---- */
+  { cat:'disney', q:'What is the name of Simba’s father in The Lion King?', opts:['Scar','Rafiki','Zazu','Mufasa'], a:3, note:'Mufasa, king of the Pride Lands.' },
+  { cat:'disney', q:'"Ohana means family. Family means…"', opts:['Nobody gets left behind','Everyone eats together','We stick like glue','Always saying aloha'], a:0, note:'"…nobody gets left behind or forgotten." — Lilo & Stitch' },
+  { cat:'disney', q:'What can Elsa create with her powers in Frozen?', opts:['Fire','Plants','Ice and snow','Wind'], a:2, note:'The cold never bothered her anyway.' },
+  { cat:'disney', q:'What is the name of Moana’s very confused chicken?', opts:['Pua','Tamatoa','Heihei','Maui'], a:2, note:'Sometimes the chicken lives inside the boat.' },
+  { cat:'disney', q:'Finish the Encanto song: "We don’t talk about ___"', opts:['Mirabel','Bruno','Abuela','Casita'], a:1, note:'No, no, no!' },
+  { cat:'disney', q:'In Aladdin, what is the Genie’s first rule about wishes?', opts:['No wishing for more wishes','No wishing for money','No wishing for flight','No wishing for food'], a:0, note:'Also: he can’t kill anyone, make anyone fall in love, or raise the dead.' },
+  { cat:'disney', q:'In The Little Mermaid, what does Ariel trade for legs?', opts:['Her hair','Her voice','Her necklace','Her memories'], a:1, note:'Ursula takes her voice as payment.' },
+  { cat:'disney', q:'In Mary Poppins, what word do the children learn that is "something to say when you have nothing to say"?', opts:['Bibbidi-Bobbidi-Boo','Abracadabra','Supercalifragilisticexpialidocious','Hakuna Matata'], a:2, note:'Even though the sound of it is something quite atrocious.' },
+  { cat:'disney', q:'In Beauty and the Beast, what is the enchanted clock called?', opts:['Lumière','Cogsworth','Chip','Mrs. Potts'], a:1, note:'Lumière is the candelabra; Cogsworth is the clock.' },
+
+  /* ---- Classic family ---- */
+  { cat:'classic', q:'In The Wizard of Oz, Dorothy repeats: "There’s no place like ___"', opts:['Oz','Kansas','Home','The farm'], a:2, note:'Click your heels three times.' },
+  { cat:'classic', q:'E.T. wants to do what?', opts:['Phone home','Ride bikes forever','Eat candy','Learn English'], a:0, note:'"E.T. phone home."' },
+  { cat:'classic', q:'Willy Wonka’s famous factory makes what?', opts:['Toys','Fireworks','Chocolate','Bubblegum only'], a:2, note:'Golden tickets got you inside the chocolate factory.' },
+  { cat:'classic', q:'"My name is Inigo Montoya. You killed my ___. Prepare to die."', opts:['Brother','Father','Teacher','King'], a:1, note:'The most quoted line in The Princess Bride.' },
+  { cat:'classic', q:'In The Princess Bride, what does Westley really mean when he says "As you wish"?', opts:['Goodbye','I love you','Yes, boss','Leave me alone'], a:1, note:'That day, Buttercup was amazed to discover it.' },
+  { cat:'classic', q:'In Home Alone, what is the name of the boy left behind?', opts:['Kevin','Buzz','Fuller','Marv'], a:0, note:'Kevin McCallister, defender of 671 Lincoln Avenue.' },
+  { cat:'classic', q:'In Back to the Future, what speed must the DeLorean reach to time travel?', opts:['77 mph','88 mph','99 mph','101 mph'], a:1, note:'88 miles per hour — and 1.21 gigawatts.' },
+  { cat:'classic', q:'In Mrs. Doubtfire, what job does the disguised father take?', opts:['Teacher','Nanny','Chef','Driver'], a:1, note:'A housekeeper and nanny for his own children.' },
+  { cat:'classic', q:'In Singin’ in the Rain, Hollywood is switching from silent films to what?', opts:['Colour films','Talkies','Widescreen','Musicals'], a:1, note:'The arrival of sound throws the studio into chaos.' },
+
+  /* ---- Animation (non-Disney/Pixar) ---- */
+  { cat:'animation', q:'What animal is Spider-Ham in Into the Spider-Verse?', opts:['A hamster','A pig','A raccoon','A capybara'], a:1, note:'Peter Porker, the Spectacular Spider-Ham.' },
+  { cat:'animation', q:'Shrek is what kind of creature?', opts:['Troll','Ogre','Giant','Goblin'], a:1, note:'Ogres are like onions — they have layers.' },
+  { cat:'animation', q:'What does the Iron Giant love to eat?', opts:['Rocks','Metal','Trees','Cars only'], a:1, note:'A giant robot with a giant appetite for metal.' },
+  { cat:'animation', q:'In Spirited Away, what happens to Chihiro’s parents?', opts:['They vanish','They turn into pigs','They fall asleep','They shrink'], a:1, note:'They eat food meant for the spirits and are turned into pigs.' },
+  { cat:'animation', q:'In My Neighbor Totoro, what arrives to carry the girls?', opts:['A dragon','A giant bird','The Catbus','A flying boat'], a:2, note:'The grinning, twelve-legged Catbus.' },
+  { cat:'animation', q:'In How to Train Your Dragon, what is Hiccup’s dragon called?', opts:['Stormfly','Toothless','Meatlug','Hookfang'], a:1, note:'A Night Fury named Toothless.' },
+  { cat:'animation', q:'In Kung Fu Panda, what is Po’s job before becoming the Dragon Warrior?', opts:['Farmer','Noodle shop worker','Blacksmith','Gardener'], a:1, note:'He works in his father’s noodle shop.' },
+  { cat:'animation', q:'In Zootopia, what animal is Officer Judy Hopps?', opts:['Fox','Rabbit','Sloth','Otter'], a:1, note:'The first rabbit on the Zootopia police force.' },
+
+  /* ---- Sci-fi & adventure ---- */
+  { cat:'adventure', q:'"May the ___ be with you."', opts:['Speed','Luck','Force','Wind'], a:2, note:'Star Wars. Always.' },
+  { cat:'adventure', q:'In Harry Potter, which platform does the Hogwarts Express leave from?', opts:['Platform 9¾','Platform 13','Platform 7½','Platform 12'], a:0, note:'Run straight at the wall between platforms 9 and 10.' },
+  { cat:'adventure', q:'In Jumanji: Welcome to the Jungle, what is Professor Oberon’s fatal weakness?', opts:['Water','Heights','Mosquitoes','Cake'], a:3, note:'Weaknesses: CAKE. (A very important Ortiz movie night.)' },
+  { cat:'adventure', q:'In Raiders of the Lost Ark, what is Indiana Jones searching for?', opts:['The Holy Grail','The Ark of the Covenant','Sankara Stones','Atlantis'], a:1, note:'And he is famously afraid of snakes.' },
+  { cat:'adventure', q:'In Jurassic Park, what is used to fill gaps in the dinosaur DNA?', opts:['Bird DNA','Frog DNA','Lizard DNA','Crocodile DNA'], a:1, note:'Which is exactly how the dinosaurs start changing sex. Life finds a way.' },
+  { cat:'adventure', q:'In The Lord of the Rings, who carries the One Ring to Mordor?', opts:['Sam','Aragorn','Frodo','Merry'], a:2, note:'Frodo Baggins — with Sam carrying him at the end.' },
+  { cat:'adventure', q:'In The Goonies, what are the kids searching for?', opts:['A lost city','One-Eyed Willy’s treasure','A meteorite','A missing dog'], a:1, note:'Goonies never say die.' },
+  { cat:'adventure', q:'In Night at the Museum, what happens to the exhibits after dark?', opts:['They disappear','They come alive','They talk only','They shrink'], a:1, note:'Thanks to the tablet of Ahkmenrah.' }
+];
+/* famous lines -> which film are they from */
+var WHO_SAID = [
+  { q:'"To infinity… and beyond!"', opts:['Toy Story','WALL·E','The Incredibles','Big Hero 6'], a:0 },
+  { q:'"There’s no place like home."', opts:['Mary Poppins','The Wizard of Oz','Peter Pan','Annie'], a:1 },
+  { q:'"Hakuna Matata."', opts:['Moana','Zootopia','The Lion King','Tarzan'], a:2 },
+  { q:'"E.T. phone home."', opts:['E.T. the Extra-Terrestrial','Close Encounters','Flight of the Navigator','Explorers'], a:0 },
+  { q:'"Just keep swimming."', opts:['The Little Mermaid','Moana','Finding Nemo','Luca'], a:2 },
+  { q:'"Why so serious?"', opts:['Spider-Man','The Dark Knight','Iron Man','Batman Begins'], a:1 },
+  { q:'"I am Groot."', opts:['Avengers','Guardians of the Galaxy','Ant-Man','Black Panther'], a:1 },
+  { q:'"Ogres are like onions."', opts:['Shrek','Trolls','Hotel Transylvania','Monsters, Inc.'], a:0 },
+  { q:'"My name is Inigo Montoya."', opts:['Robin Hood','The Princess Bride','Stardust','The Three Musketeers'], a:1 },
+  { q:'"Adventure is out there!"', opts:['Up','Onward','Brave','Encanto'], a:0 },
+  { q:'"Ohana means family."', opts:['Moana','Lilo & Stitch','Coco','Encanto'], a:1 },
+  { q:'"NO CAPES!"', opts:['Megamind','The Incredibles','Sky High','Despicable Me'], a:1 },
+  { q:'"Roads? Where we’re going we don’t need roads."', opts:['Back to the Future','Cars','Speed Racer','Herbie'], a:0 },
+  { q:'"You’re a wizard, Harry."', opts:['The Hobbit','Harry Potter and the Sorcerer’s Stone','Percy Jackson','Narnia'], a:1 },
+  { q:'"Life is like a box of chocolates."', opts:['Big','Forrest Gump','Rain Man','The Terminal'], a:1 },
+  { q:'"Anyone can cook."', opts:['Chef','Ratatouille','Julie & Julia','Burnt'], a:1 },
+  { q:'"I’ll be back."', opts:['Rocky','The Terminator','Die Hard','Predator'], a:1 },
+  { q:'"We’re gonna need a bigger boat."', opts:['Titanic','Jaws','The Perfect Storm','Master and Commander'], a:1 }
 ];
 var trivia = { order:null, idx:0, score:0, answered:false, lastPick:-1 };
 function shuffledOrder(n){
@@ -3314,7 +3435,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.9.1'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.0'));
   app.appendChild(footer);
 }
 
@@ -3388,6 +3509,16 @@ var IDEA_CATS = [
   { id:'oldies',   label:'📽 Before 1980', genres:'', before:'1980-01-01', cert:'R' },
   { id:'ai',       label:'✨ For us', ai:true }
 ];
+/* shelves shown in the Ideas tab: the fixed ones, plus one per family
+   member who has filled in a taste profile */
+function ideaShelves(){
+  var out = IDEA_CATS.slice();
+  MEMBERS.forEach(function(m){
+    if (!profileFilled(profileFor(m.id))) return;
+    out.push({ id:'ai_' + m.id, label:'✨ For ' + m.name, ai:true, member:m });
+  });
+  return out;
+}
 var ideas = { cat:'curated', items:null, loading:false, note:null, seed:1 };
 
 function watchedTitleSet(){
@@ -3446,6 +3577,36 @@ function tmdbDiscover(cat, page){
     });
   });
 }
+function aiIdeasFor(member){
+  var prof = profileFor(member.id) || {};
+  var list = nights();
+  var history = list.slice(0, 14).map(function(n){
+    var r = reactionFor(n.id, member.id);
+    var mine = (r && r.stars) ? ' — ' + member.name + ' rated it ' + starText(r.stars) + '/5' : '';
+    return '- ' + n.title + (n.year ? ' (' + n.year + ')' : '') + mine;
+  }).join('\n');
+  var taste = [];
+  if (prof.genres && prof.genres.length) taste.push('Enjoys: ' + prof.genres.join(', '));
+  if (prof.loves) taste.push('Already loves: ' + prof.loves);
+  if (prof.avoids) taste.push('Not for them: ' + prof.avoids);
+  if (prof.night) taste.push('A great movie night for them: ' + prof.night);
+  var system = 'You recommend movies for a family movie night. The family: Chris and Kat (parents), '
+    + 'Sedona and River (kids). Everything must be appropriate to watch together as a family. '
+    + 'Never recommend a film in the watched list.';
+  var prompt = 'Recommend 6 movies chosen specifically for ' + member.name + ', but that the whole family can enjoy together.\n\n'
+    + member.name + '’s taste:\n' + (taste.length ? taste.join('\n') : '(no profile yet — use their ratings below)')
+    + '\n\nWhat the family has watched:\n' + (history || '(nothing yet)')
+    + '\n\nRespond with ONLY valid JSON, no markdown fences:\n'
+    + '{"picks":[{"title":"","year":2000,"why":"one warm sentence on why ' + member.name + ' specifically would love it","synopsis":"two spoiler-free sentences"}]}';
+  return askClaude(prompt, { system: system, maxTokens: 1500 }).then(function(text){
+    var t = text.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+    var obj = JSON.parse(t);
+    if (!obj || !obj.picks || !obj.picks.length) throw new Error('BAD_SHAPE');
+    return obj.picks.slice(0, 8).map(function(p){
+      return { title:p.title, year:p.year || null, overview:p.synopsis || '', why:p.why || '', posterPath:null, score:null };
+    });
+  });
+}
 function aiIdeas(){
   var list = nights();
   var history = list.slice(0, 14).map(function(n){
@@ -3486,19 +3647,20 @@ function enrichFromTmdb(items){
   }));
 }
 function loadIdeas(force){
-  var cat = IDEA_CATS.filter(function(c){ return c.id === ideas.cat; })[0] || IDEA_CATS[0];
+  var cat = ideaShelves().filter(function(c){ return c.id === ideas.cat; })[0] || IDEA_CATS[0];
   ideas.loading = true;
   ideas.note = null;
   render();
 
   var job;
   if (cat.ai){
-    var cached = Store.get('ai_ideas');
+    var cacheKey = cat.member ? 'ai_ideas_' + cat.member.id : 'ai_ideas';
+    var cached = Store.get(cacheKey);
     if (cached && cached.length && !force){
       job = enrichFromTmdb(cached);
     } else {
-      job = aiIdeas().then(function(picks){
-        Store.set('ai_ideas', picks);
+      job = (cat.member ? aiIdeasFor(cat.member) : aiIdeas()).then(function(picks){
+        Store.set(cacheKey, picks);
         return enrichFromTmdb(picks);
       });
     }
@@ -3522,7 +3684,9 @@ function loadIdeas(force){
     ideas.loading = false;
     if (cat.ai && e && e.message === 'NO_KEY'){
       ideas.items = null;
-      ideas.note = 'Add an Anthropic key in Settings and this shelf recommends movies based on what your family has actually loved.';
+      ideas.note = cat.member
+        ? 'Add an Anthropic key in Settings and this shelf picks movies just for ' + cat.member.name + ', using their taste profile.'
+        : 'Add an Anthropic key in Settings and this shelf recommends movies based on what your family has actually loved.';
     } else if (e && e.message === 'NO_KEY'){
       // no TMDB key: stay on the chosen shelf, show the built-in picks that
       // fit it, and say plainly what unlocks the rest
@@ -3624,7 +3788,7 @@ function renderIdeas(app){
   app.appendChild(sub);
 
   var chips = el('div','idea-chips');
-  IDEA_CATS.forEach(function(c){
+  ideaShelves().forEach(function(c){
     var b = el('button','idea-chip' + (ideas.cat === c.id ? ' on' : ''), c.label);
     b.type = 'button';
     b.addEventListener('click', function(){
@@ -3839,41 +4003,180 @@ function renderStats(app){
   app.appendChild(foot);
 }
 
-/* ---------- RENDER: trivia ---------- */
-function renderTrivia(app){
-  app.appendChild(el('div','section-label','Family Movie Trivia'));
-  app.appendChild(el('div','section-sub','Answer together on the couch 🎯'));
+/* ---------- RENDER: trivia (game hub) ---------- */
+var GAMES = [
+  { id:'trivia',  ico:'🎯', name:'Movie Trivia',   desc:'Questions by category — Pixar, Disney, classics and more.' },
+  { id:'whosaid', ico:'💬', name:'Who Said It?',   desc:'A famous line appears. Name the movie it came from.' },
+  { id:'ourwall', ico:'🍿', name:'Our Quote Wall', desc:'Quotes your family saved — guess who picked each one.', needsData:true },
+  { id:'iq',      ico:'🧠', name:'Movie IQ Test',  desc:'Ten mixed questions. Find out the family’s movie rank.' }
+];
+var trivia = { game:null, cat:null, deck:null, idx:0, score:0, dunno:0, answered:false, lastPick:-1 };
 
-  if (!trivia.order){
-    trivia.order = shuffledOrder(TRIVIA.length);
-    trivia.idx = 0; trivia.score = 0; trivia.answered = false; trivia.lastPick = -1;
-    app.appendChild(el('div','tq-intro','One phone, four brains. Read each question out loud,\nargue about it, then lock in the family answer!'));
+function shuffledOrder(n){
+  var arr = [];
+  for (var i=0;i<n;i++) arr.push(i);
+  for (var j=arr.length-1;j>0;j--){
+    var k = Math.floor(Math.random()*(j+1));
+    var t = arr[j]; arr[j] = arr[k]; arr[k] = t;
+  }
+  return arr;
+}
+function shuffleArr(a){
+  var r = a.slice();
+  for (var i=r.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var t = r[i]; r[i] = r[j]; r[j] = t;
+  }
+  return r;
+}
+/* questions built from the family's own saved quotes: who picked this line? */
+function ourWallDeck(){
+  var out = [];
+  nights().forEach(function(n){
+    nightQuoteGroups(n.id).forEach(function(g){
+      if (g.members.length !== 1) return;           // ambiguous if several picked it
+      var who = g.members[0];
+      var others = shuffleArr(MEMBERS.filter(function(m){ return m.id !== who.id; })).slice(0, 3);
+      var opts = shuffleArr([who].concat(others));
+      out.push({
+        q: '“' + g.text + '”',
+        sub: 'from ' + n.title,
+        opts: opts.map(function(m){ return m.name; }),
+        a: opts.indexOf(who),
+        note: who.name + ' saved this one from ' + n.title + '.'
+      });
+    });
+  });
+  return shuffleArr(out);
+}
+function buildDeck(){
+  if (trivia.game === 'trivia'){
+    var pool = TRIVIA.filter(function(q){ return !trivia.cat || q.cat === trivia.cat; });
+    return shuffleArr(pool).slice(0, 12);
+  }
+  if (trivia.game === 'whosaid') return shuffleArr(WHO_SAID).slice(0, 12);
+  if (trivia.game === 'ourwall') return ourWallDeck().slice(0, 12);
+  if (trivia.game === 'iq'){
+    var mixed = shuffleArr(TRIVIA).slice(0, 6)
+      .concat(shuffleArr(WHO_SAID).slice(0, 3))
+      .concat(ourWallDeck().slice(0, 1));
+    return shuffleArr(mixed).slice(0, 10);
+  }
+  return [];
+}
+function startGame(gameId, catId){
+  trivia.game = gameId;
+  trivia.cat = catId || null;
+  trivia.deck = buildDeck();
+  trivia.idx = 0; trivia.score = 0; trivia.dunno = 0;
+  trivia.answered = false; trivia.lastPick = -1;
+  render();
+  window.scrollTo(0, 0);
+}
+function iqRank(pct){
+  if (pct >= 0.9) return { medal:'🏆', title:'Certified Film Buffs', line:'Roll credits and take a bow — this family knows its movies.' };
+  if (pct >= 0.7) return { medal:'🎬', title:'Serious Movie Family', line:'Strong showing. A couple more Fridays and you’ll sweep it.' };
+  if (pct >= 0.5) return { medal:'🍿', title:'Solid Watchers', line:'Respectable! The popcorn was clearly the main event.' };
+  return { medal:'🎟', title:'Rookie Reviewers', line:'The fix is obvious and delicious: more movie nights.' };
+}
+function renderTrivia(app){
+  app.appendChild(el('div','section-label','Movie Games'));
+  app.appendChild(el('div','section-sub','One phone, four brains 🎯'));
+
+  /* ---- game picker ---- */
+  if (!trivia.game){
+    var wallCount = ourWallDeck().length;
+    GAMES.forEach(function(g){
+      var locked = g.needsData && wallCount < 4;
+      var card = el('button','game-card' + (locked ? ' locked' : ''));
+      card.type = 'button';
+      var ico = el('span','g-ico', g.ico);
+      card.appendChild(ico);
+      var body = el('span','g-body');
+      body.appendChild(el('span','g-name', g.name));
+      body.appendChild(el('span','g-desc', locked
+        ? 'Save a few more favorite quotes and this game unlocks.'
+        : g.desc));
+      card.appendChild(body);
+      if (!locked){
+        card.appendChild(el('span','g-go','›'));
+        card.addEventListener('click', function(){
+          if (g.id === 'trivia'){ trivia.game = 'trivia'; trivia.deck = null; render(); window.scrollTo(0,0); }
+          else startGame(g.id);
+        });
+      }
+      app.appendChild(card);
+    });
+    var foot = el('footer');
+    foot.appendChild(el('div', null, TRIVIA.length + ' trivia questions · ' + WHO_SAID.length + ' famous lines · your own quote wall'));
+    app.appendChild(foot);
+    return;
   }
 
-  if (trivia.idx >= trivia.order.length){
+  /* ---- category picker for Movie Trivia ---- */
+  if (trivia.game === 'trivia' && !trivia.deck){
+    app.appendChild(el('div','idea-note','Pick a category — or play them all mixed together.'));
+    var all = el('button','game-card');
+    all.type = 'button';
+    all.appendChild(el('span','g-ico','🎲'));
+    var ab = el('span','g-body');
+    ab.appendChild(el('span','g-name','Everything'));
+    ab.appendChild(el('span','g-desc','All ' + TRIVIA.length + ' questions, shuffled.'));
+    all.appendChild(ab);
+    all.appendChild(el('span','g-go','›'));
+    all.addEventListener('click', function(){ startGame('trivia', null); });
+    app.appendChild(all);
+    TRIVIA_CATS.forEach(function(c){
+      var n = TRIVIA.filter(function(q){ return q.cat === c.id; }).length;
+      var b = el('button','game-card');
+      b.type = 'button';
+      b.appendChild(el('span','g-ico', c.label.split(' ')[0]));
+      var bb = el('span','g-body');
+      bb.appendChild(el('span','g-name', c.label.replace(/^\S+\s/,'')));
+      bb.appendChild(el('span','g-desc', n + ' questions'));
+      b.appendChild(bb);
+      b.appendChild(el('span','g-go','›'));
+      b.addEventListener('click', function(){ startGame('trivia', c.id); });
+      app.appendChild(b);
+    });
+    var back0 = el('button','idea-refresh','‹ Back to games');
+    back0.addEventListener('click', function(){ trivia.game = null; render(); });
+    app.appendChild(back0);
+    return;
+  }
+
+  var deck = trivia.deck || [];
+
+  /* ---- finale ---- */
+  if (trivia.idx >= deck.length){
+    var total = deck.length || 1;
+    var pct = trivia.score / total;
+    var rank = iqRank(pct);
     var done = el('div','tq-done');
-    var pct = trivia.score / trivia.order.length;
-    done.appendChild(el('div','big', pct >= 0.8 ? '🏆' : pct >= 0.5 ? '🎬' : '🍿'));
-    done.appendChild(el('div','score-line', 'Family score: ' + trivia.score + ' / ' + trivia.order.length));
-    done.appendChild(el('p', null, pct >= 0.8
-      ? 'Certified movie family. Roll credits and take a bow!'
-      : pct >= 0.5 ? 'Solid! A few more Friday nights and you’ll sweep it.'
-      : 'The fix is obvious: more movie nights.'));
-    var again = el('button','tq-next','Play Again');
-    again.addEventListener('click', function(){ trivia.order = null; render(); });
+    done.appendChild(el('div','big', rank.medal));
+    done.appendChild(el('div','score-line', trivia.score + ' / ' + total));
+    done.appendChild(el('div','rank-title', rank.title));
+    done.appendChild(el('p', null, rank.line));
+    if (trivia.dunno) done.appendChild(el('p', null, trivia.dunno + ' passed on — no shame, that’s how you learn a new favorite.'));
+    var again = el('button','tq-next','Play again');
+    again.addEventListener('click', function(){ startGame(trivia.game, trivia.cat); });
     done.appendChild(again);
+    var back = el('button','idea-refresh','‹ Back to games');
+    back.addEventListener('click', function(){ trivia.game = null; trivia.deck = null; render(); });
+    done.appendChild(back);
     app.appendChild(done);
     return;
   }
 
-  var qi = trivia.order[trivia.idx];
-  var Q = TRIVIA[qi];
+  /* ---- question ---- */
+  var Q = deck[trivia.idx];
   var card = el('div','tq-card');
   var prog = el('div','tq-progress');
-  prog.appendChild(el('span', null, 'Question ' + (trivia.idx+1) + ' of ' + trivia.order.length));
+  prog.appendChild(el('span', null, 'Question ' + (trivia.idx+1) + ' of ' + deck.length));
   prog.appendChild(el('span','score','Score: ' + trivia.score));
   card.appendChild(prog);
   card.appendChild(el('div','tq-q', Q.q));
+  if (Q.sub) card.appendChild(el('div','tq-sub', Q.sub));
 
   var opts = el('div','tq-opts');
   Q.opts.forEach(function(opt, i){
@@ -3887,10 +4190,7 @@ function renderTrivia(app){
       b.addEventListener('click', function(){
         trivia.answered = true;
         trivia.lastPick = i;
-        if (i === Q.a){
-          trivia.score++;
-          confettiBurst(14);
-        }
+        if (i === Q.a){ trivia.score++; confettiBurst(14); }
         render();
       });
     }
@@ -3898,9 +4198,22 @@ function renderTrivia(app){
   });
   card.appendChild(opts);
 
+  if (!trivia.answered){
+    var dk = el('button','tq-dunno','🤷 Don’t know — show me');
+    dk.addEventListener('click', function(){
+      trivia.answered = true;
+      trivia.lastPick = -1;
+      trivia.dunno++;
+      render();
+    });
+    card.appendChild(dk);
+  }
+
   if (trivia.answered){
-    card.appendChild(el('div','tq-note', (trivia.lastPick === Q.a ? '✓ Correct! ' : '✗ Not this time. ') + (Q.note || '')));
-    var next = el('button','tq-next', trivia.idx + 1 >= trivia.order.length ? 'See the Final Score' : 'Next Question');
+    var verdict = trivia.lastPick === -1 ? 'Here’s the answer. '
+      : (trivia.lastPick === Q.a ? '✓ Correct! ' : '✗ Not this time. ');
+    card.appendChild(el('div','tq-note', verdict + (Q.note || '')));
+    var next = el('button','tq-next', trivia.idx + 1 >= deck.length ? 'See the final score' : 'Next question');
     next.addEventListener('click', function(){
       trivia.idx++;
       trivia.answered = false;
@@ -3912,9 +4225,116 @@ function renderTrivia(app){
   }
   app.appendChild(card);
 
-  var foot = el('footer');
-  foot.appendChild(el('div', null, '24 questions in the starter reel · every night card also has a ✨ pack about that movie'));
-  app.appendChild(foot);
+  var quit = el('button','idea-refresh','‹ Back to games');
+  quit.addEventListener('click', function(){ trivia.game = null; trivia.deck = null; render(); });
+  app.appendChild(quit);
+}
+
+/* ---------- taste profiles (drive per-person recommendations) ---------- */
+var GENRES = ['Animated','Adventure','Comedy','Fantasy','Sci-fi','Musical','Mystery','Action',
+  'Drama','True stories','Historical','Sports','Spooky (a little)','Heartwarming'];
+function profileFor(memberId){
+  var r = data.records['profile_' + memberId];
+  return (r && !r.deleted) ? r : null;
+}
+function profileFilled(p){
+  return !!(p && ((p.genres && p.genres.length) || p.loves || p.avoids || p.night));
+}
+function profileSummary(p){
+  if (!profileFilled(p)) return 'Not set up yet — tap to answer a few questions';
+  var bits = [];
+  if (p.genres && p.genres.length) bits.push(p.genres.slice(0,3).join(', '));
+  if (p.loves) bits.push('loves ' + p.loves.split(/[,.]/)[0].trim());
+  return bits.join(' · ') || 'Profile saved';
+}
+function saveProfile(memberId, prof){
+  prof.id = 'profile_' + memberId;
+  prof.type = 'profile';
+  prof.member = memberId;
+  prof.updatedAt = Date.now();
+  data.records[prof.id] = prof;
+  saveData();
+}
+function openProfileEditor(member){
+  var p = profileFor(member.id) || {};
+  var picked = (p.genres || []).slice();
+  openModal(function(box, close){
+    var h = el('h3', null, member.name + '’s movie taste');
+    h.style.color = memberInk(member);
+    box.appendChild(h);
+    box.appendChild(el('div','msub','A few questions — these shape the ideas we suggest'));
+
+    box.appendChild(el('div','f-label','What kinds of movies do you love?'));
+    var gc = el('div','genre-chips');
+    GENRES.forEach(function(g){
+      var b = el('button','genre-chip' + (picked.indexOf(g) !== -1 ? ' on' : ''), g);
+      b.type = 'button';
+      b.addEventListener('click', function(){
+        var i = picked.indexOf(g);
+        if (i === -1) picked.push(g); else picked.splice(i, 1);
+        b.classList.toggle('on', picked.indexOf(g) !== -1);
+      });
+      gc.appendChild(b);
+    });
+    box.appendChild(gc);
+
+    box.appendChild(el('div','f-label','Movies you already love'));
+    var loves = el('textarea','f-area');
+    loves.placeholder = 'e.g. Spider-Verse, anything with dragons, old musicals…';
+    loves.value = p.loves || '';
+    box.appendChild(loves);
+
+    box.appendChild(el('div','f-label','Not for me'));
+    var avoids = el('textarea','f-area');
+    avoids.placeholder = 'e.g. too scary, sad animal movies, long war films…';
+    avoids.value = p.avoids || '';
+    box.appendChild(avoids);
+
+    box.appendChild(el('div','f-label','What makes a great movie night for you?'));
+    var night = el('textarea','f-area');
+    night.placeholder = 'e.g. something funny we can quote all week…';
+    night.value = p.night || '';
+    box.appendChild(night);
+
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Cancel');
+    cancel.addEventListener('click', close);
+    var save = el('button','btn-gold','Save');
+    save.addEventListener('click', function(){
+      saveProfile(member.id, {
+        genres: picked, loves: loves.value.trim(),
+        avoids: avoids.value.trim(), night: night.value.trim()
+      });
+      Store.remove('ai_ideas_' + member.id); // taste changed — regenerate
+      close();
+      render();
+      toast(member.name + '’s taste saved — ideas will use it 🎭');
+    });
+    row.appendChild(cancel); row.appendChild(save);
+    box.appendChild(row);
+  });
+}
+/* collapsible settings section */
+function collapsible(app, title, opts){
+  opts = opts || {};
+  var card = el('div','set-card');
+  var head = el('button','set-head');
+  head.type = 'button';
+  head.appendChild(el('div','set-title', title));
+  if (opts.badge) head.appendChild(el('span','set-badge' + (opts.badgeOn ? ' on' : ''), opts.badge));
+  head.appendChild(el('span','chev','›'));
+  var body = el('div','set-body');
+  var open = !!opts.open;
+  function paint(){
+    body.style.display = open ? 'block' : 'none';
+    head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  paint();
+  head.addEventListener('click', function(){ open = !open; paint(); });
+  card.appendChild(head);
+  card.appendChild(body);
+  app.appendChild(card);
+  return body;
 }
 
 /* ---------- RENDER: settings ---------- */
@@ -3962,8 +4382,7 @@ function renderSettings(app){
   app.appendChild(ap);
 
   /* keepsakes */
-  var ks = el('div','set-card');
-  ks.appendChild(el('div','set-title','📕 Printable keepsakes'));
+  var ks = collapsible(app, '📕 Printable keepsakes', { open:true });
   var years = {};
   nights().forEach(function(n){ years[n.date.slice(0,4)] = true; });
   var yearList = Object.keys(years).sort().reverse();
@@ -3980,11 +4399,34 @@ function renderSettings(app){
   } else {
     ks.appendChild(el('div','set-note','Log some movie nights and your printable keepsakes will appear here.'));
   }
-  app.appendChild(ks);
+  /* taste profiles */
+  var tp = collapsible(app, '🎭 Taste profiles', {
+    badge: MEMBERS.filter(function(m){ return profileFilled(profileFor(m.id)); }).length + '/' + MEMBERS.length,
+    badgeOn: MEMBERS.every(function(m){ return profileFilled(profileFor(m.id)); })
+  });
+  tp.appendChild(el('div','set-note','Answer a few questions each and the Ideas tab can recommend movies for each person by name.'));
+  MEMBERS.forEach(function(m){
+    var prof = profileFor(m.id);
+    var row = el('button','tp-row');
+    row.type = 'button';
+    var dot = el('span','tp-dot', m.name.charAt(0));
+    dot.style.background = m.color;
+    row.appendChild(dot);
+    var body = el('span','tp-body');
+    var nm = el('span','tp-name', m.name);
+    nm.style.color = memberInk(m);
+    body.appendChild(nm);
+    body.appendChild(el('span','tp-sum', profileSummary(prof)));
+    row.appendChild(body);
+    row.appendChild(el('span','tp-go','›'));
+    row.addEventListener('click', function(){ openProfileEditor(m); });
+    tp.appendChild(row);
+  });
 
   /* family sync */
-  var sy = el('div','set-card');
-  sy.appendChild(el('div','set-title','🔄 Family sync (shared Gist)'));
+  var sy = collapsible(app, '🔄 Family sync', {
+    badge: Sync.configured() ? 'On' : 'Off', badgeOn: Sync.configured()
+  });
   var configured = Sync.configured();
   if (configured){
     var last = Store.get('last_sync');
@@ -4074,11 +4516,8 @@ function renderSettings(app){
     });
     sy.appendChild(cg);
   }
-  app.appendChild(sy);
-
   /* data safety */
-  var ds = el('div','set-card');
-  ds.appendChild(el('div','set-title','💾 Backups (safe keeping)'));
+  var ds = collapsible(app, '💾 Backups');
   ds.appendChild(el('div','set-note','Export saves everything — nights, reactions, quotes, memories — to a file you can keep in iCloud/Files. Import merges a backup in without losing newer entries.'));
   var ex = el('button','set-btn','📦 Export backup file');
   ex.addEventListener('click', exportBackup);
@@ -4096,11 +4535,10 @@ function renderSettings(app){
   im.addEventListener('click', function(){ fileInput.click(); });
   ds.appendChild(im);
   ds.appendChild(el('div','set-note','Even with family sync on, a backup file in Drive/Files is the seatbelt.'));
-  app.appendChild(ds);
-
   /* tmdb key */
-  var tk = el('div','set-card');
-  tk.appendChild(el('div','set-title','🎬 TMDB key (posters, search & movie facts)'));
+  var tk = collapsible(app, '🎬 TMDB key — posters & facts', {
+    badge: loadTmdbCred() ? 'Saved' : 'Not set', badgeOn: !!loadTmdbCred()
+  });
   var shared = sharedTmdbKey();
   tk.appendChild(el('div','set-note', shared
     ? 'Saved and shared with the family — every phone that syncs gets posters automatically. Paste a new one to replace it.'
@@ -4124,11 +4562,11 @@ function renderSettings(app){
   });
   rowk.appendChild(kSave);
   tk.appendChild(rowk);
-  app.appendChild(tk);
 
   /* omdb key — IMDb / Rotten Tomatoes / Metacritic */
-  var ok = el('div','set-card');
-  ok.appendChild(el('div','set-title','🍅 OMDb key (IMDb & Rotten Tomatoes)'));
+  var ok = collapsible(app, '🍅 OMDb key — IMDb & RT', {
+    badge: omdbKey() ? 'Saved' : 'Not set', badgeOn: !!omdbKey()
+  });
   var oShared = data.records['settings_omdb'];
   ok.appendChild(el('div','set-note', (oShared && !oShared.deleted)
     ? 'Saved and shared — scrapbooks and movie ideas show IMDb, Rotten Tomatoes and Metacritic scores.'
@@ -4150,11 +4588,11 @@ function renderSettings(app){
   });
   rowo.appendChild(oSave);
   ok.appendChild(rowo);
-  app.appendChild(ok);
 
   /* claude key */
-  var ck = el('div','set-card');
-  ck.appendChild(el('div','set-title','🤖 Claude — after-credits packs'));
+  var ck = collapsible(app, '🤖 Claude — packs & picks', {
+    badge: Store.get('anthropic_key') ? 'Saved' : 'Not set', badgeOn: !!Store.get('anthropic_key')
+  });
   var hasAnthro = !!Store.get('anthropic_key');
   ck.appendChild(el('div','set-note', hasAnthro
     ? 'Key saved — every night card’s ✨ After-credits button can make fun facts, movie trivia, and talk-about-it questions for that night’s film. Packs sync to the whole family.'
@@ -4184,12 +4622,9 @@ function renderSettings(app){
     });
     ck.appendChild(cClear);
   }
-  app.appendChild(ck);
-
   /* sample data */
   if (hasSample()){
-    var sd = el('div','set-card');
-    sd.appendChild(el('div','set-title','🧪 Sample data'));
+    var sd = collapsible(app, '🧪 Sample data');
     sd.appendChild(el('div','set-note','The three demo nights are still in the memory book so you can explore.'));
     var cs = el('button','set-btn warn','🧹 Clear sample data');
     cs.addEventListener('click', function(){
@@ -4201,11 +4636,10 @@ function renderSettings(app){
       });
     });
     sd.appendChild(cs);
-    app.appendChild(sd);
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.9.1'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.0'));
   app.appendChild(foot);
 }
 
