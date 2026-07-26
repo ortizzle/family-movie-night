@@ -1,43 +1,58 @@
 # Family Movie Night 🍿
 
-The Ortiz family's Friday-night memory book — round-robin picks, post-movie
-reactions (stars, thoughts, favorite characters, favorite scenes, quotes,
-memories, the family poll, and the picker's own question), scrapbook pages,
-printable keepsake PDFs, stats, trivia, movie ideas, family votes, and The
+The Ortiz family's Friday-night memory book. Round-robin picks
+(Chris → Kat → Sedona → River), post-movie reactions, scrapbook pages,
+printable keepsakes, stats, trivia, movie ideas, family votes, and The
 Ortizzle year-end awards.
 
 **Live app:** https://ortizzle.github.io/family-movie-night/
 
-## This repo is generated
-
-`index.html` is a **build artifact** — don't edit it here, the next build will
-overwrite it. The source lives in
-[`ortizzle/screening-room`](https://github.com/ortizzle/screening-room) on the
-`claude/family-movie-night-app-uplwwv` branch, split into
-`family-movie-night.html` + `fmn/*.js`, with full documentation in that repo's
-`FAMILY-MOVIE-NIGHT.md`.
-
-To publish a change:
+## Working on it
 
 ```bash
-cd screening-room
-python3 fmn-build.py                 # writes ../family-movie-night/index.html
-cd ../family-movie-night
-git add -A && git commit -m "..." && git push
+open src/shell.html      # opens the app locally — no install, no server
 ```
 
-GitHub Pages serves `main` from the repository root, so a push publishes. Pages
-lags about a minute, and mobile Safari caches hard — add `?v=<something>` when
-verifying.
+Edit anything in `src/`, refresh the browser. That's the whole loop.
 
-## Data
+## Publishing
 
-Lives in each phone's localStorage and syncs across the family through a shared
-private GitHub Gist, configured in the app's Settings tab along with optional
-TMDB, OMDb, and Anthropic keys. **No keys or tokens are ever committed here.**
+```bash
+python3 build.py                                  # writes index.html
+git add -A && git commit -m "what changed" && git push
+```
 
-The app works fully without any of those keys — they add posters, critic
-scores, streaming availability, and AI recommendations.
+GitHub Pages serves `index.html` from the root of `main`, so pushing
+publishes. Give it a minute, and hard-refresh on your phone — mobile Safari
+caches aggressively.
 
-**Backing up this repo does not back up the family's memories.** Use
-Settings → Backups to export the data as JSON and keep that somewhere real.
+**Don't edit `index.html` by hand.** It's generated from `src/`, and the next
+build overwrites it.
+
+## What's where
+
+```
+index.html            ← generated; the app your family loads
+build.py              ← makes it
+src/shell.html        ← markup + all the CSS
+src/fmn/*.js          ← all the logic, twelve files
+DOCS.md               ← how it works, the data model, the gotchas
+CLAUDE.md             ← conventions for Claude Code sessions
+```
+
+Start with **DOCS.md** if you're picking this back up after a while.
+
+## Your family's memories are not in this repo
+
+The nights, ratings, quotes, and memories live in each phone's browser storage
+and sync through a private GitHub Gist. Cloning this repo does not back them
+up.
+
+**Settings → Backups → Export** writes a JSON file. Keep that somewhere real.
+
+## Keys
+
+TMDB (posters, facts, streaming availability), OMDb (IMDb and Rotten Tomatoes
+scores), and Anthropic (after-credits packs, AI recommendations) are all
+optional — entered in the app's Settings, stored on each phone. The app works
+fully without any of them. **No keys are ever committed here.**
