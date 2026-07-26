@@ -134,6 +134,9 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   font-size:clamp(24px,6.5vw,34px);margin-top:6px;line-height:1.15;
 }
 .screen .showdate{font-size:13px;color:#8A7563;margin-top:6px;font-weight:800}
+.screen .booked-title{
+  font-family:'Baloo 2',sans-serif;font-weight:700;font-size:17px;color:#4A3A32;margin-top:4px;
+}
 .screen .rotation{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:16px;flex-wrap:wrap}
 .rot-chip{
   display:flex;align-items:center;gap:6px;background:#FFF9EE;border:2px solid #E2D4BC;
@@ -375,6 +378,10 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .rx-row .snippet.empty{color:var(--muted)}
 .rx-row .chev{color:var(--muted);font-size:15px;font-weight:900}
+.you-tag{
+  font-size:9px;font-weight:900;letter-spacing:1px;text-transform:uppercase;
+  border:1.5px solid var(--line);border-radius:99px;padding:2px 6px;color:var(--muted);flex-shrink:0;
+}
 .card-actions{display:flex;gap:8px;margin-top:10px}
 .scrapbtn{
   display:flex;align-items:center;justify-content:center;gap:6px;flex:1;min-width:0;
@@ -797,9 +804,11 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   font-size:13px;font-weight:900;color:#2A1B14;flex-shrink:0;
 }
 .tp-body{flex:1;min-width:0}
-.tp-name{font-weight:900;font-size:15px}
-.tp-sum{font-size:12px;color:var(--dim);font-weight:700;margin-top:2px;
+.tp-name{display:block;font-weight:900;font-size:15px}
+.tp-sum{display:block;font-size:12px;color:var(--dim);font-weight:700;margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-starter{display:block;font-size:10.5px;color:var(--amber);font-weight:900;
+  letter-spacing:.4px;text-transform:uppercase;margin-top:3px}
 .tp-go{color:var(--muted);font-size:19px;font-weight:900}
 .genre-chips{display:flex;flex-wrap:wrap;gap:7px}
 .genre-chip{
@@ -1641,14 +1650,46 @@ function familyAvg(nightId){
   for (var i=0;i<rs.length;i++) sum += rs[i].stars;
   return sum / rs.length;
 }
-function nextPicker(){
-  var list = nights();
-  if (!list.length) return MEMBERS[0];
-  var lastId = list[0].pickedBy;
+/* ---------- whose turn it is ----------
+   A night scheduled for a future Friday is *upcoming*, not spent: the
+   rotation only advances past nights that have actually happened.
+   (Otherwise River booking her own turn made the app jump to Chris.) */
+function rotationNext(memberId){
   for (var i=0;i<MEMBERS.length;i++){
-    if (MEMBERS[i].id === lastId) return MEMBERS[(i+1) % MEMBERS.length];
+    if (MEMBERS[i].id === memberId) return MEMBERS[(i+1) % MEMBERS.length];
   }
   return MEMBERS[0];
+}
+function nightHappened(n){
+  if (n.date < AZ.today()) return true;
+  if (n.date > AZ.today()) return false;
+  // tonight: it has happened once somebody writes a reaction
+  return reactionsFor(n.id).some(rxHasContent);
+}
+function happenedNights(){            // newest first
+  return nights().filter(nightHappened);
+}
+function scheduledNights(){           // soonest first
+  return nights().filter(function(n){ return !nightHappened(n); })
+    .sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+}
+/* who is up next — the person whose night is already on the calendar,
+   otherwise whoever follows the last night that happened */
+function nextPicker(){
+  var sched = scheduledNights();
+  if (sched.length) return memberById(sched[0].pickedBy);
+  var past = happenedNights();
+  if (!past.length) return MEMBERS[0];
+  return rotationNext(past[0].pickedBy);
+}
+/* default picker when logging a brand-new night — continue past anything
+   already on the calendar so two people don't get booked into one slot */
+function pickerForNewNight(){
+  var sched = scheduledNights();
+  if (sched.length) return rotationNext(sched[sched.length - 1].pickedBy);
+  var past = happenedNights();
+  if (!past.length) return MEMBERS[0];
+  return rotationNext(past[0].pickedBy);
 }
 /* ---------- quote matching ----------
    When two people save the same line (or one saves a longer version of
@@ -2029,7 +2070,7 @@ function openAddNight(){
     var pickWrap = el('div');
     pickWrap.appendChild(el('div','f-label','Whose pick was it?'));
     var chips = el('div','pick-chips');
-    var picked = nextPicker().id;
+    var picked = pickerForNewNight().id;
     MEMBERS.forEach(function(m){
       var c = el('button','pick-chip', m.name);
       c.type = 'button';
@@ -2047,6 +2088,19 @@ function openAddNight(){
     }
     repaintAll();
     pickWrap.appendChild(chips);
+    /* Booking a night that hasn't happened yet is almost always someone
+       claiming their own turn, so default to whoever this phone belongs to.
+       Logging a night that already happened is usually one person writing it
+       up for the family, so the rotation guess stays. Either way the chips
+       are right there. */
+    var touchedPicker = false;
+    chips.addEventListener('click', function(){ touchedPicker = true; });
+    dInput.addEventListener('change', function(){
+      if (touchedPicker) return;
+      var me = whoAmI();
+      picked = (me && dInput.value > AZ.today()) ? me.id : pickerForNewNight().id;
+      repaintAll();
+    });
 
     var row = el('div','modal-buttons');
     var cancel = el('button','btn-secondary','Cancel');
@@ -2306,6 +2360,77 @@ function deleteNight(night){
     box.appendChild(row);
   });
 }
+/* edit a night — mainly for moving a Friday that didn't happen, which
+   pushes everyone behind it down the rotation automatically */
+function openEditNight(night){
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, 'Edit this movie night'));
+    box.appendChild(el('div','msub', nightHappened(night) ? 'Already watched' : 'Not watched yet'));
+
+    box.appendChild(el('div','f-label','Movie title'));
+    var tInput = el('input','f-input');
+    tInput.type = 'text';
+    tInput.value = night.title || '';
+    box.appendChild(tInput);
+
+    box.appendChild(el('div','f-label','Year'));
+    var yInput = el('input','f-input');
+    yInput.type = 'number'; yInput.inputMode = 'numeric';
+    yInput.value = night.year || '';
+    box.appendChild(yInput);
+
+    box.appendChild(el('div','f-label','Movie night date'));
+    var dInput = el('input','f-input');
+    dInput.type = 'date';
+    dInput.value = night.date;
+    box.appendChild(dInput);
+    var hint = el('div','set-note','Moving this to a later date keeps everyone’s turn in order — the rest of the lineup shifts with it.');
+    box.appendChild(hint);
+
+    box.appendChild(el('div','f-label','Whose pick?'));
+    var chips = el('div','pick-chips');
+    var picked = night.pickedBy;
+    MEMBERS.forEach(function(m){
+      var c = el('button','pick-chip', m.name);
+      c.type = 'button';
+      function paint(){
+        if (picked === m.id){ c.classList.add('on'); c.style.background = m.color; }
+        else { c.classList.remove('on'); c.style.background = ''; }
+      }
+      c.addEventListener('click', function(){ picked = m.id; repaintAll(); });
+      c._paint = paint;
+      chips.appendChild(c);
+    });
+    function repaintAll(){
+      var kids = chips.children;
+      for (var i=0;i<kids.length;i++) if (kids[i]._paint) kids[i]._paint();
+    }
+    repaintAll();
+    box.appendChild(chips);
+
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Cancel');
+    cancel.addEventListener('click', close);
+    var save = el('button','btn-gold','Save changes');
+    save.addEventListener('click', function(){
+      var title = tInput.value.trim();
+      if (!title){ toast('The movie still needs a title'); return; }
+      var rec = data.records[night.id];
+      if (!rec || rec.deleted){ close(); return; }
+      rec.title = title;
+      rec.year = Number(yInput.value) || null;
+      rec.date = dInput.value || rec.date;
+      rec.pickedBy = picked;
+      rec.updatedAt = Date.now();
+      saveData();
+      close();
+      render();
+      toast('Movie night updated');
+    });
+    row.appendChild(cancel); row.appendChild(save);
+    box.appendChild(row);
+  });
+}
 /* the ⋯ button on each night card */
 function openNightMenu(night){
   openModal(function(box, close){
@@ -2322,6 +2447,11 @@ function openNightMenu(night){
     ac.appendChild(document.createTextNode('After-credits pack'));
     ac.addEventListener('click', function(){ close(); openAfterCredits(night); });
     list.appendChild(ac);
+    var ed = el('button','menu-item');
+    ed.appendChild(el('span','mi','✏️'));
+    ed.appendChild(document.createTextNode(nightHappened(night) ? 'Edit details' : 'Edit or move this night'));
+    ed.addEventListener('click', function(){ close(); openEditNight(night); });
+    list.appendChild(ed);
     var del = el('button','menu-item danger');
     del.appendChild(el('span','mi','🗑'));
     del.appendChild(document.createTextNode('Delete this night'));
@@ -3274,11 +3404,17 @@ function renderHome(app){
   var b2 = el('span','burn b2'); b2.setAttribute('aria-hidden','true');
   screen.appendChild(b1); screen.appendChild(b2);
   var inner = el('div','screen-inner');
-  inner.appendChild(el('div','label','Up next…'));
-  var pn = el('div','pickname', 'It’s ' + np.name + '’s turn to pick! 🍿');
+  var booked = scheduledNights()[0];
+  inner.appendChild(el('div','label', booked ? 'Coming up…' : 'Up next…'));
+  var pn = el('div','pickname', booked
+    ? np.name + '’s pick 🍿'
+    : 'It’s ' + np.name + '’s turn to pick! 🍿');
   pn.style.color = np.onWhite;
   inner.appendChild(pn);
-  inner.appendChild(el('div','showdate','Next movie night · ' + AZ.prettyLong(AZ.nextFriday())));
+  if (booked) inner.appendChild(el('div','booked-title', booked.title));
+  inner.appendChild(el('div','showdate', booked
+    ? AZ.prettyLong(booked.date)
+    : 'Next movie night · ' + AZ.prettyLong(AZ.nextFriday())));
   var rot = el('div','rotation');
   MEMBERS.forEach(function(m, i){
     var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
@@ -3299,29 +3435,47 @@ function renderHome(app){
   /* friday lineup */
   var lineup = el('div','lineup');
   lineup.appendChild(el('div','lu-head','📅 Coming Attractions'));
-  var nf = AZ.nextFriday();
   var today = AZ.today();
-  var npIdx = MEMBERS.indexOf(np);
-  for (var u=0; u<4; u++){
-    var fd = AZ.addDays(nf, u*7);
-    var pm = MEMBERS[(npIdx + u) % MEMBERS.length];
+  var nf = AZ.nextFriday();
+  var sched = scheduledNights();
+  var slots = [];
+  // whatever is already booked keeps its own date and picker
+  sched.forEach(function(n){
+    slots.push({ date:n.date, member:memberById(n.pickedBy), title:n.title, night:n });
+  });
+  // then keep the rotation going on the Fridays after the last booking
+  var cursor = slots.length ? slots[slots.length-1].date : AZ.addDays(nf, -7);
+  var who = slots.length ? memberById(slots[slots.length-1].member.id) : null;
+  while (slots.length < 4){
+    cursor = AZ.addDays(cursor, 7);
+    if (cursor < nf) cursor = nf;
+    who = who ? rotationNext(who.id) : nextPicker();
+    slots.push({ date:cursor, member:who, title:null });
+  }
+  slots.slice(0,4).forEach(function(slot, u){
     var row = el('div','lu-row' + (u===3 ? ' last' : ''));
     var dt = el('div','lu-date');
-    dt.appendChild(el('div','d1', AZ.monthDay(fd)));
-    var away = AZ.daysBetween(today, fd);
-    dt.appendChild(el('div','d2', away === 0 ? 'Tonight!' : away === 1 ? 'Tomorrow' : 'in ' + away + ' days'));
+    dt.appendChild(el('div','d1', AZ.monthDay(slot.date)));
+    var away = AZ.daysBetween(today, slot.date);
+    dt.appendChild(el('div','d2', away === 0 ? 'Tonight!' : away === 1 ? 'Tomorrow'
+      : away < 0 ? 'overdue' : 'in ' + away + ' days'));
     row.appendChild(dt);
     var lp = el('div','lu-pick');
-    var ld = el('span','dot', pm.name.charAt(0));
-    ld.style.background = pm.color;
+    var ld = el('span','dot', slot.member.name.charAt(0));
+    ld.style.background = slot.member.color;
     lp.appendChild(ld);
-    var lname = el('span', null, pm.name + '’s pick');
-    lname.style.color = memberInk(pm);
+    var lname = el('span', null, slot.member.name + '’s pick');
+    lname.style.color = memberInk(slot.member);
     lp.appendChild(lname);
     row.appendChild(lp);
-    row.appendChild(el('div','lu-fill'));
+    if (slot.title){
+      var bt = el('div','lu-title', slot.title);
+      row.appendChild(bt);
+    } else {
+      row.appendChild(el('div','lu-fill'));
+    }
     lineup.appendChild(row);
-  }
+  });
   lineup.appendChild(el('div','lu-head second','🍿 Recent Fridays'));
   for (var p=1; p<=4; p++){
     var pf = AZ.addDays(nf, -7*p);
@@ -3454,9 +3608,11 @@ function renderHome(app){
       if (rxHasContent(r)) reactedCount++;
       var row = el('button','rx-row');
       row.type = 'button';
+      var me = whoAmI();
       var who = el('span','who', m.name);
       who.style.color = memberInk(m);
       row.appendChild(who);
+      if (me && me.id === m.id) row.appendChild(el('span','you-tag','you'));
       if (r && r.stars) row.appendChild(starsNode(r.stars));
       var snippetText = r ? (r.thought || rxQuotes(r)[0] || rxMemories(r)[0] || r.scene || r.character || '') : '';
       if (snippetText){
@@ -3498,7 +3654,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.1'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.2'));
   app.appendChild(footer);
 }
 
@@ -3557,6 +3713,24 @@ var CURATED = [
   { title:'The Greatest Showman', year:2017, cert:'PG', kid:true, overview:'P.T. Barnum builds a spectacle out of the people everyone else turned away, and nearly loses his family to it.' },
   { title:'Sing', year:2016, cert:'PG', kid:true, overview:'A desperate koala theatre owner stages a singing competition, and every contestant has something to prove.' },
 
+  /* ---- mystery & whodunnit (the Only Murders / Elsbeth lane) ---- */
+  { title:'Knives Out', year:2019, cert:'PG-13', kid:true, overview:'A wildly wealthy novelist dies after his birthday party and a courtly private detective picks apart a houseful of suspects.' },
+  { title:'Glass Onion: A Knives Out Mystery', year:2022, cert:'PG-13', kid:true, overview:'Benoit Blanc is invited to a tech billionaire’s island murder-mystery weekend, where the real murder is not on the schedule.' },
+  { title:'Clue', year:1985, cert:'PG', kid:true, classic:true, overview:'Six strangers, one mansion, one blackmailer and several endings — the board game played entirely for laughs.' },
+  { title:'Murder on the Orient Express', year:2017, cert:'PG-13', kid:true, overview:'Hercule Poirot is snowbound on a luxury train with thirteen suspects and one very stabbed passenger.' },
+  { title:'See How They Run', year:2022, cert:'PG-13', kid:true, overview:'A weary inspector and an eager constable investigate a killing behind the scenes of a West End play.' },
+  { title:'Scooby-Doo', year:2002, cert:'PG', kid:true, overview:'The gang reunites on Spooky Island, where the tourists are behaving very strangely indeed.' },
+
+  /* ---- KPop, music & modern Disney the girls gravitate to ---- */
+  { title:'KPop Demon Hunters', year:2025, cert:'PG', kid:true, overview:'A chart-topping K-pop girl group leads a secret double life hunting the demons that feed on their fans.' },
+  { title:'Wish', year:2023, cert:'PG', kid:true, overview:'A girl and a mischievous star take on a king who has been hoarding his kingdom’s wishes.' },
+  { title:'Frozen II', year:2019, cert:'PG', kid:true, overview:'Elsa follows a voice only she can hear into an enchanted forest to learn where her power came from.' },
+  { title:'Moana 2', year:2024, cert:'PG', kid:true, overview:'Moana answers a call from her ancestors and sails far beyond familiar waters with a new crew.' },
+  { title:'Descendants: The Rise of Red', year:2024, cert:'PG', kid:true, overview:'The Queen of Hearts’ daughter and Cinderella’s daughter travel back in time to stop a coup at Auradon Prep.' },
+  { title:'Camp Rock', year:2008, cert:'PG', kid:true, overview:'A girl works in the camp kitchen to attend a music camp, and a teen star hears her sing without knowing who she is.' },
+  { title:'Enchanted', year:2007, cert:'PG', kid:true, overview:'A cartoon princess is banished into live-action Manhattan and keeps singing anyway.' },
+  { title:'Coraline', year:2009, cert:'PG', kid:true, overview:'A girl finds a door to a better version of her family — until they ask her to sew buttons over her eyes.' },
+
   /* ---- classics that still land with this age group ---- */
   { title:'E.T. the Extra-Terrestrial', year:1982, cert:'PG', classic:true, kid:true, overview:'A lonely boy hides a stranded alien in his home and helps him find a way back to his planet.' },
   { title:'Back to the Future', year:1985, cert:'PG', classic:true, kid:true, overview:'A teenager is sent thirty years into the past and has to make sure his parents still fall in love.' },
@@ -3589,14 +3763,15 @@ var CURATED = [
 var IDEA_CATS = [
   { id:'shortlist',label:'🔖 Our shortlist', local:true },
   { id:'curated',  label:'🍿 Crowd pleasers' },
-  { id:'toprated', label:'⭐ Top rated', genres:'', cert:'PG-13', minVotes:4000, since:'1990-01-01' },
+  { id:'toprated', label:'⭐ Top rated', genres:'', cert:'PG-13', minVotes:4000 },
   { id:'talk',     label:'💬 Worth discussing' },
   { id:'classics', label:'🏛 Classics' },
-  { id:'family',   label:'👨‍👩‍👧 Family', genres:'10751', cert:'PG', since:'1995-01-01' },
-  { id:'animated', label:'🎨 Animated', genres:'16', cert:'PG', since:'1995-01-01' },
-  { id:'adventure',label:'🗺 Adventure', genres:'12', cert:'PG-13', since:'1990-01-01' },
-  { id:'funny',    label:'😂 Funny', genres:'35', cert:'PG-13', since:'1990-01-01' },
-  { id:'fantasy',  label:'🐉 Fantasy & sci-fi', genres:'14,878', cert:'PG-13', since:'1990-01-01' },
+  { id:'family',   label:'👨‍👩‍👧 Family', genres:'10751', cert:'PG' },
+  { id:'animated', label:'🎨 Animated', genres:'16', cert:'PG' },
+  { id:'adventure',label:'🗺 Adventure', genres:'12', cert:'PG-13' },
+  { id:'funny',    label:'😂 Funny', genres:'35', cert:'PG-13' },
+  { id:'fantasy',  label:'🐉 Fantasy & sci-fi', genres:'14,878', cert:'PG-13' },
+  { id:'mystery',  label:'🔍 Mystery & whodunnit', genres:'9648,80', cert:'PG-13' },
   { id:'drama',    label:'🎭 Great drama', genres:'18', cert:'R' },
   { id:'ai',       label:'✨ For us', ai:true }
 ];
@@ -3604,11 +3779,19 @@ var IDEA_CATS = [
    member who has filled in a taste profile */
 function ideaShelves(){
   var out = IDEA_CATS.slice();
+  var me = whoAmI();
+  var personal = [];
   MEMBERS.forEach(function(m){
     if (!profileFilled(profileFor(m.id))) return;
-    out.push({ id:'ai_' + m.id, label:'✨ For ' + m.name, ai:true, member:m });
+    personal.push({ id:'ai_' + m.id, label:'✨ For ' + m.name, ai:true, member:m });
   });
-  return out;
+  // whoever is holding this phone gets their shelf first
+  personal.sort(function(a,b){
+    if (me && a.member.id === me.id) return -1;
+    if (me && b.member.id === me.id) return 1;
+    return 0;
+  });
+  return out.concat(personal);
 }
 var ideas = { cat:'curated', items:null, loading:false, note:null, seed:1 };
 
@@ -3709,11 +3892,13 @@ function aiIdeasFor(member){
   if (prof.loves) taste.push('Already loves: ' + prof.loves);
   if (prof.avoids) taste.push('Not for them: ' + prof.avoids);
   if (prof.night) taste.push('A great movie night for them: ' + prof.night);
+  if (prof.era) taste.push('Older films: ' + prof.era);
   var system = 'You recommend movies for a family movie night. The family: Chris and Kat (parents), '
     + 'Sedona (12) and River (9). Everything must genuinely work for a 9- and 12-year-old watching '
-    + 'with their parents — engaging for kids that age, not just technically permitted. Favour films '
-    + 'made in the last 25 years unless an older one is a true all-ages classic. '
-    + 'Never recommend a film in the watched list.';
+    + 'with their parents — engaging for kids that age, not just technically permitted. '
+    + 'Follow each person\'s stated taste on older films; classics are welcome when they still hold a '
+    + 'kid\'s attention. If they mention TV shows they love, use those as a taste signal and recommend '
+    + 'films in the same spirit. Never recommend a film in the watched list.';
   var prompt = 'Recommend 6 movies chosen specifically for ' + member.name + ', but that the whole family can enjoy together.\n\n'
     + member.name + '’s taste:\n' + (taste.length ? taste.join('\n') : '(no profile yet — use their ratings below)')
     + '\n\nWhat the family has watched:\n' + (history || '(nothing yet)')
@@ -3738,8 +3923,9 @@ function aiIdeas(){
   }).join('\n');
   var system = 'You recommend movies for a family movie night. The family: Chris and Kat (parents), '
     + 'Sedona (12) and River (9). Everything must genuinely work for a 9- and 12-year-old watching '
-    + 'with their parents — engaging for kids that age, not merely permitted. Favour films made in '
-    + 'the last 25 years unless an older one is a true all-ages classic. '
+    + 'with their parents — engaging for kids that age, not merely permitted. Classics are welcome '
+    + 'when they still hold a kid\'s attention. If the family mentions TV shows they love, use those '
+    + 'as a taste signal and recommend films in the same spirit. '
     + 'Never recommend a movie that appears in their watched list.';
   var shortlistLine = shortlisted().length
     ? '\n\nAlready on their shortlist (they like the look of these — suggest things in a similar spirit, but do not repeat them):\n'
@@ -3784,13 +3970,22 @@ function loadIdeas(force){
 
   var job;
   if (cat.ai){
-    var cacheKey = cat.member ? 'ai_ideas_' + cat.member.id : 'ai_ideas';
-    var cached = Store.get(cacheKey);
+    var recId = 'airecs_' + (cat.member ? cat.member.id : 'family');
+    var stored = data.records[recId];
+    var cached = (stored && !stored.deleted && stored.picks) ? stored.picks : null;
     if (cached && cached.length && !force){
+      job = enrichFromTmdb(cached);
+    } else if (!Store.get('anthropic_key') && cached){
       job = enrichFromTmdb(cached);
     } else {
       job = (cat.member ? aiIdeasFor(cat.member) : aiIdeas()).then(function(picks){
-        Store.set(cacheKey, picks);
+        // stored as a synced record so the rest of the family sees these
+        // without needing an Anthropic key of their own
+        data.records[recId] = {
+          id:recId, type:'airecs', member: cat.member ? cat.member.id : null,
+          picks:picks, updatedAt: Date.now()
+        };
+        saveData();
         return enrichFromTmdb(picks);
       });
     }
@@ -3823,6 +4018,14 @@ function loadIdeas(force){
   }).catch(function(e){
     ideas.loading = false;
     if (cat.ai && e && e.message === 'NO_KEY'){
+      var relay = data.records['airecs_' + (cat.member ? cat.member.id : 'family')];
+      if (relay && !relay.deleted && relay.picks && relay.picks.length){
+        ideas.items = notWatched(relay.picks);
+        ideas.note = 'Picked out on ' + (cat.member ? cat.member.name + '’s' : 'the family’s')
+          + ' behalf and shared with everyone — no key needed on this phone.';
+        render();
+        return;
+      }
       ideas.items = null;
       ideas.note = cat.member
         ? 'Add an Anthropic key in Settings and this shelf picks movies just for ' + cat.member.name + ', using their taste profile.'
@@ -3931,6 +4134,103 @@ function openIdeaDetail(it){
     box.appendChild(row);
   });
 }
+function openAddToShortlist(){
+  var sel = null;
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, '🔖 Add to our shortlist'));
+    box.appendChild(el('div','msub','Something you heard about and want to remember'));
+    var cred = loadTmdbCred();
+    var selWrap = el('div');
+    function paintSel(){
+      while (selWrap.firstChild) selWrap.removeChild(selWrap.firstChild);
+      if (!sel) return;
+      var card = el('div','m-results');
+      var rowB = el('div','m-result');
+      var mini = el('div','mini');
+      if (sel.posterPath){
+        var im = document.createElement('img');
+        im.alt = ''; im.src = TMDB_IMG + sel.posterPath;
+        mini.appendChild(im);
+      }
+      var tx = el('div');
+      tx.appendChild(el('div','t', sel.title));
+      tx.appendChild(el('div','y', sel.year ? String(sel.year) : ''));
+      rowB.appendChild(mini); rowB.appendChild(tx);
+      card.appendChild(rowB);
+      selWrap.appendChild(el('div','f-label','Selected'));
+      selWrap.appendChild(card);
+    }
+    if (cred){
+      box.appendChild(el('div','f-label','Search'));
+      var sInput = el('input','f-input');
+      sInput.type = 'search'; sInput.placeholder = 'Search movies (TMDB)…'; sInput.autocomplete = 'off';
+      box.appendChild(sInput);
+      var resBox = el('div');
+      box.appendChild(resBox);
+      var timer = null;
+      sInput.addEventListener('input', function(){
+        clearTimeout(timer);
+        var q = sInput.value.trim();
+        if (q.length < 2){ while (resBox.firstChild) resBox.removeChild(resBox.firstChild); return; }
+        timer = setTimeout(function(){
+          tmdbSearch(q).then(function(d){
+            while (resBox.firstChild) resBox.removeChild(resBox.firstChild);
+            var wrap = el('div','m-results');
+            (d.results || []).slice(0,5).forEach(function(r){
+              var b = el('button','m-result');
+              b.type = 'button';
+              var mini = el('div','mini');
+              if (r.poster_path){
+                var im = document.createElement('img');
+                im.alt = ''; im.loading = 'lazy'; im.src = 'https://image.tmdb.org/t/p/w92' + r.poster_path;
+                mini.appendChild(im);
+              }
+              var tx = el('div');
+              tx.appendChild(el('div','t', r.title));
+              tx.appendChild(el('div','y', (r.release_date||'').slice(0,4)));
+              b.appendChild(mini); b.appendChild(tx);
+              b.addEventListener('click', function(){
+                sel = { title:r.title, year:Number((r.release_date||'').slice(0,4)) || null,
+                        tmdbId:r.id, posterPath:r.poster_path || null, overview:r.overview || '' };
+                while (resBox.firstChild) resBox.removeChild(resBox.firstChild);
+                sInput.value = '';
+                paintSel();
+              });
+              wrap.appendChild(b);
+            });
+            resBox.appendChild(wrap);
+          }).catch(function(){ toast('Search failed — type the title instead'); });
+        }, 350);
+      });
+    }
+    box.appendChild(el('div','f-label', cred ? 'Or type the title' : 'Movie title'));
+    var tInput = el('input','f-input');
+    tInput.type = 'text'; tInput.placeholder = 'e.g. Knives Out';
+    box.appendChild(tInput);
+    box.appendChild(el('div','f-label','Year (optional)'));
+    var yInput = el('input','f-input');
+    yInput.type = 'number'; yInput.inputMode = 'numeric';
+    box.appendChild(yInput);
+    box.appendChild(selWrap);
+
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Cancel');
+    cancel.addEventListener('click', close);
+    var save = el('button','btn-primary','Save to shortlist');
+    save.addEventListener('click', function(){
+      var item = sel || { title: tInput.value.trim(), year: Number(yInput.value) || null };
+      if (!item.title){ toast('Give it a title first'); return; }
+      toggleShortlist(item);
+      close();
+      ideas.cat = 'shortlist';
+      ideas.items = null;
+      loadIdeas(true);
+      toast('Saved to the shortlist 🔖');
+    });
+    row.appendChild(cancel); row.appendChild(save);
+    box.appendChild(row);
+  });
+}
 function renderIdeas(app){
   app.appendChild(el('div','section-label','Movie Ideas'));
   var np = nextPicker();
@@ -3999,12 +4299,18 @@ function renderIdeas(app){
   }
   if (ideas.note) app.appendChild(el('div','idea-note', ideas.note));
 
+  if (ideas.cat === 'shortlist'){
+    var addBtn = el('button','idea-refresh','＋ Add a movie by name');
+    addBtn.addEventListener('click', openAddToShortlist);
+    app.appendChild(addBtn);
+  }
+
   var refresh = el('button','idea-refresh','🔀 Show me different ones');
   refresh.addEventListener('click', function(){
     ideas.seed = (ideas.seed + 7) % 997;
     loadIdeas(true);
   });
-  app.appendChild(refresh);
+  if (ideas.cat !== 'shortlist') app.appendChild(refresh);
 
   var foot = el('footer');
   foot.appendChild(el('div', null, 'Tap any poster for the story · already-watched titles are hidden'));
@@ -4383,6 +4689,12 @@ function renderTrivia(app){
 /* ---------- taste profiles (drive per-person recommendations) ---------- */
 var GENRES = ['Animated','Adventure','Comedy','Fantasy','Sci-fi','Musical','Mystery','Action',
   'Drama','True stories','Historical','Sports','Spooky (a little)','Heartwarming'];
+function whoAmI(){
+  var id = Store.get('me');
+  if (!id) return null;
+  for (var i=0;i<MEMBERS.length;i++) if (MEMBERS[i].id === id) return MEMBERS[i];
+  return null;
+}
 function profileFor(memberId){
   var r = data.records['profile_' + memberId];
   return (r && !r.deleted) ? r : null;
@@ -4396,6 +4708,47 @@ function profileSummary(p){
   if (p.genres && p.genres.length) bits.push(p.genres.slice(0,3).join(', '));
   if (p.loves) bits.push('loves ' + p.loves.split(/[,.]/)[0].trim());
   return bits.join(' · ') || 'Profile saved';
+}
+/* Starter profiles, from what the family already said they love. These are a
+   first draft, not a verdict — anyone can open theirs and rewrite it, and the
+   moment they do, the starter flag is gone. Only ever written when a person
+   has no profile of their own yet. */
+var STARTER_PROFILES = {
+  chris: { genres:['Adventure','Comedy','Sci-fi','Mystery','True stories'],
+    era:'Love the old classics',
+    loves:'The Princess Bride, Back to the Future, Indiana Jones, Knives Out, Spider-Verse',
+    avoids:'',
+    night:'Something we can all quote at breakfast for the next week.' },
+  kat: { genres:['Comedy','Mystery','Heartwarming','Drama','Musical'],
+    era:'Happy to mix in classics',
+    loves:'Only Murders in the Building, Elsbeth, Knives Out, Ferris Bueller’s Day Off',
+    avoids:'',
+    night:'Funny and warm, with a mystery I can try to solve out loud.' },
+  sedona: { genres:['Mystery','Comedy','Musical','Animated','Fantasy'],
+    era:'Happy to mix in classics',
+    loves:'Only Murders in the Building, High Potential, Elsbeth, Knives Out, KPop Demon Hunters, Disney movies',
+    avoids:'Anything genuinely scary',
+    night:'A whodunnit with a soundtrack worth adding to my playlist.' },
+  river: { genres:['Animated','Adventure','Comedy','Fantasy','Musical'],
+    era:'Mostly newer films',
+    loves:'KPop Demon Hunters, Disney and Pixar movies, Spider-Verse, Knives Out',
+    avoids:'Sad animal movies, anything too scary',
+    night:'Big, funny, and loud — with popcorn.' }
+};
+function seedProfiles(){
+  var wrote = false;
+  MEMBERS.forEach(function(m){
+    if (data.records['profile_' + m.id]) return;   // includes tombstones — never resurrect
+    var s = STARTER_PROFILES[m.id];
+    if (!s) return;
+    data.records['profile_' + m.id] = {
+      id:'profile_' + m.id, type:'profile', member:m.id, starter:true,
+      genres:s.genres.slice(), era:s.era, loves:s.loves, avoids:s.avoids, night:s.night,
+      updatedAt: Date.now()
+    };
+    wrote = true;
+  });
+  if (wrote) saveData();
 }
 function saveProfile(memberId, prof){
   prof.id = 'profile_' + memberId;
@@ -4428,9 +4781,25 @@ function openProfileEditor(member){
     });
     box.appendChild(gc);
 
-    box.appendChild(el('div','f-label','Movies you already love'));
+    box.appendChild(el('div','f-label','Older films & classics'));
+    var eras = ['Mostly newer films','Happy to mix in classics','Love the old classics'];
+    var eraPick = p.era || eras[1];
+    var ec = el('div','genre-chips');
+    eras.forEach(function(opt){
+      var b = el('button','genre-chip' + (eraPick === opt ? ' on' : ''), opt);
+      b.type = 'button';
+      b.addEventListener('click', function(){
+        eraPick = opt;
+        var kids = ec.children;
+        for (var i=0;i<kids.length;i++) kids[i].classList.toggle('on', kids[i].textContent === eraPick);
+      });
+      ec.appendChild(b);
+    });
+    box.appendChild(ec);
+
+    box.appendChild(el('div','f-label','Movies & shows you already love'));
     var loves = el('textarea','f-area');
-    loves.placeholder = 'e.g. Spider-Verse, anything with dragons, old musicals…';
+    loves.placeholder = 'e.g. Only Murders in the Building, Knives Out, KPop Demon Hunters…';
     loves.value = p.loves || '';
     box.appendChild(loves);
 
@@ -4452,10 +4821,11 @@ function openProfileEditor(member){
     var save = el('button','btn-gold','Save');
     save.addEventListener('click', function(){
       saveProfile(member.id, {
-        genres: picked, loves: loves.value.trim(),
+        genres: picked, era: eraPick, loves: loves.value.trim(),
         avoids: avoids.value.trim(), night: night.value.trim()
       });
-      Store.remove('ai_ideas_' + member.id); // taste changed — regenerate
+      var rid = 'airecs_' + member.id;   // taste changed — retire the shared picks
+      if (data.records[rid]) data.records[rid] = { id:rid, type:'airecs', deleted:true, updatedAt: Date.now() };
       close();
       render();
       toast(member.name + '’s taste saved — ideas will use it 🎭');
@@ -4549,12 +4919,32 @@ function renderSettings(app){
   } else {
     ks.appendChild(el('div','set-note','Log some movie nights and your printable keepsakes will appear here.'));
   }
+  /* who's on this phone */
+  var meNow = whoAmI();
+  var wm = collapsible(app, '🙋 Who’s on this phone?', {
+    badge: meNow ? meNow.name : 'Not set', badgeOn: !!meNow
+  });
+  wm.appendChild(el('div','set-note','Pick yourself and the app marks your row on each movie night, and puts your own recommendations first. Stays on this phone.'));
+  var meChips = el('div','pick-chips');
+  MEMBERS.forEach(function(m){
+    var c = el('button','pick-chip' + (meNow && meNow.id === m.id ? ' on' : ''), m.name);
+    c.type = 'button';
+    if (meNow && meNow.id === m.id) c.style.background = m.color;
+    c.addEventListener('click', function(){
+      Store.set('me', m.id);
+      render();
+      toast('This phone is ' + m.name + '’s 🙋');
+    });
+    meChips.appendChild(c);
+  });
+  wm.appendChild(meChips);
+
   /* taste profiles */
   var tp = collapsible(app, '🎭 Taste profiles', {
     badge: MEMBERS.filter(function(m){ return profileFilled(profileFor(m.id)); }).length + '/' + MEMBERS.length,
     badgeOn: MEMBERS.every(function(m){ return profileFilled(profileFor(m.id)); })
   });
-  tp.appendChild(el('div','set-note','Answer a few questions each and the Ideas tab can recommend movies for each person by name.'));
+  tp.appendChild(el('div','set-note','Everyone starts with a profile built from what you already love. Tap yours to correct it — the Ideas tab uses these to recommend movies for each person by name.'));
   MEMBERS.forEach(function(m){
     var prof = profileFor(m.id);
     var row = el('button','tp-row');
@@ -4567,6 +4957,7 @@ function renderSettings(app){
     nm.style.color = memberInk(m);
     body.appendChild(nm);
     body.appendChild(el('span','tp-sum', profileSummary(prof)));
+    if (prof && prof.starter) body.appendChild(el('span','tp-starter','starter — tap to make it yours'));
     row.appendChild(body);
     row.appendChild(el('span','tp-go','›'));
     row.addEventListener('click', function(){ openProfileEditor(m); });
@@ -4795,7 +5186,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.1'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.2'));
   app.appendChild(foot);
 }
 
@@ -4815,6 +5206,7 @@ function render(){
 applyTheme();
 applyMotion();
 seedSample();
+seedProfiles();
 render();
 pullSync(true); // pick up the family's latest entries on launch (no-op until sync is set up)
 </script>
