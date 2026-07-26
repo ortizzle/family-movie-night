@@ -334,10 +334,25 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   border:2px dashed var(--line);border-radius:8px;padding:2px 7px;margin-left:8px;vertical-align:2px;
 }
 .night .del{
-  background:none;border:none;color:var(--muted);font-size:16px;padding:8px 10px;
-  position:absolute;top:4px;right:4px;min-width:36px;min-height:36px;z-index:2;
+  background:none;border:none;color:var(--muted);font-size:18px;padding:8px 10px;
+  position:absolute;top:4px;right:4px;min-width:40px;min-height:40px;z-index:2;
+  letter-spacing:1px;line-height:1;
 }
-.night .del:active{color:var(--coral)}
+.night .del:active{color:var(--amber)}
+.menu-list{display:flex;flex-direction:column;gap:9px;margin-top:18px}
+.menu-item{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;min-height:52px;
+  border-radius:14px;border:2px solid var(--line);background:var(--card-2);
+  color:var(--cream);font-weight:800;font-size:15px;padding:10px 14px;
+}
+.menu-item .mi{font-size:19px}
+.menu-item.danger{color:var(--coral);border-color:rgba(242,112,95,.45)}
+.danger-note{
+  margin-top:12px;background:rgba(242,112,95,.10);border:2px solid rgba(242,112,95,.35);
+  border-radius:12px;padding:11px 13px;font-size:13.5px;color:var(--cream);font-weight:700;line-height:1.5;
+}
+.btn-danger{background:linear-gradient(135deg,#C24632,#A2382A);color:#FFF1EC}
+.poster-tap{cursor:pointer}
 .rx-rows{margin-top:12px;display:flex;flex-direction:column;gap:7px}
 .rx-row{
   display:flex;align-items:center;gap:9px;width:100%;text-align:left;
@@ -555,9 +570,9 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
     radial-gradient(circle 3px at 3px calc(100% - 8px), #E4D9C2 0 3px, transparent 3.5px);
   background-repeat:no-repeat;
 }
-.sp-scene .slug{font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-size:12.5px;margin-top:10px}
+.sp-scene .slug{font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-size:12.5px}
 .sp-scene .action{margin-top:8px;white-space:pre-wrap}
-.sp-scene .cut{text-align:right;font-weight:700;font-size:12px;text-transform:uppercase}
+.sp-scene .cut{text-align:right;font-weight:700;font-size:12px;text-transform:uppercase;margin-top:10px}
 .sp-strip{
   margin-top:12px;border-radius:3px;padding:11px 14px;position:relative;
   box-shadow:0 5px 14px rgba(74,53,32,.18);font-size:13.5px;font-weight:700;line-height:1.5;
@@ -816,6 +831,18 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   border-radius:99px;padding:4px 10px;color:var(--dim);
 }
 .idea-fact.star{color:var(--star)}
+.idea-fact.rt{color:var(--coral)}
+.idea-fact.cert{color:var(--cream);border-color:var(--cream);font-weight:900;letter-spacing:.5px}
+.idea-hero .side{display:flex;flex-direction:column;justify-content:flex-start}
+/* facts printed on the scrapbook ticket stub area */
+.sp-facts{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px;max-width:230px}
+.sp-fact{
+  font-size:10px;font-weight:800;background:#FFFDF6;border:1px solid #E4D9C2;
+  border-radius:99px;padding:3px 9px;color:#5E4326;
+}
+.sp-fact.cert{border-color:#8A6A44;color:#3A2A20;font-weight:900}
+.sp-fact.star{color:#B8860B}
+.sp-fact.rt{color:#C0392B}
 .idea-syn{
   margin-top:14px;background:var(--card-2);border-radius:14px;padding:13px 15px;
   font-size:14.5px;line-height:1.6;color:var(--cream);font-weight:600;
@@ -1145,9 +1172,26 @@ function detectCred(raw){
   if (t.indexOf('eyJ') === 0) return { type:'v4', value:t };
   return { type:'v3', value:t };
 }
+/* The TMDB key is shared with the family through the synced gist so one
+   person's setup gives everyone posters — otherwise each phone has to be
+   configured separately and the others see blank cards. It's a free,
+   read-only metadata key; the Anthropic key stays per-device because it
+   bills. Nothing is ever written into the HTML. */
+function sharedTmdbKey(){
+  var r = data.records['settings_tmdb'];
+  return (r && !r.deleted && r.value) ? r.value : null;
+}
+function setSharedTmdbKey(v){
+  data.records['settings_tmdb'] = {
+    id:'settings_tmdb', type:'setting', key:'tmdb', value:v, updatedAt: Date.now()
+  };
+  saveData();
+}
 function loadTmdbCred(){
   var own = Store.get('tmdb_key');
   if (own) return detectCred(own);
+  var shared = sharedTmdbKey();
+  if (shared) return detectCred(shared);
   try {
     var raw = localStorage.getItem('sr_tmdb_key');
     if (raw){
@@ -1156,6 +1200,20 @@ function loadTmdbCred(){
     }
   } catch(e){}
   return null;
+}
+/* optional OMDb key -> IMDb / Rotten Tomatoes / Metacritic scores.
+   Shared the same way so the whole family sees the same numbers. */
+function omdbKey(){
+  var own = Store.get('omdb_key');
+  if (own) return own;
+  var r = data.records['settings_omdb'];
+  return (r && !r.deleted && r.value) ? r.value : null;
+}
+function setSharedOmdbKey(v){
+  data.records['settings_omdb'] = {
+    id:'settings_omdb', type:'setting', key:'omdb', value:v, updatedAt: Date.now()
+  };
+  saveData();
 }
 function tmdbSearch(query){
   var cred = loadTmdbCred();
@@ -1168,6 +1226,104 @@ function tmdbSearch(query){
     if (!res.ok) throw new Error('TMDB ' + res.status);
     return res.json();
   });
+}
+
+/* ---------- movie facts (cert, release, runtime, critic scores) ----------
+   Fetched once per title and cached on the record so they sync to the
+   family and survive offline. OMDb (optional) adds IMDb / Rotten
+   Tomatoes / Metacritic. */
+function tmdbDetails(tmdbId){
+  var cred = loadTmdbCred();
+  if (!cred || !tmdbId) return Promise.reject(new Error('NO_KEY'));
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates';
+  var headers = {};
+  if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
+  else url += '&api_key=' + encodeURIComponent(cred.value);
+  return fetch(url, { headers: headers }).then(function(res){
+    if (!res.ok) throw new Error('TMDB ' + res.status);
+    return res.json();
+  });
+}
+function usCertFrom(details){
+  try {
+    var list = (details.release_dates && details.release_dates.results) || [];
+    for (var i=0;i<list.length;i++){
+      if (list[i].iso_3166_1 !== 'US') continue;
+      var rd = list[i].release_dates || [];
+      for (var j=0;j<rd.length;j++){
+        if (rd[j].certification) return rd[j].certification;
+      }
+    }
+  } catch(e){}
+  return null;
+}
+function omdbScores(imdbId){
+  var key = omdbKey();
+  if (!key || !imdbId) return Promise.resolve(null);
+  return fetch('https://www.omdbapi.com/?apikey=' + encodeURIComponent(key) + '&i=' + encodeURIComponent(imdbId))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d || d.Response === 'False') return null;
+      var out = { imdb: d.imdbRating && d.imdbRating !== 'N/A' ? d.imdbRating : null, rt:null, meta:null };
+      (d.Ratings || []).forEach(function(r){
+        if (r.Source === 'Rotten Tomatoes') out.rt = r.Value;
+        if (r.Source === 'Metacritic') out.meta = r.Value;
+      });
+      return out;
+    })
+    .catch(function(){ return null; });
+}
+/* resolves {cert, released, runtime, tmdbScore, imdb, rt, meta} */
+function buildFacts(tmdbId, fallbackTitle){
+  var idPromise = tmdbId
+    ? Promise.resolve(tmdbId)
+    : tmdbSearch(fallbackTitle || '').then(function(d){
+        var hit = (d.results || [])[0];
+        return hit ? hit.id : null;
+      });
+  return idPromise.then(function(id){
+    if (!id) throw new Error('NO_ID');
+    return tmdbDetails(id).then(function(d){
+      var f = {
+        tmdbId: id,
+        cert: usCertFrom(d),
+        released: d.release_date || null,
+        runtime: d.runtime || null,
+        tmdbScore: d.vote_average || null,
+        imdbId: d.imdb_id || null,
+        fetchedAt: Date.now()
+      };
+      return omdbScores(f.imdbId).then(function(sc){
+        if (sc){ f.imdb = sc.imdb; f.rt = sc.rt; f.meta = sc.meta; }
+        return f;
+      });
+    });
+  });
+}
+function factChips(f, cls){
+  var wrap = el('div', cls || 'idea-facts');
+  if (!f) return wrap;
+  if (f.cert) wrap.appendChild(el('span','idea-fact cert', f.cert));
+  if (f.released) wrap.appendChild(el('span','idea-fact', AZ.pretty(f.released).replace(/^\w+, /,'') + ', ' + f.released.slice(0,4)));
+  if (f.runtime) wrap.appendChild(el('span','idea-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
+  if (f.imdb) wrap.appendChild(el('span','idea-fact star','IMDb ' + f.imdb));
+  if (f.rt) wrap.appendChild(el('span','idea-fact rt','🍅 ' + f.rt));
+  if (f.meta) wrap.appendChild(el('span','idea-fact','Metacritic ' + f.meta));
+  if (!f.imdb && f.tmdbScore) wrap.appendChild(el('span','idea-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
+  return wrap;
+}
+/* ensure a night has cached facts; re-renders once they arrive */
+function ensureNightFacts(night, onDone){
+  if (night.facts && night.facts.fetchedAt) { if (onDone) onDone(night.facts); return; }
+  if (!loadTmdbCred()) return;
+  buildFacts(night.tmdbId, night.title + (night.year ? ' ' + night.year : '')).then(function(f){
+    var rec = data.records[night.id];
+    if (!rec || rec.deleted) return;
+    rec.facts = f;
+    rec.updatedAt = Date.now();
+    saveData();
+    if (onDone) onDone(f);
+  }).catch(function(){});
 }
 
 /* ---------- data ---------- */
@@ -1970,22 +2126,83 @@ function openReaction(night, member){
 }
 
 /* ---------- delete a night (tombstone) ---------- */
-function deleteNight(night){
-  confirmModal({
-    title:'Remove this night?',
-    message:'"' + night.title + '" (' + AZ.pretty(night.date) + ') and everyone’s reactions will be removed.',
-    confirmText:'Delete night',
-    onConfirm: function(){
+function reallyDeleteNight(night){
       var now = Date.now();
       data.records[night.id] = { id:night.id, type:'night', deleted:true, updatedAt:now };
       MEMBERS.forEach(function(m){
         var rid = 'rx_' + night.id + '_' + m.id;
         if (data.records[rid]) data.records[rid] = { id:rid, type:'reaction', deleted:true, updatedAt:now };
       });
-      saveData();
-      render();
-      toast('Night removed');
-    }
+  saveData();
+  render();
+  toast('Night removed');
+}
+/* Deleting a night throws away everyone's writing, so it takes a
+   deliberate path: a menu, then a confirm that names what is lost, then
+   a second confirm whenever anybody has already written something. */
+function deleteNight(night){
+  var filled = MEMBERS.filter(function(m){ return rxHasContent(reactionFor(night.id, m.id)); });
+  if (!filled.length){
+    confirmModal({
+      title:'Remove this night?',
+      message:'“' + night.title + '” (' + AZ.pretty(night.date) + ') has no reactions yet.',
+      confirmText:'Delete night',
+      onConfirm: function(){ reallyDeleteNight(night); }
+    });
+    return;
+  }
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, 'Delete this movie night?'));
+    box.appendChild(el('div','msub', night.title + ' · ' + AZ.pretty(night.date)));
+    var note = el('div','danger-note');
+    note.appendChild(document.createTextNode(
+      'This permanently deletes ' + filled.length + ' saved reaction' + (filled.length===1?'':'s') +
+      ' from ' + memberNames(filled) + ' — every rating, quote, favorite scene and memory from that night. It cannot be undone.'));
+    box.appendChild(note);
+    var row = el('div','modal-buttons');
+    var keep = el('button','btn-secondary','Keep it');
+    keep.addEventListener('click', close);
+    var go = el('button','btn-danger','Continue');
+    go.addEventListener('click', function(){
+      close();
+      confirmModal({
+        title:'Are you sure?',
+        message:'Last chance — “' + night.title + '” and ' + memberNames(filled) + '’s writing will be gone for good.',
+        confirmText:'Delete forever',
+        onConfirm: function(){ reallyDeleteNight(night); }
+      });
+    });
+    row.appendChild(keep); row.appendChild(go);
+    box.appendChild(row);
+  });
+}
+/* the ⋯ button on each night card */
+function openNightMenu(night){
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, night.title));
+    box.appendChild(el('div','msub', AZ.pretty(night.date) + ' · ' + memberById(night.pickedBy).name + '’s pick'));
+    var list = el('div','menu-list');
+    var open = el('button','menu-item');
+    open.appendChild(el('span','mi','📖'));
+    open.appendChild(document.createTextNode('Open the scrapbook'));
+    open.addEventListener('click', function(){ close(); openScrapbook(night); });
+    list.appendChild(open);
+    var ac = el('button','menu-item');
+    ac.appendChild(el('span','mi','✨'));
+    ac.appendChild(document.createTextNode('After-credits pack'));
+    ac.addEventListener('click', function(){ close(); openAfterCredits(night); });
+    list.appendChild(ac);
+    var del = el('button','menu-item danger');
+    del.appendChild(el('span','mi','🗑'));
+    del.appendChild(document.createTextNode('Delete this night'));
+    del.addEventListener('click', function(){ close(); deleteNight(night); });
+    list.appendChild(del);
+    box.appendChild(list);
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Close');
+    cancel.addEventListener('click', close);
+    row.appendChild(cancel);
+    box.appendChild(row);
   });
 }
 
@@ -2099,8 +2316,8 @@ function buildNightKeepsake(container, night){
     sceneMembers.forEach(function(m){
       var r = reactionFor(night.id, m.id);
       var pageEl = el('div','sp-scene');
-      pageEl.appendChild(el('div','cut','Cut to:'));
       pageEl.appendChild(el('div','slug', m.name + '’s favorite scene'));
+      pageEl.appendChild(el('div','cut','Cut to:'));
       pageEl.appendChild(el('div','action', r.scene));
       scSec.appendChild(pageEl);
     });
@@ -2216,6 +2433,24 @@ function openScrapbook(night){
   tnm.style.background = picker.color;
   ticket.appendChild(adm); ticket.appendChild(tnm);
   side.appendChild(ticket);
+
+  // the film's own vitals, under the ticket
+  var factsBox = el('div','sp-facts');
+  function paintFacts(f){
+    while (factsBox.firstChild) factsBox.removeChild(factsBox.firstChild);
+    if (!f) return;
+    if (f.cert) factsBox.appendChild(el('span','sp-fact cert', f.cert));
+    if (f.released) factsBox.appendChild(el('span','sp-fact', f.released.slice(0,4)));
+    if (f.runtime) factsBox.appendChild(el('span','sp-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
+    if (f.imdb) factsBox.appendChild(el('span','sp-fact star','IMDb ' + f.imdb));
+    if (f.rt) factsBox.appendChild(el('span','sp-fact rt','🍅 ' + f.rt));
+    if (f.meta) factsBox.appendChild(el('span','sp-fact','Metacritic ' + f.meta));
+    if (!f.imdb && f.tmdbScore) factsBox.appendChild(el('span','sp-fact star','★ ' + Number(f.tmdbScore).toFixed(1) + ' TMDB'));
+  }
+  paintFacts(night.facts);
+  ensureNightFacts(night, paintFacts);
+  side.appendChild(factsBox);
+
   head.appendChild(side);
   page.appendChild(head);
 
@@ -2988,6 +3223,18 @@ function renderHome(app){
       poster.style.background = n.grad || 'linear-gradient(160deg,#4E3E51,#2E2430)';
       poster.appendChild(document.createTextNode(n.title));
     }
+    // tapping the poster opens that night's scrapbook
+    poster.classList.add('poster-tap');
+    poster.setAttribute('role','button');
+    poster.setAttribute('tabindex','0');
+    poster.setAttribute('aria-label','Open the scrapbook for ' + n.title);
+    (function(night){
+      function go(){ openScrapbook(night); }
+      poster.addEventListener('click', go);
+      poster.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); }
+      });
+    })(n);
     head.appendChild(poster);
 
     var ht = el('div','head-txt');
@@ -3050,16 +3297,16 @@ function renderHome(app){
     actions.appendChild(ab);
     card.appendChild(actions);
 
-    var del = el('button','del','✕');
-    del.setAttribute('aria-label','Delete this night');
-    del.addEventListener('click', function(){ deleteNight(n); });
+    var del = el('button','del','⋯');
+    del.setAttribute('aria-label','More options for this night');
+    del.addEventListener('click', function(){ openNightMenu(n); });
     card.appendChild(del);
 
     app.appendChild(card);
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.8'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.9'));
   app.appendChild(footer);
 }
 
@@ -3069,42 +3316,84 @@ function renderHome(app){
    built-in shelf so the tab is useful with no keys at all. Titles the
    family has already logged are filtered out. */
 var CURATED = [
-  { title:'The Iron Giant', year:1999, overview:'A boy in 1950s Maine befriends a giant metal robot fallen from space, and tries to hide him from a government agent determined to destroy him.' },
-  { title:'Paddington 2', year:2017, overview:'Paddington takes on odd jobs to buy his aunt the perfect birthday present, then has to clear his name when the gift is stolen.' },
-  { title:'Spirited Away', year:2001, overview:'A ten-year-old girl wanders into a world of spirits and must work in a bathhouse for the gods to win back her parents.' },
-  { title:'Coco', year:2017, overview:'A boy who dreams of being a musician crosses into the Land of the Dead and uncovers the truth about his family’s history.' },
-  { title:'My Neighbor Totoro', year:1988, overview:'Two sisters move to the countryside while their mother is ill and befriend the gentle forest spirits living nearby.' },
-  { title:'E.T. the Extra-Terrestrial', year:1982, overview:'A lonely boy hides a stranded alien in his suburban home and helps him find a way back to his own planet.' },
-  { title:'Back to the Future', year:1985, overview:'A teenager is accidentally sent thirty years into the past in a time-travelling DeLorean and has to make sure his parents still fall in love.' },
-  { title:'WALL·E', year:2008, overview:'A small trash-compacting robot, left alone on an abandoned Earth, follows a visiting probe across the galaxy.' },
-  { title:'The Incredibles', year:2004, overview:'A family of undercover superheroes is pulled back into action when a new villain targets them.' },
-  { title:'Moana', year:2016, overview:'A chief’s daughter sails beyond her island’s reef with a stubborn demigod to return a stolen relic and save her people.' },
-  { title:'How to Train Your Dragon', year:2010, overview:'A Viking teenager who is supposed to kill dragons instead befriends an injured one and changes his village forever.' },
-  { title:'Ratatouille', year:2007, overview:'A rat with a remarkable palate teams up with a clumsy kitchen worker to cook in one of Paris’s great restaurants.' },
-  { title:'Up', year:2009, overview:'An elderly widower ties thousands of balloons to his house and flies to South America, with an eager boy scout accidentally aboard.' },
-  { title:'Finding Nemo', year:2003, overview:'An anxious clownfish crosses the ocean, helped by a forgetful blue tang, to find the son who was taken from the reef.' },
-  { title:'Zootopia', year:2016, overview:'A rookie rabbit police officer and a con-artist fox uncover a conspiracy in a city where predators and prey live side by side.' },
-  { title:'The Lego Movie', year:2014, overview:'An utterly ordinary minifigure is mistaken for the prophesied hero destined to save the universe.' },
-  { title:'Kiki’s Delivery Service', year:1989, overview:'A young witch moves to a seaside town for a year on her own and starts a flying delivery service.' },
-  { title:'Big Hero 6', year:2014, overview:'A boy genius and a soft inflatable healthcare robot assemble a team of friends to solve a mystery in San Fransokyo.' },
-  { title:'Encanto', year:2021, overview:'The only girl in a magical family born without a gift may be the one who has to save their enchanted house.' },
-  { title:'Home Alone', year:1990, overview:'An eight-year-old accidentally left behind at Christmas defends the family house against two determined burglars.' }
+  /* rating is the US certification; `talk` marks films we surface on the
+     discussion shelf rather than the all-ages one */
+  { title:'The Iron Giant', year:1999, cert:'PG', overview:'A boy in 1950s Maine befriends a giant metal robot fallen from space, and tries to hide him from a government agent determined to destroy him.' },
+  { title:'Paddington 2', year:2017, cert:'PG', overview:'Paddington takes on odd jobs to buy his aunt the perfect birthday present, then has to clear his name when the gift is stolen.' },
+  { title:'Spirited Away', year:2001, cert:'PG', overview:'A ten-year-old girl wanders into a world of spirits and must work in a bathhouse for the gods to win back her parents.' },
+  { title:'Coco', year:2017, cert:'PG', overview:'A boy who dreams of being a musician crosses into the Land of the Dead and uncovers the truth about his family’s history.' },
+  { title:'My Neighbor Totoro', year:1988, cert:'G', overview:'Two sisters move to the countryside while their mother is ill and befriend the gentle forest spirits living nearby.' },
+  { title:'E.T. the Extra-Terrestrial', year:1982, cert:'PG', overview:'A lonely boy hides a stranded alien in his suburban home and helps him find a way back to his own planet.' },
+  { title:'Back to the Future', year:1985, cert:'PG', overview:'A teenager is accidentally sent thirty years into the past in a time-travelling DeLorean and has to make sure his parents still fall in love.' },
+  { title:'WALL·E', year:2008, cert:'G', overview:'A small trash-compacting robot, left alone on an abandoned Earth, follows a visiting probe across the galaxy.' },
+  { title:'The Incredibles', year:2004, cert:'PG', overview:'A family of undercover superheroes is pulled back into action when a new villain targets them.' },
+  { title:'Moana', year:2016, cert:'PG', overview:'A chief’s daughter sails beyond her island’s reef with a stubborn demigod to return a stolen relic and save her people.' },
+  { title:'How to Train Your Dragon', year:2010, cert:'PG', overview:'A Viking teenager who is supposed to kill dragons instead befriends an injured one and changes his village forever.' },
+  { title:'Ratatouille', year:2007, cert:'G', overview:'A rat with a remarkable palate teams up with a clumsy kitchen worker to cook in one of Paris’s great restaurants.' },
+  { title:'Up', year:2009, cert:'PG', overview:'An elderly widower ties thousands of balloons to his house and flies to South America, with an eager boy scout accidentally aboard.' },
+  { title:'Zootopia', year:2016, cert:'PG', overview:'A rookie rabbit police officer and a con-artist fox uncover a conspiracy in a city where predators and prey live side by side.' },
+  { title:'Kiki’s Delivery Service', year:1989, cert:'G', overview:'A young witch moves to a seaside town for a year on her own and starts a flying delivery service.' },
+  { title:'Big Hero 6', year:2014, cert:'PG', overview:'A boy genius and a soft inflatable healthcare robot assemble a team of friends to solve a mystery in San Fransokyo.' },
+  { title:'Encanto', year:2021, cert:'PG', overview:'The only girl in a magical family born without a gift may be the one who has to save their enchanted house.' },
+  { title:'Home Alone', year:1990, cert:'PG', overview:'An eight-year-old accidentally left behind at Christmas defends the family house against two determined burglars.' },
+
+  /* classics worth showing kids */
+  { title:'Singin’ in the Rain', year:1952, cert:'G', classic:true, overview:'As Hollywood lurches from silent films to talkies, a matinee idol and his friends try to rescue a disastrous production with song and dance.' },
+  { title:'The Wizard of Oz', year:1939, cert:'G', classic:true, overview:'A Kansas farm girl is swept by a tornado into a technicolor land and follows a yellow brick road home.' },
+  { title:'It’s a Wonderful Life', year:1946, cert:'PG', classic:true, overview:'On Christmas Eve, a despairing small-town man is shown what his community would have become if he had never been born.' },
+  { title:'To Kill a Mockingbird', year:1962, cert:'NR', classic:true, talk:true, overview:'A small-town Alabama lawyer defends a Black man falsely accused of rape, watched by his young daughter Scout.' },
+  { title:'Some Like It Hot', year:1959, cert:'NR', classic:true, overview:'Two musicians witness a mob killing and flee Chicago disguised as members of an all-women band.' },
+  { title:'Modern Times', year:1936, cert:'G', classic:true, overview:'Chaplin’s Little Tramp struggles to survive the machinery and mass production of the industrial age.' },
+  { title:'Mary Poppins', year:1964, cert:'G', classic:true, overview:'A magical nanny arrives on the east wind to look after two neglected London children — and their father.' },
+  { title:'12 Angry Men', year:1957, cert:'NR', classic:true, talk:true, overview:'One juror refuses to vote guilty, forcing eleven others to re-examine a murder case in a sweltering deliberation room.' },
+  { title:'Casablanca', year:1942, cert:'PG', classic:true, overview:'A cynical nightclub owner in wartime Morocco must choose between the woman he loves and the resistance cause.' },
+  { title:'Jaws', year:1975, cert:'PG', classic:true, overview:'A police chief, an oceanographer and a grizzled shark hunter set out to kill a great white terrorising a beach town.' },
+  { title:'Raiders of the Lost Ark', year:1981, cert:'PG', classic:true, overview:'An archaeologist races Nazi agents across the globe to find the Ark of the Covenant.' },
+
+  /* films worth talking about afterwards — includes tasteful PG-13/R */
+  { title:'Billy Elliot', year:2000, cert:'R', talk:true, overview:'During the 1984 miners’ strike, a boxing-class boy in a County Durham mining town discovers he would rather dance ballet — and has to win over his grieving father.' },
+  { title:'Dead Poets Society', year:1989, cert:'PG', talk:true, overview:'An unorthodox English teacher at a strict boys’ boarding school inspires his students to think for themselves.' },
+  { title:'Hidden Figures', year:2016, cert:'PG', talk:true, overview:'Three Black women mathematicians at NASA fight segregation while helping put an astronaut into orbit.' },
+  { title:'Wonder', year:2017, cert:'PG', talk:true, overview:'A boy with a facial difference starts fifth grade at a mainstream school and slowly changes everyone around him.' },
+  { title:'Remember the Titans', year:2000, cert:'PG', talk:true, overview:'A newly integrated Virginia high school football team learns to play — and live — together in 1971.' },
+  { title:'October Sky', year:1999, cert:'PG', talk:true, overview:'A coal miner’s son in 1950s West Virginia builds rockets against his father’s wishes and aims for a science scholarship.' },
+  { title:'Life Is Beautiful', year:1997, cert:'PG-13', talk:true, overview:'An Italian Jewish father uses humour and invention to shield his young son from the horror of a concentration camp.' },
+  { title:'The Blind Side', year:2009, cert:'PG-13', talk:true, overview:'A well-off Memphis family takes in a homeless teenager who becomes an All-American football player.' },
+  { title:'Good Will Hunting', year:1997, cert:'R', talk:true, overview:'A young janitor at MIT with a genius for mathematics is pushed to face his past by a therapist who has his own grief.' },
+  { title:'A Beautiful Mind', year:2001, cert:'PG-13', talk:true, overview:'Nobel-winning mathematician John Nash battles schizophrenia while doing groundbreaking work.' },
+  { title:'The Pursuit of Happyness', year:2006, cert:'PG-13', talk:true, overview:'A struggling salesman takes an unpaid stockbroking internship while homeless with his young son.' },
+  { title:'Selma', year:2014, cert:'PG-13', talk:true, overview:'Dr. Martin Luther King Jr. leads the 1965 voting-rights march from Selma to Montgomery.' },
+  { title:'Schindler’s List', year:1993, cert:'R', talk:true, overview:'A German industrialist gradually risks everything to save more than a thousand Jewish workers from the Holocaust.' },
+  { title:'Whale Rider', year:2002, cert:'PG-13', talk:true, overview:'A Māori girl fights her grandfather’s tradition that only a firstborn boy can lead their people.' },
+  { title:'Bend It Like Beckham', year:2002, cert:'PG-13', talk:true, overview:'A London teenager secretly joins a women’s football team against her traditional Punjabi family’s wishes.' },
+  { title:'Stand by Me', year:1986, cert:'R', talk:true, overview:'Four boys hike into the Oregon woods to find a missing body, and grow up somewhere along the way.' }
 ];
 var IDEA_CATS = [
-  { id:'curated', label:'🍿 Crowd pleasers' },
-  { id:'family',  label:'👨‍👩‍👧 Family', genres:'10751' },
-  { id:'animated',label:'🎨 Animated', genres:'16' },
-  { id:'adventure',label:'🗺 Adventure', genres:'12' },
-  { id:'funny',   label:'😂 Funny', genres:'35,10751' },
-  { id:'classic', label:'📽 Classics', genres:'10751', before:'2001-01-01' },
-  { id:'ai',      label:'✨ For us', ai:true }
+  { id:'curated',  label:'🍿 Crowd pleasers' },
+  { id:'talk',     label:'💬 Worth discussing' },
+  { id:'classics', label:'🏛 Classics' },
+  { id:'family',   label:'👨‍👩‍👧 Family', genres:'10751', cert:'PG-13' },
+  { id:'animated', label:'🎨 Animated', genres:'16', cert:'PG-13' },
+  { id:'adventure',label:'🗺 Adventure', genres:'12', cert:'PG-13' },
+  { id:'funny',    label:'😂 Funny', genres:'35', cert:'PG-13' },
+  { id:'drama',    label:'🎭 Great drama', genres:'18', cert:'R' },
+  { id:'oldies',   label:'📽 Before 1980', genres:'', before:'1980-01-01', cert:'R' },
+  { id:'ai',       label:'✨ For us', ai:true }
 ];
 var ideas = { cat:'curated', items:null, loading:false, note:null, seed:1 };
 
 function watchedTitleSet(){
   var set = {};
   nights().forEach(function(n){ set[normQuote(n.title)] = true; });
+  liveRecords('seen').forEach(function(r){ set[normQuote(r.title)] = true; });
   return set;
+}
+function markSeen(it){
+  var id = 'seen_' + normQuote(it.title).replace(/\s+/g,'_').slice(0, 60);
+  data.records[id] = {
+    id:id, type:'seen', title:it.title, year:it.year || null, updatedAt: Date.now()
+  };
+  saveData();
 }
 function notWatched(items){
   var seen = watchedTitleSet();
@@ -3125,9 +3414,9 @@ function tmdbDiscover(cat, page){
   if (!cred) return Promise.reject(new Error('NO_KEY'));
   var url = 'https://api.themoviedb.org/3/discover/movie'
     + '?include_adult=false&language=en-US'
-    + '&certification_country=US&certification.lte=PG-13'
+    + '&certification_country=US&certification.lte=' + encodeURIComponent(cat.cert || 'PG-13')
     + '&sort_by=vote_average.desc&vote_count.gte=700'
-    + '&with_genres=' + encodeURIComponent(cat.genres)
+    + (cat.genres ? '&with_genres=' + encodeURIComponent(cat.genres) : '')
     + '&page=' + (page || 1);
   if (cat.before) url += '&primary_release_date.lte=' + cat.before;
   var headers = {};
@@ -3206,7 +3495,11 @@ function loadIdeas(force){
       });
     }
   } else if (cat.id === 'curated'){
-    job = enrichFromTmdb(shuffleWithSeed(CURATED, ideas.seed).slice(0, 12));
+    job = enrichFromTmdb(shuffleWithSeed(CURATED.filter(function(c){ return !c.talk && !c.classic; }), ideas.seed).slice(0, 12));
+  } else if (cat.id === 'talk'){
+    job = enrichFromTmdb(shuffleWithSeed(CURATED.filter(function(c){ return c.talk; }), ideas.seed).slice(0, 12));
+  } else if (cat.id === 'classics'){
+    job = enrichFromTmdb(shuffleWithSeed(CURATED.filter(function(c){ return c.classic; }), ideas.seed).slice(0, 12));
   } else {
     job = tmdbDiscover(cat, 1 + (ideas.seed % 3));
   }
@@ -3223,10 +3516,13 @@ function loadIdeas(force){
       ideas.items = null;
       ideas.note = 'Add an Anthropic key in Settings and this shelf recommends movies based on what your family has actually loved.';
     } else if (e && e.message === 'NO_KEY'){
-      // no TMDB key — fall back to the built-in shelf
-      ideas.cat = 'curated';
-      ideas.items = notWatched(shuffleWithSeed(CURATED, ideas.seed).slice(0, 12));
-      ideas.note = 'Add a TMDB key in Settings for posters and a much bigger catalogue.';
+      // no TMDB key: stay on the chosen shelf, show the built-in picks that
+      // fit it, and say plainly what unlocks the rest
+      var pool = CURATED;
+      if (cat.id === 'animated') pool = CURATED.filter(function(c){ return !c.talk && !c.classic; });
+      else if (cat.id === 'drama' || cat.id === 'oldies') pool = CURATED.filter(function(c){ return c.talk || c.classic; });
+      ideas.items = notWatched(shuffleWithSeed(pool, ideas.seed).slice(0, 12));
+      ideas.note = 'Showing our built-in picks. Add a free TMDB key in Settings for posters and thousands more movies.';
     } else {
       ideas.items = null;
       ideas.note = 'Couldn’t load ideas just now — check your connection and try again.';
@@ -3251,9 +3547,27 @@ function openIdeaDetail(it){
     hero.appendChild(poster);
     var side = el('div','side');
     var facts = el('div','idea-facts');
-    if (it.score) facts.appendChild(el('span','idea-fact star', '★ ' + Number(it.score).toFixed(1) + ' TMDB'));
-    if (it.year) facts.appendChild(el('span','idea-fact', String(it.year)));
-    facts.appendChild(el('span','idea-fact', 'Not yet watched'));
+    function paintIdeaFacts(f){
+      while (facts.firstChild) facts.removeChild(facts.firstChild);
+      var cert = (f && f.cert) || it.cert;
+      if (cert) facts.appendChild(el('span','idea-fact cert', cert));
+      var rel = (f && f.released) || null;
+      facts.appendChild(el('span','idea-fact', rel ? rel.slice(0,4) : (it.year ? String(it.year) : 'Movie')));
+      if (f && f.runtime) facts.appendChild(el('span','idea-fact', Math.floor(f.runtime/60) + 'h ' + (f.runtime%60) + 'm'));
+      if (f && f.imdb) facts.appendChild(el('span','idea-fact star','IMDb ' + f.imdb));
+      if (f && f.rt) facts.appendChild(el('span','idea-fact rt','🍅 ' + f.rt));
+      if (f && f.meta) facts.appendChild(el('span','idea-fact','Metacritic ' + f.meta));
+      var ts = (f && f.tmdbScore) || it.score;
+      if (ts && !(f && f.imdb)) facts.appendChild(el('span','idea-fact star','★ ' + Number(ts).toFixed(1) + ' TMDB'));
+      facts.appendChild(el('span','idea-fact','Not yet watched'));
+    }
+    paintIdeaFacts(it.facts);
+    if (!it.facts && loadTmdbCred()){
+      buildFacts(it.tmdbId, it.title + (it.year ? ' ' + it.year : '')).then(function(f){
+        it.facts = f;
+        paintIdeaFacts(f);
+      }).catch(function(){});
+    }
     side.appendChild(facts);
     if (it.why) side.appendChild(el('div','idea-why', '“' + it.why + '”'));
     hero.appendChild(side);
@@ -3261,6 +3575,15 @@ function openIdeaDetail(it){
 
     box.appendChild(el('div','f-label','What it’s about'));
     box.appendChild(el('div','idea-syn', it.overview || 'No synopsis available for this one yet — but the title alone might be enough.'));
+
+    var seenBtn = el('button','idea-refresh','✓ We’ve already seen this one');
+    seenBtn.addEventListener('click', function(){
+      markSeen(it);
+      close();
+      render();
+      toast('Marked as watched — we won’t suggest it again');
+    });
+    box.appendChild(seenBtn);
 
     var row = el('div','modal-buttons');
     var cancel = el('button','btn-secondary','Close');
@@ -3769,30 +4092,57 @@ function renderSettings(app){
 
   /* tmdb key */
   var tk = el('div','set-card');
-  tk.appendChild(el('div','set-title','🎬 TMDB key (posters & search)'));
-  var own = Store.get('tmdb_key');
-  tk.appendChild(el('div','set-note', own
-    ? 'A key is saved on this phone — posters and movie search are on.'
+  tk.appendChild(el('div','set-title','🎬 TMDB key (posters, search & movie facts)'));
+  var shared = sharedTmdbKey();
+  tk.appendChild(el('div','set-note', shared
+    ? 'Saved and shared with the family — every phone that syncs gets posters automatically. Paste a new one to replace it.'
     : (loadTmdbCred()
-      ? 'Using a key already saved on this phone. Save one here to make this app fully standalone.'
-      : 'Optional: without a key you just type titles by hand. Free keys at themoviedb.org.')));
+      ? 'Using a key stored on this phone only. Save it here to share it with the whole family through sync.'
+      : 'Free at themoviedb.org. Save it once and it syncs to everyone’s phone — posters, movie facts and search for the whole family.')));
   var rowk = el('div','set-row');
   var kInput = el('input','f-input');
   kInput.type = 'password';
   kInput.autocomplete = 'off';
-  kInput.placeholder = own ? 'Key saved — paste to replace' : 'Paste TMDB API key';
+  kInput.placeholder = shared ? 'Shared key saved — paste to replace' : 'Paste TMDB API key';
   rowk.appendChild(kInput);
   var kSave = el('button','set-save','Save');
   kSave.addEventListener('click', function(){
     var v = kInput.value.trim();
     if (!v) return;
-    Store.set('tmdb_key', v);
+    Store.remove('tmdb_key');   // prefer the shared copy from here on
+    setSharedTmdbKey(v);
     render();
-    toast('TMDB key saved 🎬');
+    toast(Sync.configured() ? 'TMDB key saved & shared with the family 🎬' : 'TMDB key saved 🎬');
   });
   rowk.appendChild(kSave);
   tk.appendChild(rowk);
   app.appendChild(tk);
+
+  /* omdb key — IMDb / Rotten Tomatoes / Metacritic */
+  var ok = el('div','set-card');
+  ok.appendChild(el('div','set-title','🍅 OMDb key (IMDb & Rotten Tomatoes)'));
+  var oShared = data.records['settings_omdb'];
+  ok.appendChild(el('div','set-note', (oShared && !oShared.deleted)
+    ? 'Saved and shared — scrapbooks and movie ideas show IMDb, Rotten Tomatoes and Metacritic scores.'
+    : 'Optional and free at omdbapi.com. Adds IMDb, Rotten Tomatoes and Metacritic scores to scrapbook pages and movie ideas.'));
+  var rowo = el('div','set-row');
+  var oInput = el('input','f-input');
+  oInput.type = 'password';
+  oInput.autocomplete = 'off';
+  oInput.placeholder = (oShared && !oShared.deleted) ? 'Shared key saved — paste to replace' : 'Paste OMDb API key';
+  rowo.appendChild(oInput);
+  var oSave = el('button','set-save','Save');
+  oSave.addEventListener('click', function(){
+    var v = oInput.value.trim();
+    if (!v) return;
+    Store.remove('omdb_key');
+    setSharedOmdbKey(v);
+    render();
+    toast(Sync.configured() ? 'OMDb key saved & shared 🍅' : 'OMDb key saved 🍅');
+  });
+  rowo.appendChild(oSave);
+  ok.appendChild(rowo);
+  app.appendChild(ok);
 
   /* claude key */
   var ck = el('div','set-card');
@@ -3847,7 +4197,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.8'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.9'));
   app.appendChild(foot);
 }
 
