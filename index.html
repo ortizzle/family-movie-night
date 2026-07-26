@@ -536,8 +536,9 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .sp-comic-wrap.flip .sp-comic::before{left:auto;right:34px;border-width:15px 0 0 13px;border-color:#3A2A20 transparent transparent transparent}
 .sp-comic-wrap.flip .sp-comic::after{left:auto;right:37.5px;border-width:11px 0 0 9px;border-color:#FFFDF6 transparent transparent transparent}
-.sp-comic-wrap .sp-tag{margin:18px 0 0 30px}
-.sp-comic-wrap.flip .sp-tag{margin-left:auto;margin-right:30px;display:table}
+.sp-comic-wrap .sp-tags{margin:18px 0 0 30px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sp-comic-wrap.flip .sp-tags{margin-left:30px;margin-right:30px;justify-content:flex-end}
+.sp-both{font-family:'Caveat',cursive;font-size:16px;color:#8A6A44}
 
 /* favorite scene — screenplay page */
 .sp-scene{
@@ -593,6 +594,71 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 .yb-best{margin-top:22px;font-weight:800;font-size:14px;color:#4A3520}
 .yb-best b{color:#3A2A20}
 .yb-night{margin-top:40px;border-top:3px dashed #D9C6A4;padding-top:24px;page-break-inside:avoid}
+.yb-no{
+  display:inline-block;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:11px;
+  letter-spacing:2px;text-transform:uppercase;color:#fff;background:#3A2A20;
+  border-radius:99px;padding:3px 12px;margin-bottom:6px;
+}
+
+/* ===== anthology: cover, contents, complete stats ===== */
+.ks-page{page-break-after:always}
+.ks-cover{text-align:center;padding:20px 0 8px}
+.ks-crest{font-size:52px;line-height:1;margin-bottom:6px}
+.ks-cover .yb-year{font-size:56px;letter-spacing:-1px}
+/* solid, not a gradient — print pipelines rasterize gradients inconsistently */
+.ks-rule{height:2px;background:#C9A227;margin:16px auto;max-width:210px;border-radius:2px;opacity:.85}
+.ks-cast{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.ks-cast .who{
+  display:flex;align-items:center;gap:7px;background:#FFFDF6;border:1px solid #E4D9C2;
+  border-radius:99px;padding:6px 14px 6px 7px;font-weight:800;font-size:13px;color:#4A3520;
+}
+.ks-cast .dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:900;color:#fff}
+
+.ks-h2{
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:22px;color:#3A2A20;
+  text-align:center;margin-top:6px;
+}
+.ks-sub{text-align:center;font-family:'Caveat',cursive;font-size:19px;color:#8A6A44;margin-top:2px}
+
+.toc{margin-top:22px}
+.toc-row{
+  display:flex;align-items:baseline;gap:8px;padding:9px 2px;
+  border-bottom:1px dotted #CBB99C;page-break-inside:avoid;
+}
+.toc-no{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;color:#A3814F;width:34px;flex-shrink:0}
+.toc-title{font-weight:800;font-size:14px;color:#3A2A20}
+.toc-dots{flex:1;border-bottom:1px dotted #CBB99C;transform:translateY(-3px)}
+.toc-meta{font-size:12px;color:#8A6A44;font-weight:700;white-space:nowrap}
+.toc-score{font-weight:900;color:#B8860B;margin-left:6px}
+
+.ks-stat-band{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+.ks-tile{
+  background:#FFFDF6;border:1px solid #E4D9C2;border-radius:10px;padding:11px 16px;
+  text-align:center;box-shadow:0 4px 10px rgba(74,53,32,.14);min-width:104px;
+}
+.ks-tile .n{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:22px;color:#3A2A20}
+.ks-tile .l{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:900;color:#A3814F;margin-top:2px}
+
+.ks-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12.5px}
+.ks-table th{
+  text-align:left;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  color:#A3814F;font-weight:900;padding:6px 6px;border-bottom:2px solid #D9C6A4;
+}
+.ks-table th.num,.ks-table td.num{text-align:right}
+.ks-table td{padding:8px 6px;border-bottom:1px solid #E4D9C2;color:#4A3520;font-weight:700}
+.ks-table td.who{font-weight:900}
+.ks-awards{margin-top:16px}
+.ks-award{
+  display:flex;gap:10px;align-items:flex-start;background:#FFFDF6;border-left:5px solid #C9A227;
+  border-radius:8px;padding:10px 13px;margin-top:9px;box-shadow:0 3px 9px rgba(74,53,32,.12);
+  page-break-inside:avoid;
+}
+.ks-award .medal{font-size:19px;line-height:1.2}
+.ks-award .body{flex:1;min-width:0}
+.ks-award .t{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:900;color:#A3814F}
+.ks-award .v{font-weight:900;font-size:14px;color:#3A2A20;margin-top:2px}
+.ks-award .d{font-size:12px;color:#8A6A44;font-weight:700;margin-top:2px;line-height:1.45}
 
 /* ============ STATS ============ */
 .stat-tiles{display:flex;gap:12px;margin-top:22px}
@@ -827,26 +893,28 @@ footer{
   .scrap-close,.sp-print,.sp-print-hint,.no-print{display:none !important}
   .scrap-page{
     max-width:none;font-size:12.5px;
-    padding:0.22in 0.62in;
+    padding:0.22in 0.82in;
     background-color:transparent;
     /* sprocket holes must come FIRST — earlier layers paint on top of later
        ones, so the solid strips are listed last and sit underneath */
     background-image:
-      linear-gradient(to bottom, transparent 0 0.075in, #F6ECD8 0.075in 0.175in, transparent 0.175in 0.25in),
-      linear-gradient(to bottom, transparent 0 0.075in, #F6ECD8 0.075in 0.175in, transparent 0.175in 0.25in),
+      linear-gradient(to bottom, transparent 0 0.10in, #F6ECD8 0.10in 0.24in, transparent 0.24in 0.34in),
+      linear-gradient(to bottom, transparent 0 0.10in, #F6ECD8 0.10in 0.24in, transparent 0.24in 0.34in),
       linear-gradient(#2A1E14,#2A1E14),
       linear-gradient(#2A1E14,#2A1E14);
     background-size:
-      0.14in 0.25in, 0.14in 0.25in,
-      0.32in 100%, 0.32in 100%;
+      0.20in 0.34in, 0.20in 0.34in,
+      0.46in 100%, 0.46in 100%;
     background-position:
-      0.09in top, right 0.09in top,
+      0.13in top, right 0.13in top,
       left top, right top;
     background-repeat:
       repeat-y, repeat-y,
       no-repeat, no-repeat;
   }
   .yb-cover{page-break-after:always}
+  .ks-cover{padding-top:1.1in}
+  .ks-page{page-break-after:always}
   .yb-night,.sp-section{page-break-inside:avoid}
   .sp-title{font-size:24px}
   .sp-comic{font-size:14px}
@@ -1252,17 +1320,74 @@ function nextPicker(){
   }
   return MEMBERS[0];
 }
+/* ---------- quote matching ----------
+   When two people save the same line (or one saves a longer version of
+   it) we show it once, credited to everyone who picked it. */
+function normQuote(s){
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[‘’“”"']/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function quoteSimilar(a, b){
+  var na = normQuote(a), nb = normQuote(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  // one is a longer telling of the other ("Weaknesses: cake" inside
+  // "Strengths: none. Weaknesses: cake") — guarded so tiny lines like
+  // "hey" don't swallow everything they appear in
+  if (na.length >= 8 && nb.length >= 8 && (na.indexOf(nb) !== -1 || nb.indexOf(na) !== -1)) return true;
+  // near-identical wording (Dice coefficient over word tokens)
+  var ta = na.split(' '), tb = nb.split(' ');
+  if (ta.length < 3 || tb.length < 3) return false;
+  var pool = {};
+  tb.forEach(function(t){ pool[t] = (pool[t] || 0) + 1; });
+  var overlap = 0;
+  ta.forEach(function(t){ if (pool[t]) { overlap++; pool[t]--; } });
+  return (2 * overlap) / (ta.length + tb.length) >= 0.8;
+}
+/* entries: [{text, member}] -> [{text, members:[...]}] */
+function groupQuotes(entries){
+  var groups = [];
+  entries.forEach(function(e){
+    if (!e.text) return;
+    for (var i = 0; i < groups.length; i++){
+      if (quoteSimilar(groups[i].text, e.text)){
+        if (groups[i].members.indexOf(e.member) === -1) groups[i].members.push(e.member);
+        // keep the fullest wording as the one we print
+        if (String(e.text).length > String(groups[i].text).length) groups[i].text = e.text;
+        return;
+      }
+    }
+    groups.push({ text: e.text, members: [e.member] });
+  });
+  return groups;
+}
+function nightQuoteGroups(nightId){
+  var entries = [];
+  MEMBERS.forEach(function(m){
+    rxQuotes(reactionFor(nightId, m.id)).forEach(function(q){
+      entries.push({ text: q, member: m });
+    });
+  });
+  return groupQuotes(entries);
+}
+function memberNames(list){
+  var names = list.map(function(m){ return m.name; });
+  if (names.length <= 1) return names.join('');
+  if (names.length === 2) return names[0] + ' & ' + names[1];
+  return names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1];
+}
 function allQuotes(){
   var out = [];
   var ns = nights();
   for (var i=0;i<ns.length;i++){
-    var rs = reactionsFor(ns[i].id);
-    for (var j=0;j<rs.length;j++){
-      var qs = rxQuotes(rs[j]);
-      for (var k=0;k<qs.length;k++){
-        out.push({ quote: qs[k], member: memberById(rs[j].member), movie: ns[i].title });
-      }
-    }
+    // group per movie so the same line in two films stays separate
+    nightQuoteGroups(ns[i].id).forEach(function(g){
+      out.push({ quote: g.text, members: g.members, movie: ns[i].title });
+    });
   }
   return out;
 }
@@ -1876,24 +2001,24 @@ function buildNightKeepsake(container, night){
     container.appendChild(chSec);
   }
 
-  /* quotes — comic speech bubbles, tails alternating sides */
-  var anyQuotes = false;
-  var qSec = spSection('💬 Quotes we kept');
-  var qi = 0;
-  MEMBERS.forEach(function(m){
-    var r = reactionFor(night.id, m.id);
-    rxQuotes(r).forEach(function(q){
-      anyQuotes = true;
+  /* quotes — comic speech bubbles, tails alternating sides.
+     Matching lines from different people share one bubble. */
+  var qGroups = nightQuoteGroups(night.id);
+  if (qGroups.length){
+    var qSec = spSection('💬 Quotes we kept');
+    qGroups.forEach(function(g, qi){
       var wrap = el('div','sp-comic-wrap' + (qi % 2 ? ' flip' : ''));
-      var bubble = el('div','sp-comic', q);
+      var bubble = el('div','sp-comic', g.text);
       bubble.style.transform = 'rotate(' + (rots[qi % 4] * 0.6) + 'deg)';
       wrap.appendChild(bubble);
-      wrap.appendChild(spTag(m));
+      var tags = el('div','sp-tags');
+      g.members.forEach(function(m){ tags.appendChild(spTag(m)); });
+      if (g.members.length > 1) tags.appendChild(el('span','sp-both','— both said it!'));
+      wrap.appendChild(tags);
       qSec.appendChild(wrap);
-      qi++;
     });
-  });
-  if (anyQuotes) container.appendChild(qSec);
+    container.appendChild(qSec);
+  }
 
   /* favorite scenes — screenplay pages */
   var sceneMembers = MEMBERS.filter(function(m){
@@ -2109,6 +2234,222 @@ function openYearbook(year){
   });
 
   page.appendChild(el('div','sp-foot','The Ortiz Family · ' + year + ' · est. Fridays'));
+  overlay.appendChild(page);
+  document.body.appendChild(overlay);
+}
+
+/* ---------- THE COMPLETE COLLECTION (every night, all time) ----------
+   Cover → table of contents → full stats → every movie in order. */
+function collectionStats(list){
+  var s = {
+    nights: list.length, avgs: [], quotes: 0, memories: 0, scenes: 0,
+    firstWatches: 0, laughs: 0, cries: 0, rewatch: 0,
+    best: null, worst: null, mostQuoted: null, split: null,
+    perMember: {}
+  };
+  MEMBERS.forEach(function(m){
+    s.perMember[m.id] = { m:m, picks:0, given:[], received:[], fives:0, quotes:0, memories:0 };
+  });
+  list.forEach(function(n){
+    var avg = familyAvg(n.id);
+    if (avg !== null){
+      s.avgs.push(avg);
+      if (!s.best || avg > s.best.avg) s.best = { n:n, avg:avg };
+      if (!s.worst || avg < s.worst.avg) s.worst = { n:n, avg:avg };
+      if (s.perMember[n.pickedBy]) s.perMember[n.pickedBy].received.push(avg);
+    }
+    if (s.perMember[n.pickedBy]) s.perMember[n.pickedBy].picks++;
+
+    var nightQuotes = 0;
+    MEMBERS.forEach(function(m){
+      var r = reactionFor(n.id, m.id);
+      if (!r) return;
+      var pm = s.perMember[m.id];
+      if (r.stars){ pm.given.push(r.stars); if (r.stars === 5) pm.fives++; }
+      var qn = rxQuotes(r).length, mn = rxMemories(r).length;
+      pm.quotes += qn; pm.memories += mn;
+      s.quotes += qn; s.memories += mn; nightQuotes += qn;
+      if (r.scene) s.scenes++;
+      if (r.poll){
+        if (r.poll.laughed) s.laughs++;
+        if (r.poll.cried) s.cries++;
+        if (r.poll.rewatch) s.rewatch++;
+        if (!r.poll.seenBefore) s.firstWatches++;
+      }
+    });
+    if (nightQuotes && (!s.mostQuoted || nightQuotes > s.mostQuoted.count)){
+      s.mostQuoted = { n:n, count:nightQuotes };
+    }
+    var rs = reactionsFor(n.id).filter(function(r){ return r.stars > 0; });
+    if (rs.length >= 2){
+      var mn2 = 6, mx = 0, mnW = null, mxW = null;
+      rs.forEach(function(r){
+        if (r.stars < mn2){ mn2 = r.stars; mnW = memberById(r.member).name; }
+        if (r.stars > mx){ mx = r.stars; mxW = memberById(r.member).name; }
+      });
+      if (mx - mn2 > 0 && (!s.split || mx - mn2 > s.split.spread)){
+        s.split = { n:n, spread:mx-mn2, lo:mn2, hi:mx, loWho:mnW, hiWho:mxW };
+      }
+    }
+  });
+  return s;
+}
+function openCollection(){
+  var list = nights().slice().sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  if (!list.length){ toast('Log a movie night first — then the collection is worth printing'); return; }
+
+  var overlay = keepsakeOverlay();
+  var page = el('div','scrap-page');
+  var s = collectionStats(list);
+  var avgAll = s.avgs.length ? s.avgs.reduce(function(a,b){return a+b;},0)/s.avgs.length : null;
+  var first = list[0].date, last = list[list.length-1].date;
+
+  /* ---- cover ---- */
+  var cover = el('div','ks-cover ks-page');
+  cover.appendChild(el('div','ks-crest','🎬'));
+  cover.appendChild(el('div','yb-eyebrow','The Ortiz Family Presents'));
+  cover.appendChild(el('div','sp-title','Family Movie Night'));
+  cover.appendChild(el('div','ks-rule'));
+  cover.appendChild(el('div','yb-sub','the complete collection'));
+  cover.appendChild(el('div','sp-date', AZ.prettyLong(first) + ' — ' + AZ.prettyLong(last)));
+  var band = el('div','ks-stat-band');
+  [
+    { n:String(s.nights), l:'movie nights' },
+    { n:avgAll === null ? '—' : avgAll.toFixed(1) + '★', l:'family score' },
+    { n:String(s.quotes), l:'quotes kept' },
+    { n:String(s.memories), l:'memories' }
+  ].forEach(function(t){
+    var d = el('div','ks-tile');
+    d.appendChild(el('div','n', t.n));
+    d.appendChild(el('div','l', t.l));
+    band.appendChild(d);
+  });
+  cover.appendChild(band);
+  var cast = el('div','ks-cast');
+  MEMBERS.forEach(function(m){
+    var w = el('div','who');
+    var dot = el('span','dot', m.name.charAt(0));
+    dot.style.background = m.onWhite;
+    w.appendChild(dot);
+    w.appendChild(document.createTextNode(m.name));
+    cast.appendChild(w);
+  });
+  cover.appendChild(cast);
+  printButton(cover);
+  page.appendChild(cover);
+
+  /* ---- table of contents ---- */
+  var toc = el('div','ks-page');
+  toc.appendChild(el('div','ks-h2','Table of Contents'));
+  toc.appendChild(el('div','ks-sub','every Friday, in order'));
+  var tocList = el('div','toc');
+  list.forEach(function(n, i){
+    var row = el('div','toc-row');
+    row.appendChild(el('span','toc-no','No. ' + (i+1)));
+    row.appendChild(el('span','toc-title', n.title));
+    row.appendChild(el('span','toc-dots'));
+    var meta = el('span','toc-meta', AZ.monthDay(n.date) + ' · ' + memberById(n.pickedBy).name);
+    var avg = familyAvg(n.id);
+    if (avg !== null) meta.appendChild(el('span','toc-score', avg.toFixed(1) + '★'));
+    row.appendChild(meta);
+    tocList.appendChild(row);
+  });
+  toc.appendChild(tocList);
+  page.appendChild(toc);
+
+  /* ---- complete stats ---- */
+  var st = el('div','ks-page');
+  st.appendChild(el('div','ks-h2','The Family Record Book'));
+  st.appendChild(el('div','ks-sub','everything, added up'));
+
+  var band2 = el('div','ks-stat-band');
+  [
+    { n:String(s.nights), l:'nights' },
+    { n:avgAll === null ? '—' : avgAll.toFixed(1) + '★', l:'avg score' },
+    { n:String(s.quotes), l:'quotes' },
+    { n:String(s.memories), l:'memories' },
+    { n:String(s.scenes), l:'scenes' },
+    { n:String(s.firstWatches), l:'first watches' },
+    { n:String(s.laughs), l:'laughs' },
+    { n:String(s.cries), l:'good cries' }
+  ].forEach(function(t){
+    var d = el('div','ks-tile');
+    d.appendChild(el('div','n', t.n));
+    d.appendChild(el('div','l', t.l));
+    band2.appendChild(d);
+  });
+  st.appendChild(band2);
+
+  var table = el('table','ks-table');
+  var thead = el('thead');
+  var hr = el('tr');
+  [['Who',''],['Picks','num'],['Avg given','num'],['Their picks','num'],['5★','num'],['Quotes','num'],['Memories','num']]
+    .forEach(function(h){ var th = el('th', h[1], h[0]); hr.appendChild(th); });
+  thead.appendChild(hr);
+  table.appendChild(thead);
+  var tbody = el('tbody');
+  MEMBERS.forEach(function(m){
+    var pm = s.perMember[m.id];
+    var g = mean(pm.given), rc = mean(pm.received);
+    var tr = el('tr');
+    var td0 = el('td','who', m.name);
+    td0.style.color = m.onWhite;
+    tr.appendChild(td0);
+    [String(pm.picks), g===null?'—':g.toFixed(1), rc===null?'—':rc.toFixed(1)+'★',
+     String(pm.fives), String(pm.quotes), String(pm.memories)]
+      .forEach(function(v){ tr.appendChild(el('td','num', v)); });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  st.appendChild(table);
+
+  var awards = el('div','ks-awards');
+  function award(medal, title, value, detail){
+    var a = el('div','ks-award');
+    a.appendChild(el('div','medal', medal));
+    var b = el('div','body');
+    b.appendChild(el('div','t', title));
+    b.appendChild(el('div','v', value));
+    if (detail) b.appendChild(el('div','d', detail));
+    a.appendChild(b);
+    awards.appendChild(a);
+  }
+  if (s.best) award('🏆','Best Picture', s.best.n.title,
+    s.best.avg.toFixed(1) + '★ · ' + memberById(s.best.n.pickedBy).name + '’s pick · ' + AZ.prettyLong(s.best.n.date));
+  if (s.mostQuoted) award('💬','Most Quotable', s.mostQuoted.n.title,
+    s.mostQuoted.count + ' quote' + (s.mostQuoted.count===1?'':'s') + ' saved from one night');
+  if (s.split) award('💥','Biggest Split Decision', s.split.n.title,
+    s.split.hiWho + ' gave it ' + starText(s.split.hi) + '★ … ' + s.split.loWho + ' gave it ' + starText(s.split.lo) + '★.');
+  var critic = null, pleaser = null, quoter = null;
+  MEMBERS.forEach(function(m){
+    var pm = s.perMember[m.id];
+    var g = mean(pm.given), rc = mean(pm.received);
+    if (g !== null && (!critic || g < critic.v)) critic = { m:m, v:g };
+    if (rc !== null && (!pleaser || rc > pleaser.v)) pleaser = { m:m, v:rc };
+    if (!quoter || pm.quotes > quoter.v) quoter = { m:m, v:pm.quotes };
+  });
+  if (critic) award('🍅','Toughest Critic', critic.m.name, 'averages ' + critic.v.toFixed(1) + '★ across every night');
+  if (pleaser) award('🎉','Crowd Pleaser', pleaser.m.name, 'their picks average ' + pleaser.v.toFixed(1) + '★ with the family');
+  if (quoter && quoter.v > 0) award('🎙','Keeper of the Quotes', quoter.m.name, quoter.v + ' quotes saved for the wall');
+  if (s.rewatch) award('🔁','Would Watch Again', s.rewatch + ' votes', 'across ' + s.nights + ' night' + (s.nights===1?'':'s'));
+  st.appendChild(awards);
+  page.appendChild(st);
+
+  /* ---- every night, numbered to match the contents ---- */
+  list.forEach(function(n, i){
+    var sec = el('div','yb-night');
+    var picker = memberById(n.pickedBy);
+    sec.appendChild(el('div','yb-no','No. ' + (i+1)));
+    sec.appendChild(el('div','sp-kicker', AZ.prettyLong(n.date)));
+    sec.appendChild(el('div','sp-title', n.title));
+    var avg = familyAvg(n.id);
+    sec.appendChild(el('div','sp-date',
+      picker.name + '’s pick' + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
+    buildNightKeepsake(sec, n);
+    page.appendChild(sec);
+  });
+
+  page.appendChild(el('div','sp-foot','The Ortiz Family · est. Fridays'));
   overlay.appendChild(page);
   document.body.appendChild(overlay);
 }
@@ -2524,9 +2865,12 @@ function renderHome(app){
     var bubble = el('div','cq', q.quote);
     cqw.appendChild(bubble);
     var attr = el('div','attr');
-    var an = el('span', null, q.member.name);
-    an.style.color = memberInk(q.member);
-    attr.appendChild(an);
+    q.members.forEach(function(m, i){
+      if (i) attr.appendChild(document.createTextNode(i === q.members.length - 1 ? ' & ' : ', '));
+      var an = el('span', null, m.name);
+      an.style.color = memberInk(m);
+      attr.appendChild(an);
+    });
     attr.appendChild(document.createTextNode(' · ' + q.movie));
     cqw.appendChild(attr);
     cqw.appendChild(el('div','hint','From the quote wall · tap for another'));
@@ -2645,7 +2989,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.6'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.7'));
   app.appendChild(footer);
 }
 
@@ -2915,19 +3259,22 @@ function renderSettings(app){
 
   /* keepsakes */
   var ks = el('div','set-card');
-  ks.appendChild(el('div','set-title','📕 Year in Review keepsakes'));
+  ks.appendChild(el('div','set-title','📕 Printable keepsakes'));
   var years = {};
   nights().forEach(function(n){ years[n.date.slice(0,4)] = true; });
   var yearList = Object.keys(years).sort().reverse();
   if (yearList.length){
-    ks.appendChild(el('div','set-note','Every night of the year on one printable scrapbook — open it, then “Save as PDF.” A perfect end-of-year keepsake.'));
+    ks.appendChild(el('div','set-note','Open one, then “Save as PDF.” The collection is the big one — cover, table of contents, the full record book, then every movie night we’ve ever had.'));
+    var cb = el('button','set-btn','📚 The Complete Collection — every movie night');
+    cb.addEventListener('click', openCollection);
+    ks.appendChild(cb);
     yearList.forEach(function(y){
-      var b = el('button','set-btn','📖 Open the ' + y + ' Year in Review');
+      var b = el('button','set-btn','📖 ' + y + ' Year in Review');
       b.addEventListener('click', function(){ openYearbook(y); });
       ks.appendChild(b);
     });
   } else {
-    ks.appendChild(el('div','set-note','Log some movie nights and your Year in Review will appear here.'));
+    ks.appendChild(el('div','set-note','Log some movie nights and your printable keepsakes will appear here.'));
   }
   app.appendChild(ks);
 
@@ -3127,7 +3474,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.6'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.7'));
   app.appendChild(foot);
 }
 
