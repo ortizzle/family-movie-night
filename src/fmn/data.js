@@ -246,9 +246,21 @@ function nightHappened(n){
 function happenedNights(){            // newest first
   return nights().filter(nightHappened);
 }
-function scheduledNights(){           // soonest first
+function scheduledNights(){           // soonest first, everything upcoming
   return nights().filter(function(n){ return !nightHappened(n); })
     .sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+}
+/* A bonus night is a real movie night — a trip to the theatre, a rainy
+   Sunday, a sleepover — that simply isn't somebody's turn. It gets a card,
+   reactions, a scrapbook page and a place in the stats like any other; it
+   just doesn't touch the rotation. Everything that decides whose turn it is
+   filters these out. */
+function isBonus(n){ return !!(n && n.bonus); }
+function turnNights(list){
+  return list.filter(function(n){ return !isBonus(n); });
+}
+function bonusNights(){              // upcoming bonuses, soonest first
+  return scheduledNights().filter(isBonus);
 }
 /* The rotation anchor restarts the order without anyone having to log a
    movie for it: "from this Friday on, it's Kat's turn." It only decides
@@ -275,7 +287,7 @@ function nextOpenFriday(){
 /* nights that count toward the running order — everything since the restart */
 function nightsSinceAnchor(){
   var a = rotationAnchor();
-  var past = happenedNights();
+  var past = turnNights(happenedNights());
   if (!a) return past;
   return past.filter(function(n){ return n.date >= a.date; });
 }
@@ -286,7 +298,7 @@ function rotationBase(){
   if (since.length) return rotationNext(since[0].pickedBy);
   var a = rotationAnchor();
   if (a) return memberById(a.member);
-  var past = happenedNights();
+  var past = turnNights(happenedNights());
   if (past.length) return rotationNext(past[0].pickedBy);
   return MEMBERS[0];
 }
@@ -303,7 +315,7 @@ function rotationOrderFrom(member){
   return out;
 }
 function lineupSlots(count){
-  var sched = scheduledNights();
+  var sched = turnNights(scheduledNights());
   var placed = {}, slots = [];
   var cursor = nextOpenFriday();
   if (sched.length && sched[0].date < cursor) cursor = sched[0].date;

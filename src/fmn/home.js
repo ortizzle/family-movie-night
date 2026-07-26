@@ -56,17 +56,33 @@ function renderHome(app){
   var inner = el('div','screen-inner');
   // the very next slot on the calendar, booked or not
   var upNext = lineupSlots(1)[0];
+  // a bonus night sooner than the next turn is the next thing happening, and
+  // worth announcing — but it never changes whose turn it is
+  var soonestBonus = bonusNights()[0];
+  var showBonus = soonestBonus && soonestBonus.date < upNext.date;
+  if (showBonus){
+    upNext = { date: soonestBonus.date, member: memberById(soonestBonus.pickedBy),
+               title: soonestBonus.title, night: soonestBonus };
+  }
   var booked = upNext.night;
-  inner.appendChild(el('div','label', booked ? 'Coming up…' : 'Up next…'));
-  var pn = el('div','pickname', booked
-    ? np.name + '’s pick 🍿'
+  var who = showBonus ? upNext.member : np;
+  inner.appendChild(el('div','label', showBonus
+    ? (soonestBonus.venue === 'theater' ? 'Bonus — at the theatre…' : 'Bonus movie…')
+    : booked ? 'Coming up…' : 'Up next…'));
+  var pn = el('div','pickname', showBonus
+    ? who.name + '’s bonus pick 🎟️'
+    : booked ? np.name + '’s pick 🍿'
     : 'It’s ' + np.name + '’s turn to pick! 🍿');
-  pn.style.color = np.onWhite;
+  pn.style.color = who.onWhite;
   inner.appendChild(pn);
   if (booked) inner.appendChild(el('div','booked-title', booked.title));
   inner.appendChild(el('div','showdate', booked
     ? AZ.prettyLong(upNext.date)
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
+  if (showBonus){
+    inner.appendChild(el('div','screen-bonus',
+      'Nobody loses a turn — ' + np.name + ' still picks next'));
+  }
   /* where to find it — right where you look on the way to the couch */
   if (booked){
     var wWrap = el('div','screen-watch');
@@ -105,9 +121,16 @@ function renderHome(app){
   var projected = lineupSlots(4);
   var slots = projected.slice(0, 4);
   var later = projected.slice(4).filter(function(s){ return s.night; });
-  slots.concat(later).forEach(function(slot, u){
-    if (u === 4) lineup.appendChild(el('div','lu-later','· later on ·'));
-    var row = el('div','lu-row' + (u === slots.length + later.length - 1 ? ' last' : ''));
+  /* bonus nights sit in the calendar chronologically without taking a slot */
+  var withBonus = slots.slice();
+  bonusNights().forEach(function(n){
+    withBonus.push({ date:n.date, member:memberById(n.pickedBy), title:n.title, night:n, bonus:true });
+  });
+  withBonus.sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  var rows = withBonus.concat(later);
+  rows.forEach(function(slot, u){
+    if (u === withBonus.length && later.length) lineup.appendChild(el('div','lu-later','· later on ·'));
+    var row = el('div','lu-row' + (u === rows.length - 1 ? ' last' : '') + (slot.bonus ? ' bonus' : ''));
     var dt = el('div','lu-date');
     dt.appendChild(el('div','d1', AZ.monthDay(slot.date)));
     var away = AZ.daysBetween(today, slot.date);
@@ -118,7 +141,9 @@ function renderHome(app){
     var ld = el('span','dot', slot.member.name.charAt(0));
     ld.style.background = slot.member.color;
     lp.appendChild(ld);
-    var lname = el('span', null, slot.member.name + '’s pick');
+    var lname = el('span', null, slot.bonus
+      ? slot.member.name + '’s bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
+      : slot.member.name + '’s pick');
     lname.style.color = memberInk(slot.member);
     lp.appendChild(lname);
     row.appendChild(lp);
@@ -265,6 +290,8 @@ function renderHome(app){
     ticket.appendChild(tnm);
     ht.appendChild(ticket);
     if (n.sample) ht.appendChild(el('span','sampletag','sample'));
+    if (isBonus(n)) ht.appendChild(el('span','bonustag',
+      n.venue === 'theater' ? '🍿 bonus · at the theatre' : '🎟️ bonus night'));
     if (n.question) ht.appendChild(el('div','night-q', '❓ ' + memberById(n.pickedBy).name + ' asks: ' + n.question));
     head.appendChild(ht);
     card.appendChild(head);

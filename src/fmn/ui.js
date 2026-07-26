@@ -199,8 +199,51 @@ function openAddNight(){
     dInput.type = 'date'; dInput.value = AZ.today();
     dateWrap.appendChild(dInput);
 
+    /* bonus nights — a trip to the theatre, a rainy Sunday, a sleepover */
+    var isBonusNight = false;
+    var venue = 'home';
+    var bonusWrap = el('div');
+    var bonusRow = el('div','pick-chips');
+    var bonusBtn = el('button','pick-chip','🎟️ Bonus movie — doesn’t use a turn');
+    bonusBtn.type = 'button';
+    var venueWrap = el('div');
+    venueWrap.style.display = 'none';
+    bonusBtn.addEventListener('click', function(){
+      isBonusNight = !isBonusNight;
+      bonusBtn.classList.toggle('on', isBonusNight);
+      bonusBtn.style.background = isBonusNight ? 'var(--amber)' : '';
+      bonusBtn.style.color = isBonusNight ? 'var(--btn-ink)' : '';
+      venueWrap.style.display = isBonusNight ? 'block' : 'none';
+      pickHint.textContent = isBonusNight
+        ? 'Whose idea was it? Their turn still stands.'
+        : 'Whose pick was it?';
+    });
+    bonusRow.appendChild(bonusBtn);
+    bonusWrap.appendChild(bonusRow);
+    venueWrap.appendChild(el('div','f-label','Where did we watch it?'));
+    var venueRow = el('div','pick-chips');
+    [{ id:'home', label:'🛋 On the couch' }, { id:'theater', label:'🍿 At the theatre' }]
+      .forEach(function(v){
+        var c = el('button','pick-chip' + (venue === v.id ? ' on' : ''), v.label);
+        c.type = 'button';
+        if (venue === v.id) c.style.background = 'var(--amber)';
+        c.addEventListener('click', function(){
+          venue = v.id;
+          for (var i=0;i<venueRow.children.length;i++){
+            var on = venueRow.children[i] === c;
+            venueRow.children[i].classList.toggle('on', on);
+            venueRow.children[i].style.background = on ? 'var(--amber)' : '';
+            venueRow.children[i].style.color = on ? 'var(--btn-ink)' : '';
+          }
+        });
+        venueRow.appendChild(c);
+      });
+    venueWrap.appendChild(venueRow);
+    bonusWrap.appendChild(venueWrap);
+
     var pickWrap = el('div');
-    pickWrap.appendChild(el('div','f-label','Whose pick was it?'));
+    var pickHint = el('div','f-label','Whose pick was it?');
+    pickWrap.appendChild(pickHint);
     var chips = el('div','pick-chips');
     var picked = (pickerForDate(AZ.today()) || pickerForNewNight()).id;
     MEMBERS.forEach(function(m){
@@ -247,13 +290,17 @@ function openAddNight(){
       var id = 'night_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
       data.records[id] = {
         id:id, type:'night', title:title, year:year, date:date, pickedBy:picked,
+        bonus: isBonusNight || false,
+        venue: isBonusNight ? venue : 'home',
         tmdbId: sel ? sel.tmdbId : null, posterPath: sel ? sel.posterPath : null,
         updatedAt: Date.now()
       };
       saveData();
       close();
       render();
-      toast(memberById(picked).name + '’s pick is saved — everyone add your reactions!');
+      toast(isBonusNight
+        ? 'Bonus movie added — nobody loses a turn 🎟️'
+        : memberById(picked).name + '’s pick is saved — everyone add your reactions!');
     });
     row.appendChild(cancel); row.appendChild(save);
 
@@ -261,6 +308,7 @@ function openAddNight(){
     box.appendChild(manualWrap);
     box.appendChild(selWrap);
     box.appendChild(dateWrap);
+    box.appendChild(bonusWrap);
     box.appendChild(pickWrap);
     box.appendChild(row);
   });
@@ -552,6 +600,42 @@ function openEditNight(night){
     var hint = el('div','set-note','Moving this to a later date keeps everyone’s turn in order — the rest of the lineup shifts with it.');
     box.appendChild(hint);
 
+    box.appendChild(el('div','f-label','Kind of night'));
+    var eBonus = !!night.bonus;
+    var eVenue = night.venue || 'home';
+    var eBonusRow = el('div','pick-chips');
+    var eBonusBtn = el('button','pick-chip' + (eBonus ? ' on' : ''), '🎟️ Bonus — doesn’t use a turn');
+    eBonusBtn.type = 'button';
+    if (eBonus){ eBonusBtn.style.background = 'var(--amber)'; eBonusBtn.style.color = 'var(--btn-ink)'; }
+    var eVenueRow = el('div','pick-chips');
+    eVenueRow.style.display = eBonus ? 'flex' : 'none';
+    eBonusBtn.addEventListener('click', function(){
+      eBonus = !eBonus;
+      eBonusBtn.classList.toggle('on', eBonus);
+      eBonusBtn.style.background = eBonus ? 'var(--amber)' : '';
+      eBonusBtn.style.color = eBonus ? 'var(--btn-ink)' : '';
+      eVenueRow.style.display = eBonus ? 'flex' : 'none';
+    });
+    eBonusRow.appendChild(eBonusBtn);
+    box.appendChild(eBonusRow);
+    [{ id:'home', label:'🛋 On the couch' }, { id:'theater', label:'🍿 At the theatre' }]
+      .forEach(function(v){
+        var c = el('button','pick-chip' + (eVenue === v.id ? ' on' : ''), v.label);
+        c.type = 'button';
+        if (eVenue === v.id){ c.style.background = 'var(--amber)'; c.style.color = 'var(--btn-ink)'; }
+        c.addEventListener('click', function(){
+          eVenue = v.id;
+          for (var i=0;i<eVenueRow.children.length;i++){
+            var on = eVenueRow.children[i] === c;
+            eVenueRow.children[i].classList.toggle('on', on);
+            eVenueRow.children[i].style.background = on ? 'var(--amber)' : '';
+            eVenueRow.children[i].style.color = on ? 'var(--btn-ink)' : '';
+          }
+        });
+        eVenueRow.appendChild(c);
+      });
+    box.appendChild(eVenueRow);
+
     box.appendChild(el('div','f-label','❓ Question for the family'));
     var qInput = el('input','f-input');
     qInput.type = 'text';
@@ -595,6 +679,8 @@ function openEditNight(night){
       rec.date = dInput.value || rec.date;
       rec.pickedBy = picked;
       rec.question = qInput.value.trim();
+      rec.bonus = eBonus;
+      rec.venue = eBonus ? eVenue : 'home';
       rec.updatedAt = Date.now();
       saveData();
       close();
