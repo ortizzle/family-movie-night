@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#211820"/>
+  <!-- string light glow -->
+  <circle cx="96" cy="72" r="14" fill="#FFB454"/>
+  <circle cx="196" cy="58" r="14" fill="#F2705F"/>
+  <circle cx="316" cy="58" r="14" fill="#A8C686"/>
+  <circle cx="416" cy="72" r="14" fill="#8FB8DE"/>
+  <path d="M60 84 Q 256 20 452 84" stroke="#5A4A5C" stroke-width="7" fill="none"/>
+  <!-- projector screen -->
+  <rect x="86" y="120" width="340" height="230" rx="20" fill="#17101A"/>
+  <rect x="102" y="136" width="308" height="198" rx="10" fill="#F7EEDC"/>
+  <rect x="238" y="350" width="36" height="34" fill="#17101A"/>
+  <!-- star on screen -->
+  <path d="M256 168 l22 46 51 7 -37 36 9 51 -45 -24 -45 24 9 -51 -37 -36 51 -7 z" fill="#FFB454"/>
+  <!-- popcorn box -->
+  <path d="M180 494 L196 388 L316 388 L332 494 Z" fill="#F2705F"/>
+  <path d="M212 494 L220 388 L244 388 L240 494 Z" fill="#FFEFD9"/>
+  <path d="M268 494 L268 388 L292 388 L300 494 Z" fill="#FFEFD9"/>
+  <circle cx="222" cy="380" r="16" fill="#FFEFD9"/>
+  <circle cx="256" cy="370" r="18" fill="#FFF7E8"/>
+  <circle cx="290" cy="380" r="16" fill="#FFEFD9"/>
+</svg>
