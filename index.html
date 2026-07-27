@@ -148,10 +148,11 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   box-shadow:0 10px 22px rgba(58,46,40,.35);
 }
 .screen .rotation{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:16px;flex-wrap:wrap}
+/* initials only — four circles and arrows always fit one line at 390px */
 .rot-chip{
-  display:flex;align-items:center;gap:6px;background:#FFF9EE;border:2px solid #E2D4BC;
-  border-radius:99px;padding:6px 13px 6px 8px;font-size:13px;font-weight:800;color:#8A7563;
-  min-height:38px;
+  display:flex;align-items:center;justify-content:center;
+  background:#FFF9EE;border:2px solid #E2D4BC;border-radius:50%;
+  width:38px;height:38px;padding:0;
 }
 .rot-chip .dot{
   width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
@@ -4037,13 +4038,18 @@ function renderHome(app){
     ensureNightFacts(booked, function(f){ paintWatch(f); paintPoster(); });
   }
   var rot = el('div','rotation');
+  /* initials only, so the whole order fits on one line under the poster;
+     the full names live in the label for screen readers */
+  rot.setAttribute('aria-label', 'Pick order: '
+    + MEMBERS.map(function(m){ return m.name; }).join(', then ')
+    + '. ' + np.name + ' is up.');
   MEMBERS.forEach(function(m, i){
     var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
+    chip.setAttribute('aria-hidden','true');
     if (m.id === np.id) chip.style.background = m.onWhite;
     var dot = el('span','dot', m.name.charAt(0));
     dot.style.background = m.color;
     chip.appendChild(dot);
-    chip.appendChild(document.createTextNode(m.name));
     rot.appendChild(chip);
     if (i < MEMBERS.length - 1) rot.appendChild(el('span','rot-arrow','→'));
   });

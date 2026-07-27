@@ -117,13 +117,18 @@ function renderHome(app){
     ensureNightFacts(booked, function(f){ paintWatch(f); paintPoster(); });
   }
   var rot = el('div','rotation');
+  /* initials only, so the whole order fits on one line under the poster;
+     the full names live in the label for screen readers */
+  rot.setAttribute('aria-label', 'Pick order: '
+    + MEMBERS.map(function(m){ return m.name; }).join(', then ')
+    + '. ' + np.name + ' is up.');
   MEMBERS.forEach(function(m, i){
     var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
+    chip.setAttribute('aria-hidden','true');
     if (m.id === np.id) chip.style.background = m.onWhite;
     var dot = el('span','dot', m.name.charAt(0));
     dot.style.background = m.color;
     chip.appendChild(dot);
-    chip.appendChild(document.createTextNode(m.name));
     rot.appendChild(chip);
     if (i < MEMBERS.length - 1) rot.appendChild(el('span','rot-arrow','→'));
   });
