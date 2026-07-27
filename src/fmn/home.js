@@ -76,7 +76,24 @@ function renderHome(app){
   // a bonus belongs to everybody, so it doesn't wear anyone's colour
   pn.style.color = showBonus ? '' : who.onWhite;
   inner.appendChild(pn);
-  if (booked) inner.appendChild(el('div','booked-title', booked.title));
+  /* the one-sheet, projected right onto the screen. Painted lazily so a
+     poster that arrives with the facts fetch (a hand-typed booking) still
+     shows up without a re-render; a broken image just disappears. */
+  var paintPoster = function(){};
+  if (booked){
+    var pWrap = el('div','screen-poster');
+    paintPoster = function(){
+      if (!booked.posterPath || pWrap.firstChild) return;
+      var pimg = document.createElement('img');
+      pimg.alt = '';
+      pimg.src = TMDB_IMG + booked.posterPath;
+      pimg.addEventListener('error', function(){ pimg.remove(); });
+      pWrap.appendChild(pimg);
+    };
+    paintPoster();
+    inner.appendChild(pWrap);
+    inner.appendChild(el('div','booked-title', booked.title));
+  }
   inner.appendChild(el('div','showdate', booked
     ? AZ.prettyLong(upNext.date)
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
@@ -97,7 +114,7 @@ function renderHome(app){
       if (wr) wWrap.appendChild(wr);
     };
     paintWatch(booked.facts);
-    ensureNightFacts(booked, paintWatch);
+    ensureNightFacts(booked, function(f){ paintWatch(f); paintPoster(); });
   }
   var rot = el('div','rotation');
   MEMBERS.forEach(function(m, i){

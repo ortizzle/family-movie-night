@@ -284,6 +284,7 @@ function buildFacts(tmdbId, fallbackTitle){
     return tmdbDetails(id).then(function(d){
       var f = {
         tmdbId: id,
+        poster: d.poster_path || null,
         cert: usCertFrom(d),
         released: d.release_date || null,
         runtime: d.runtime || null,
@@ -391,6 +392,8 @@ function ensureNightFacts(night, onDone){
     var rec = data.records[night.id];
     if (!rec || rec.deleted) return;
     rec.facts = f2;
+    /* a night typed in by hand has no poster; the facts fetch knows it */
+    if (!rec.posterPath && f2.poster) rec.posterPath = f2.poster;
     rec.updatedAt = Date.now();
     saveData();
     if (onDone) onDone(f2);
