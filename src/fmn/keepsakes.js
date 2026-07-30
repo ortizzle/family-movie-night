@@ -787,7 +787,200 @@ function openAfterCredits(night){
   document.body.appendChild(overlay);
 }
 
+/* ---------- Coming Attractions — the pre-show sheet for a booked night ----------
+   Tapping the poster on the projector screen lands here: the one-sheet big,
+   the facts, the trailer, where to watch it, and — with a Claude key — a
+   spoiler-free pre-show to read out before anybody presses play. Shares the
+   after-credits overlay, so it re-themes with the app. */
+function preShowFor(nightId){
+  var r = data.records['pre_' + nightId];
+  return (r && !r.deleted && r.lookFor && r.lookFor.length) ? r : null;
+}
+function generatePreShow(night){
+  var system = 'You write spoiler-free pre-show notes for a family movie night. '
+    + 'The family: Chris and Kat (parents), Sedona (12) and River (9). '
+    + 'They have NOT seen this film yet — never reveal twists, endings, deaths or any '
+    + 'surprise, and never hint that one is coming. Warm, excited, PG, and specific to '
+    + 'this film rather than generic praise.';
+  var prompt = 'Movie: "' + night.title + '"' + (night.year ? ' (' + night.year + ')' : '') + '.\n'
+    + 'Respond with ONLY valid JSON, no markdown fences, exactly this shape:\n'
+    + '{"hype":"two spoiler-free sentences on why this is a great pick for tonight",'
+    + '"lookFor":["3 spoiler-free things to watch for — a visual detail, a piece of craft, a running joke"],'
+    + '"guess":["2 predictions the family can call out loud before pressing play"],'
+    + '"heads":"one short honest heads-up for parents about tone or intensity, or an empty string if there is nothing to flag"}';
+  return askClaude(prompt, { system: system, maxTokens: 1100 }).then(function(text){
+    var t = text.trim();
+    t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    var obj = JSON.parse(t);
+    if (!obj || !obj.hype || !obj.lookFor || !obj.lookFor.length) throw new Error('BAD_SHAPE');
+    var rec = {
+      id: 'pre_' + night.id, type: 'preshow', nightId: night.id, title: night.title,
+      hype: String(obj.hype),
+      lookFor: obj.lookFor.slice(0, 4),
+      guess: (obj.guess || []).slice(0, 3),
+      heads: obj.heads ? String(obj.heads) : '',
+      updatedAt: Date.now()
+    };
+    if (night.sample) rec.sample = true; // demo packs stay off the family gist
+    data.records[rec.id] = rec;
+    saveData();
+    return rec;
+  });
+}
+function openComingAttractions(night){
+  var overlay = el('div','ai-overlay');
+  var closeBtn = el('button','scrap-close','✕');
+  closeBtn.setAttribute('aria-label','Close');
+  closeBtn.addEventListener('click', function(){ overlay.remove(); });
+  overlay.appendChild(closeBtn);
+  var page = el('div','ai-page');
+  overlay.appendChild(page);
+  var loading = false;
+  var facts = night.facts || null;
+
+  function startGenerate(){
+    loading = true;
+    paint();
+    generatePreShow(night).then(function(){
+      loading = false;
+      paint();
+      confettiBurst(16);
+    }).catch(function(e){
+      loading = false;
+      paint();
+      if (e && e.message === 'BAD_KEY') toast('That Anthropic key was rejected — check it in Settings');
+      else if (e && e.message === 'NO_KEY') toast('Add an Anthropic key in Settings first');
+      else toast('Couldn’t reach Claude — try again in a moment');
+    });
+  }
+
+  function paint(){
+    while (page.firstChild) page.removeChild(page.firstChild);
+    var tonight = night.date === AZ.today();
+    page.appendChild(el('div','ai-kicker', tonight ? '🎬 Tonight’s feature' : '🎟 Coming attractions'));
+    page.appendChild(el('div','ai-title', night.title));
+    page.appendChild(el('div','ai-sub', (isBonus(night)
+        ? memberById(night.pickedBy).name + '’s find · family bonus'
+        : memberById(night.pickedBy).name + '’s pick')
+      + ' · ' + (tonight ? 'tonight' : AZ.prettyLong(night.date))));
+
+    if (night.posterPath){
+      var pw = el('div','ca-poster');
+      var img = document.createElement('img');
+      img.alt = '';
+      img.src = TMDB_IMG + night.posterPath;
+      img.addEventListener('error', function(){ pw.remove(); });
+      pw.appendChild(img);
+      page.appendChild(pw);
+    }
+
+    if (facts){
+      var chips = factChips(facts, 'idea-facts ca-facts', night.title);
+      page.appendChild(chips);
+      var tu = trailerUrl(facts);
+      if (tu){
+        var ta = el('a','ca-trailer','▶ Watch the trailer');
+        ta.href = tu;
+        ta.target = '_blank';
+        ta.rel = 'noopener noreferrer';
+        ta.setAttribute('aria-label','Watch the trailer for ' + night.title + ' on YouTube');
+        page.appendChild(ta);
+      }
+      var wr = watchRow(facts);
+      if (wr) page.appendChild(wr);
+    }
+
+    if (loading){
+      var ld = el('div','ai-loading');
+      var reel = el('div','reel','🎞️');
+      reel.setAttribute('aria-hidden','true');
+      ld.appendChild(reel);
+      ld.appendChild(el('div','msg','Writing tonight’s pre-show…'));
+      page.appendChild(ld);
+      return;
+    }
+
+    var pack = preShowFor(night.id);
+    var hasKey = !!Store.get('anthropic_key');
+
+    if (pack){
+      page.appendChild(el('div','ai-sec-title','🍿 Before you press play'));
+      page.appendChild(el('div','ca-hype', pack.hype));
+      page.appendChild(el('div','ai-sec-title','👀 Watch for'));
+      pack.lookFor.forEach(function(w, i){
+        var fc = el('div','ai-fact');
+        fc.appendChild(el('b', null, '#' + (i+1) + ' '));
+        fc.appendChild(document.createTextNode(w));
+        page.appendChild(fc);
+      });
+      if (pack.guess && pack.guess.length){
+        page.appendChild(el('div','ai-sec-title','🔮 Call it now'));
+        pack.guess.forEach(function(g){ page.appendChild(el('div','ai-talk', g)); });
+      }
+      if (pack.heads){
+        page.appendChild(el('div','ai-sec-title','🧭 Parent heads-up'));
+        page.appendChild(el('div','ca-heads', pack.heads));
+      }
+      if (hasKey){
+        var regen = el('button','ai-regen','↻ Fresh pre-show');
+        regen.addEventListener('click', function(){
+          confirmModal({
+            title:'Write a fresh pre-show?',
+            message:'Tonight’s notes for this movie will be replaced for everyone.',
+            confirmText:'Fresh pre-show',
+            onConfirm: startGenerate
+          });
+        });
+        page.appendChild(regen);
+      }
+      page.appendChild(el('div','ai-disclaimer','Written by Claude · asked to stay spoiler-free, but skim it first'));
+      return;
+    }
+
+    var c = el('div','ai-center');
+    c.appendChild(el('div','big','🎟️✨'));
+    if (hasKey){
+      c.appendChild(el('div', null, 'A spoiler-free pre-show — why this pick is worth the popcorn, things to watch for, and predictions to call out loud.'));
+      var gen = el('button','ai-gen','✨ Write the pre-show');
+      gen.addEventListener('click', startGenerate);
+      page.appendChild(c);
+      page.appendChild(gen);
+    } else {
+      c.appendChild(el('div', null, 'Pre-show notes need a Claude (Anthropic) API key. Add one in Settings — the poster, facts, trailer and where-to-watch all work without it.'));
+      var go = el('button','ai-gen','⚙️ Open Settings');
+      go.addEventListener('click', function(){
+        overlay.remove();
+        view = 'settings';
+        render();
+        window.scrollTo(0, 0);
+      });
+      page.appendChild(c);
+      page.appendChild(go);
+    }
+  }
+
+  paint();
+  /* fills in facts, trailer and where-to-watch for a night booked by hand */
+  ensureNightFacts(night, function(f){ facts = f; paint(); });
+  document.body.appendChild(overlay);
+}
+
 /* ---------- export / import ---------- */
+/* When the family last exported a real backup file. Synced, so one phone
+   doing it settles the nudge for everybody — and it's a timestamp, not a
+   secret, so it's safe to share. */
+function lastBackup(){
+  var r = data.records['settings_backup'];
+  return (r && !r.deleted && r.at) ? r : null;
+}
+function markBackup(){
+  var me = whoAmI();
+  data.records['settings_backup'] = {
+    id:'settings_backup', type:'setting', key:'backup',
+    at: Date.now(), by: me ? me.id : null, updatedAt: Date.now()
+  };
+  saveData();
+}
 function exportBackup(){
   try {
     var blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
@@ -798,6 +991,8 @@ function exportBackup(){
     a.click();
     a.remove();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+    markBackup();
+    render();
     toast('Backup exported 📦');
   } catch(e){
     toast('Export failed — try again');

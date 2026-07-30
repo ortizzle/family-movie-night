@@ -73,6 +73,7 @@ never removals — a hard delete resurrects on the next sync from another phone.
 |---|---|---|
 | `night` | `night_<ts>_<rand>` | title, year, date, pickedBy, question, bonus, venue, posterPath, cached `facts` |
 | `reaction` | `rx_<nightId>_<member>` | stars, thought, character, scene, quotes[], memories[], poll, answer, why |
+| `preshow` | `pre_<nightId>` | spoiler-free pre-show notes for a booked night |
 | `shortlist` | `short_<slug>` | movies held for later |
 | `seen` | `seen_<slug>` | "we've already watched this" — keeps it off the Ideas shelves |
 | `pass` | `pass_<slug>` | "not interested" — also fed to Claude as a signal to avoid |
@@ -82,7 +83,7 @@ never removals — a hard delete resurrects on the next sync from another phone.
 | `ballot` | `ballot_<member>_<round>` | one person's movie vote |
 | `oballot` | `oballot_<year>_<cat>_<member>` | one person's Ortizzle vote |
 | `rotation` | `rotation_anchor` | pins a Friday to a person, restarting the turn order |
-| `setting` | `settings_*` | TMDB/OMDb keys, Ortizzle date, sample dismissal |
+| `setting` | `settings_*` | TMDB/OMDb keys, Ortizzle date, sample dismissal, last backup |
 
 Per-person records (`ballot_`, `oballot_`, `rx_`) are deliberately separate
 records rather than arrays on a parent, so two phones acting at once merge
@@ -163,6 +164,27 @@ having it.
 **Streaming providers aren't in the keepsakes.** They'd be stale within a
 month. They show on the projector screen and in idea details only.
 
+**The projector screen only ever paints what's cached.** Poster, trailer and
+where-to-watch all read `night.facts`, then repaint from the one
+`ensureNightFacts` callback when a fetch lands. A night typed in by hand has no
+poster or trailer until that callback fires — which is why the poster wrapper
+is created empty and `:empty` hides it, rather than the screen reflowing.
+
+**Facts top-ups are additive, never a refetch.** `ensureNightFacts` skips
+re-fetching once `fetchedAt` is set, so anything added to the shape later needs
+its own `<thing>Tried` flag and a top-up branch — that's how OMDb scores and
+then trailers reached nights cached before either existed. Old nights still
+carry no `posterPath` if they were logged by hand before posters were cached.
+
+**Pre-show packs are spoiler-free by prompt, not by guarantee.** `generatePreShow`
+tells Claude the family hasn't seen the film; the sheet says so too. Keep that
+instruction if you touch the prompt — the after-credits pack is the one that's
+allowed to discuss the plot.
+
+**The backup nudge is synced, not per-phone.** `settings_backup` records when
+anybody last exported, so Chris backing up settles the nudge on Kat's phone
+instead of nagging everyone separately.
+
 **Everything degrades without keys.** TMDB (posters, facts, providers), OMDb
 (IMDb/RT), and Anthropic (packs, recommendations) are all optional. The app is
 fully usable with none of them set.
@@ -200,6 +222,8 @@ mistake would hide.
 
 ## Version history
 
+- **v3.3** — the poster on the projector screen, trailers, spoiler-free pre-show packs, a backup nudge
+- **v3.2** — cards in date order, and a Rotten Tomatoes link
 - **v3.1** — bonus nights that don't take a turn, and where you watched
 - **v3.0** — picker's question, family votes, where-to-watch, The Ortizzle; source split into `src/fmn/*.js` and moved into its own repo
 - **v2.6** — "Not interested" on movie ideas

@@ -127,8 +127,14 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
     0 16px 30px rgba(90,70,45,.28),
     inset 0 -14px 30px rgba(58,46,40,.05), inset 0 6px 24px rgba(255,255,255,.9);
 }
+/* movie night itself — the projector runs a slightly hotter bulb */
+.screen.tonight{background:linear-gradient(180deg,#FFFDF7 0%,#FFF6E4 74%,#FBEBCE 100%)}
+:root[data-theme="light"] .screen.tonight{
+  background:linear-gradient(180deg,#FFFFFF 0%,#FFFAEE 70%,#FDF2DC 100%);
+}
 .screen-inner{position:relative;z-index:1}
 .screen .label{font-size:11px;letter-spacing:4px;color:var(--coral);text-transform:uppercase;font-weight:900}
+.screen .label.tonight{color:#A8620F}
 .screen .pickname{
   font-family:'Baloo 2',sans-serif;font-weight:800;
   font-size:clamp(24px,6.5vw,34px);margin-top:6px;line-height:1.15;
@@ -147,6 +153,18 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   background:#E9DEC8;
   box-shadow:0 10px 22px rgba(58,46,40,.35);
 }
+.screen .screen-poster.poster-tap img{cursor:pointer}
+.screen .screen-poster.poster-tap:active img{transform:scale(.98)}
+/* the trailer — always-light surface, so fixed inks (see the token rule) */
+.screen-trailer{margin-top:10px}
+.screen-trailer:empty{display:none}
+.screen-trailer .st-link{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:44px;padding:0 18px;border-radius:99px;text-decoration:none;
+  background:#FFF9EE;border:2px solid #E2D4BC;color:#A8620F;
+  font-size:13px;font-weight:900;letter-spacing:.3px;
+}
+.screen-trailer .st-link:active{background:#FFF3DE}
 .screen .rotation{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:16px;flex-wrap:wrap}
 /* initials only — four circles and arrows always fit one line at 390px */
 .rot-chip{
@@ -615,6 +633,27 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   text-align:center;font-size:10px;color:var(--muted);font-weight:800;letter-spacing:1px;
   margin-top:14px;text-transform:uppercase;
 }
+/* coming attractions — the pre-show sheet, on the after-credits overlay */
+.ca-poster{margin-top:16px;text-align:center}
+.ca-poster img{
+  width:170px;max-width:52%;border-radius:12px;border:3px solid var(--line);
+  box-shadow:0 14px 30px rgba(0,0,0,.4);
+}
+.ca-facts{justify-content:center;margin-top:14px}
+.ca-trailer{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  margin-top:14px;min-height:54px;border-radius:99px;text-decoration:none;
+  background:linear-gradient(135deg,#FFB454,#F0982F);color:#2A1B14;
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;
+}
+.ca-hype{
+  margin-top:10px;background:var(--card);border:2px solid var(--line);border-radius:16px;
+  padding:14px 16px;font-size:15px;font-weight:700;line-height:1.6;
+}
+.ca-heads{
+  margin-top:9px;background:rgba(255,180,84,.12);border:2px solid rgba(255,180,84,.36);
+  border-radius:12px;padding:12px 14px;font-size:13.5px;font-weight:700;line-height:1.55;
+}
 .ai-loading{text-align:center;margin-top:40px}
 .ai-loading .reel{font-size:44px;display:inline-block;animation:reelspin 1.6s linear infinite}
 .ai-loading .msg{margin-top:12px;color:var(--dim);font-weight:800;font-size:14px;letter-spacing:1px}
@@ -1005,6 +1044,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   font-size:11px;letter-spacing:3px;color:var(--amber);text-transform:uppercase;font-weight:900;
 }
 .set-note{font-size:12.5px;color:var(--dim);font-weight:600;line-height:1.55;margin-top:8px}
+/* a nudge, not an alarm — used when the last backup has gone stale */
+.set-warn{
+  margin-top:10px;background:rgba(255,180,84,.12);border:2px solid rgba(255,180,84,.38);
+  border-radius:12px;padding:11px 13px;font-size:13px;color:var(--cream);
+  font-weight:700;line-height:1.55;
+}
+.set-warn b{color:var(--amber);font-weight:900}
 .set-btn{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   min-height:50px;border-radius:14px;border:2px solid var(--line);
@@ -1325,6 +1371,11 @@ var AZ = {
   today: function(){
     return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date());
   },
+  /* the Arizona calendar date a timestamp fell on — for ageing stored
+     stamps without ever drifting to UTC */
+  dateOf: function(ts){
+    return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date(ts));
+  },
   pretty: function(dateStr){
     var p = dateStr.split('-').map(Number);
     var d = new Date(p[0], p[1]-1, p[2]);
@@ -1500,7 +1551,7 @@ function tmdbSearch(query){
 function tmdbDetails(tmdbId){
   var cred = loadTmdbCred();
   if (!cred || !tmdbId) return Promise.reject(new Error('NO_KEY'));
-  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates,watch/providers';
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates,watch/providers,videos';
   var headers = {};
   if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
   else url += '&api_key=' + encodeURIComponent(cred.value);
@@ -1508,6 +1559,41 @@ function tmdbDetails(tmdbId){
     if (!res.ok) throw new Error('TMDB ' + res.status);
     return res.json();
   });
+}
+/* The trailer, for building hype at the dinner table. Official YouTube
+   trailers win over teasers and fan uploads; anything else is skipped
+   rather than risking a link to somebody's reaction video. */
+function trailerFrom(details){
+  try {
+    var list = (details.videos && details.videos.results) || [];
+    var best = null;
+    for (var i=0;i<list.length;i++){
+      var v = list[i];
+      if (v.site !== 'YouTube' || !v.key) continue;
+      if (v.type !== 'Trailer' && v.type !== 'Teaser') continue;
+      var score = (v.type === 'Trailer' ? 2 : 0) + (v.official ? 1 : 0);
+      if (!best || score > best.score) best = { score:score, key:v.key, name:v.name || 'Trailer' };
+    }
+    return best ? { key: best.key, name: best.name } : null;
+  } catch(e){ return null; }
+}
+/* just the videos, for topping up facts cached before trailers existed */
+function tmdbVideos(tmdbId){
+  var cred = loadTmdbCred();
+  if (!cred || !tmdbId) return Promise.resolve(null);
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '/videos';
+  var headers = {};
+  if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
+  else url += '?api_key=' + encodeURIComponent(cred.value);
+  return fetch(url, { headers: headers })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){ return d ? trailerFrom({ videos: d }) : null; })
+    .catch(function(){ return null; });
+}
+function trailerUrl(f){
+  return (f && f.trailer && f.trailer.key)
+    ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(f.trailer.key)
+    : null;
 }
 /* Where the family can actually watch it tonight. TMDB relays JustWatch
    data; we only want US, and only the names — logos would mean more
@@ -1579,6 +1665,8 @@ function buildFacts(tmdbId, fallbackTitle){
         tmdbScore: d.vote_average || null,
         imdbId: d.imdb_id || null,
         watch: usWatchFrom(d),
+        trailer: trailerFrom(d),
+        videosTried: true,
         fetchedAt: Date.now()
       };
       return omdbScores(f.imdbId).then(function(sc){
@@ -1655,18 +1743,27 @@ function ensureNightFacts(night, onDone){
   var f = night.facts;
   var haveCore = !!(f && f.fetchedAt);
   var wantsOmdb = haveCore && !f.imdb && !f.omdbTried && !!omdbKey() && !!f.imdbId;
+  /* facts cached before trailers existed have no video, so top those up the
+     same way rather than leaving old bookings without a trailer forever */
+  var wantsVideos = haveCore && !f.trailer && !f.videosTried && !!loadTmdbCred() && !!f.tmdbId;
 
-  if (haveCore && !wantsOmdb){ if (onDone) onDone(f); return; }
+  if (haveCore && !wantsOmdb && !wantsVideos){ if (onDone) onDone(f); return; }
 
-  if (wantsOmdb){
+  if (haveCore){
     if (onDone) onDone(f);            // paint what we already have
-    omdbScores(f.imdbId).then(function(sc){
+    Promise.all([
+      wantsOmdb ? omdbScores(f.imdbId) : Promise.resolve(null),
+      wantsVideos ? tmdbVideos(f.tmdbId) : Promise.resolve(null)
+    ]).then(function(res){
+      var sc = res[0], tr = res[1];
       var rec = data.records[night.id];
       if (!rec || rec.deleted) return;
       var merged = {};
       for (var k in f) merged[k] = f[k];
       if (sc){ merged.imdb = sc.imdb; merged.rt = sc.rt; merged.meta = sc.meta; }
-      merged.omdbTried = true;
+      if (wantsOmdb) merged.omdbTried = true;
+      if (tr) merged.trailer = tr;
+      if (wantsVideos) merged.videosTried = true;
       rec.facts = merged;
       rec.updatedAt = Date.now();
       saveData();
@@ -2955,6 +3052,15 @@ function openNightMenu(night){
       ? 'family bonus, ' + memberById(night.pickedBy).name + '’s find'
       : memberById(night.pickedBy).name + '’s pick')));
     var list = el('div','menu-list');
+    /* for a night that hasn't happened yet the pre-show sheet is the useful
+       one, and it's the only way in when there's no poster to tap */
+    if (!nightHappened(night)){
+      var ca = el('button','menu-item');
+      ca.appendChild(el('span','mi','🎟'));
+      ca.appendChild(document.createTextNode('Coming attractions'));
+      ca.addEventListener('click', function(){ close(); openComingAttractions(night); });
+      list.appendChild(ca);
+    }
     var open = el('button','menu-item');
     open.appendChild(el('span','mi','📖'));
     open.appendChild(document.createTextNode('Open the scrapbook'));
@@ -3774,7 +3880,200 @@ function openAfterCredits(night){
   document.body.appendChild(overlay);
 }
 
+/* ---------- Coming Attractions — the pre-show sheet for a booked night ----------
+   Tapping the poster on the projector screen lands here: the one-sheet big,
+   the facts, the trailer, where to watch it, and — with a Claude key — a
+   spoiler-free pre-show to read out before anybody presses play. Shares the
+   after-credits overlay, so it re-themes with the app. */
+function preShowFor(nightId){
+  var r = data.records['pre_' + nightId];
+  return (r && !r.deleted && r.lookFor && r.lookFor.length) ? r : null;
+}
+function generatePreShow(night){
+  var system = 'You write spoiler-free pre-show notes for a family movie night. '
+    + 'The family: Chris and Kat (parents), Sedona (12) and River (9). '
+    + 'They have NOT seen this film yet — never reveal twists, endings, deaths or any '
+    + 'surprise, and never hint that one is coming. Warm, excited, PG, and specific to '
+    + 'this film rather than generic praise.';
+  var prompt = 'Movie: "' + night.title + '"' + (night.year ? ' (' + night.year + ')' : '') + '.\n'
+    + 'Respond with ONLY valid JSON, no markdown fences, exactly this shape:\n'
+    + '{"hype":"two spoiler-free sentences on why this is a great pick for tonight",'
+    + '"lookFor":["3 spoiler-free things to watch for — a visual detail, a piece of craft, a running joke"],'
+    + '"guess":["2 predictions the family can call out loud before pressing play"],'
+    + '"heads":"one short honest heads-up for parents about tone or intensity, or an empty string if there is nothing to flag"}';
+  return askClaude(prompt, { system: system, maxTokens: 1100 }).then(function(text){
+    var t = text.trim();
+    t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    var obj = JSON.parse(t);
+    if (!obj || !obj.hype || !obj.lookFor || !obj.lookFor.length) throw new Error('BAD_SHAPE');
+    var rec = {
+      id: 'pre_' + night.id, type: 'preshow', nightId: night.id, title: night.title,
+      hype: String(obj.hype),
+      lookFor: obj.lookFor.slice(0, 4),
+      guess: (obj.guess || []).slice(0, 3),
+      heads: obj.heads ? String(obj.heads) : '',
+      updatedAt: Date.now()
+    };
+    if (night.sample) rec.sample = true; // demo packs stay off the family gist
+    data.records[rec.id] = rec;
+    saveData();
+    return rec;
+  });
+}
+function openComingAttractions(night){
+  var overlay = el('div','ai-overlay');
+  var closeBtn = el('button','scrap-close','✕');
+  closeBtn.setAttribute('aria-label','Close');
+  closeBtn.addEventListener('click', function(){ overlay.remove(); });
+  overlay.appendChild(closeBtn);
+  var page = el('div','ai-page');
+  overlay.appendChild(page);
+  var loading = false;
+  var facts = night.facts || null;
+
+  function startGenerate(){
+    loading = true;
+    paint();
+    generatePreShow(night).then(function(){
+      loading = false;
+      paint();
+      confettiBurst(16);
+    }).catch(function(e){
+      loading = false;
+      paint();
+      if (e && e.message === 'BAD_KEY') toast('That Anthropic key was rejected — check it in Settings');
+      else if (e && e.message === 'NO_KEY') toast('Add an Anthropic key in Settings first');
+      else toast('Couldn’t reach Claude — try again in a moment');
+    });
+  }
+
+  function paint(){
+    while (page.firstChild) page.removeChild(page.firstChild);
+    var tonight = night.date === AZ.today();
+    page.appendChild(el('div','ai-kicker', tonight ? '🎬 Tonight’s feature' : '🎟 Coming attractions'));
+    page.appendChild(el('div','ai-title', night.title));
+    page.appendChild(el('div','ai-sub', (isBonus(night)
+        ? memberById(night.pickedBy).name + '’s find · family bonus'
+        : memberById(night.pickedBy).name + '’s pick')
+      + ' · ' + (tonight ? 'tonight' : AZ.prettyLong(night.date))));
+
+    if (night.posterPath){
+      var pw = el('div','ca-poster');
+      var img = document.createElement('img');
+      img.alt = '';
+      img.src = TMDB_IMG + night.posterPath;
+      img.addEventListener('error', function(){ pw.remove(); });
+      pw.appendChild(img);
+      page.appendChild(pw);
+    }
+
+    if (facts){
+      var chips = factChips(facts, 'idea-facts ca-facts', night.title);
+      page.appendChild(chips);
+      var tu = trailerUrl(facts);
+      if (tu){
+        var ta = el('a','ca-trailer','▶ Watch the trailer');
+        ta.href = tu;
+        ta.target = '_blank';
+        ta.rel = 'noopener noreferrer';
+        ta.setAttribute('aria-label','Watch the trailer for ' + night.title + ' on YouTube');
+        page.appendChild(ta);
+      }
+      var wr = watchRow(facts);
+      if (wr) page.appendChild(wr);
+    }
+
+    if (loading){
+      var ld = el('div','ai-loading');
+      var reel = el('div','reel','🎞️');
+      reel.setAttribute('aria-hidden','true');
+      ld.appendChild(reel);
+      ld.appendChild(el('div','msg','Writing tonight’s pre-show…'));
+      page.appendChild(ld);
+      return;
+    }
+
+    var pack = preShowFor(night.id);
+    var hasKey = !!Store.get('anthropic_key');
+
+    if (pack){
+      page.appendChild(el('div','ai-sec-title','🍿 Before you press play'));
+      page.appendChild(el('div','ca-hype', pack.hype));
+      page.appendChild(el('div','ai-sec-title','👀 Watch for'));
+      pack.lookFor.forEach(function(w, i){
+        var fc = el('div','ai-fact');
+        fc.appendChild(el('b', null, '#' + (i+1) + ' '));
+        fc.appendChild(document.createTextNode(w));
+        page.appendChild(fc);
+      });
+      if (pack.guess && pack.guess.length){
+        page.appendChild(el('div','ai-sec-title','🔮 Call it now'));
+        pack.guess.forEach(function(g){ page.appendChild(el('div','ai-talk', g)); });
+      }
+      if (pack.heads){
+        page.appendChild(el('div','ai-sec-title','🧭 Parent heads-up'));
+        page.appendChild(el('div','ca-heads', pack.heads));
+      }
+      if (hasKey){
+        var regen = el('button','ai-regen','↻ Fresh pre-show');
+        regen.addEventListener('click', function(){
+          confirmModal({
+            title:'Write a fresh pre-show?',
+            message:'Tonight’s notes for this movie will be replaced for everyone.',
+            confirmText:'Fresh pre-show',
+            onConfirm: startGenerate
+          });
+        });
+        page.appendChild(regen);
+      }
+      page.appendChild(el('div','ai-disclaimer','Written by Claude · asked to stay spoiler-free, but skim it first'));
+      return;
+    }
+
+    var c = el('div','ai-center');
+    c.appendChild(el('div','big','🎟️✨'));
+    if (hasKey){
+      c.appendChild(el('div', null, 'A spoiler-free pre-show — why this pick is worth the popcorn, things to watch for, and predictions to call out loud.'));
+      var gen = el('button','ai-gen','✨ Write the pre-show');
+      gen.addEventListener('click', startGenerate);
+      page.appendChild(c);
+      page.appendChild(gen);
+    } else {
+      c.appendChild(el('div', null, 'Pre-show notes need a Claude (Anthropic) API key. Add one in Settings — the poster, facts, trailer and where-to-watch all work without it.'));
+      var go = el('button','ai-gen','⚙️ Open Settings');
+      go.addEventListener('click', function(){
+        overlay.remove();
+        view = 'settings';
+        render();
+        window.scrollTo(0, 0);
+      });
+      page.appendChild(c);
+      page.appendChild(go);
+    }
+  }
+
+  paint();
+  /* fills in facts, trailer and where-to-watch for a night booked by hand */
+  ensureNightFacts(night, function(f){ facts = f; paint(); });
+  document.body.appendChild(overlay);
+}
+
 /* ---------- export / import ---------- */
+/* When the family last exported a real backup file. Synced, so one phone
+   doing it settles the nudge for everybody — and it's a timestamp, not a
+   secret, so it's safe to share. */
+function lastBackup(){
+  var r = data.records['settings_backup'];
+  return (r && !r.deleted && r.at) ? r : null;
+}
+function markBackup(){
+  var me = whoAmI();
+  data.records['settings_backup'] = {
+    id:'settings_backup', type:'setting', key:'backup',
+    at: Date.now(), by: me ? me.id : null, updatedAt: Date.now()
+  };
+  saveData();
+}
 function exportBackup(){
   try {
     var blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
@@ -3785,6 +4084,8 @@ function exportBackup(){
     a.click();
     a.remove();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+    markBackup();
+    render();
     toast('Backup exported 📦');
   } catch(e){
     toast('Export failed — try again');
@@ -3987,9 +4288,17 @@ function renderHome(app){
   }
   var booked = upNext.night;
   var who = showBonus ? upNext.member : np;
-  inner.appendChild(el('div','label', showBonus
-    ? (soonestBonus.venue === 'theater' ? 'Bonus — at the theatre…' : 'Bonus movie…')
-    : booked ? 'Coming up…' : 'Up next…'));
+  /* movie night itself deserves a different announcement than "coming up",
+     and a slightly hotter bulb — see .screen.tonight */
+  var isTonight = upNext.date === AZ.today();
+  if (isTonight) screen.classList.add('tonight');
+  inner.appendChild(el('div','label' + (isTonight ? ' tonight' : ''), isTonight
+    ? (showBonus
+        ? (soonestBonus.venue === 'theater' ? 'Tonight — at the theatre' : 'Tonight’s bonus')
+        : booked ? 'Tonight’s feature' : 'Tonight')
+    : (showBonus
+        ? (soonestBonus.venue === 'theater' ? 'Bonus — at the theatre…' : 'Bonus movie…')
+        : booked ? 'Coming up…' : 'Up next…')));
   var pn = el('div','pickname', showBonus
     ? 'Family bonus 🎟️'
     : booked ? np.name + '’s pick 🍿'
@@ -4008,15 +4317,30 @@ function renderHome(app){
       var pimg = document.createElement('img');
       pimg.alt = '';
       pimg.src = TMDB_IMG + booked.posterPath;
-      pimg.addEventListener('error', function(){ pimg.remove(); });
+      pimg.addEventListener('error', function(){
+        pimg.remove();
+        pWrap.removeAttribute('role');
+        pWrap.removeAttribute('tabindex');
+      });
       pWrap.appendChild(pimg);
+      /* tapping the one-sheet opens the pre-show sheet for that movie */
+      pWrap.classList.add('poster-tap');
+      pWrap.setAttribute('role','button');
+      pWrap.setAttribute('tabindex','0');
+      pWrap.setAttribute('aria-label','Coming attractions for ' + booked.title);
     };
+    var openCA = function(){ if (pWrap.firstChild) openComingAttractions(booked); };
+    pWrap.addEventListener('click', openCA);
+    pWrap.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openCA(); }
+    });
     paintPoster();
     inner.appendChild(pWrap);
     inner.appendChild(el('div','booked-title', booked.title));
   }
-  inner.appendChild(el('div','showdate', booked
-    ? AZ.prettyLong(upNext.date)
+  inner.appendChild(el('div','showdate', isTonight
+    ? 'Tonight · ' + AZ.prettyLong(upNext.date)
+    : booked ? AZ.prettyLong(upNext.date)
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
   if (showBonus){
     // don't name the same person twice when the finder is also up next
@@ -4025,17 +4349,36 @@ function renderHome(app){
       ? finder.name + ' found this one · nobody loses a turn'
       : finder.name + ' found this one · nobody loses a turn, ' + np.name + ' still picks next'));
   }
-  /* where to find it — right where you look on the way to the couch */
+  /* the trailer and where to find it — right where you look on the way to
+     the couch. Both wait on the same cached facts, so they paint together. */
   if (booked){
+    var tWrap = el('div','screen-trailer');
+    inner.appendChild(tWrap);
     var wWrap = el('div','screen-watch');
     inner.appendChild(wWrap);
+    var paintTrailer = function(f){
+      while (tWrap.firstChild) tWrap.removeChild(tWrap.firstChild);
+      var tu = trailerUrl(f);
+      if (!tu) return;
+      var a = el('a','st-link','▶ Watch the trailer');
+      a.href = tu;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.setAttribute('aria-label','Watch the trailer for ' + booked.title + ' on YouTube');
+      tWrap.appendChild(a);
+    };
     var paintWatch = function(f){
       while (wWrap.firstChild) wWrap.removeChild(wWrap.firstChild);
       var wr = watchRow(f);
       if (wr) wWrap.appendChild(wr);
     };
+    paintTrailer(booked.facts);
     paintWatch(booked.facts);
-    ensureNightFacts(booked, function(f){ paintWatch(f); paintPoster(); });
+    ensureNightFacts(booked, function(f){
+      paintPoster();
+      paintTrailer(f);
+      paintWatch(f);
+    });
   }
   var rot = el('div','rotation');
   /* initials only, so the whole order fits on one line under the poster;
@@ -4309,7 +4652,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.2'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.3'));
   app.appendChild(footer);
 }
 
@@ -6579,8 +6922,30 @@ function renderSettings(app){
     });
     sy.appendChild(cg);
   }
-  /* data safety */
-  var ds = collapsible(app, '💾 Backups');
+  /* data safety.
+     The badge carries the answer without anybody having to expand the
+     section, because the whole point is noticing before it matters. */
+  var lb = lastBackup();
+  var lbAge = lb ? AZ.daysBetween(AZ.dateOf(lb.at), AZ.today()) : null;
+  var lbStale = !lb || lbAge >= 45;
+  var lbWhen = !lb ? 'Never'
+    : lbAge <= 0 ? 'Today'
+    : lbAge === 1 ? 'Yesterday'
+    : lbAge < 60 ? lbAge + ' days ago'
+    : Math.round(lbAge / 30) + ' months ago';
+  var ds = collapsible(app, '💾 Backups', { badge: lbWhen, badgeOn: !lbStale });
+  ds.appendChild(el('div','set-note', lb
+    ? 'Last backup: ' + lbWhen.toLowerCase() + (lb.by ? ' by ' + memberById(lb.by).name : '')
+      + ' · ' + AZ.pretty(AZ.dateOf(lb.at)) + '.'
+    : 'No backup file has been exported yet.'));
+  if (lbStale){
+    var warn = el('div','set-warn');
+    warn.appendChild(el('b', null, lb ? 'It’s been a while. ' : 'Worth doing once. '));
+    warn.appendChild(document.createTextNode(
+      'Every night, reaction, quote and memory lives on the phones and in the family gist — '
+      + 'a file in Files or Drive is the only copy that survives losing both.'));
+    ds.appendChild(warn);
+  }
   ds.appendChild(el('div','set-note','Export saves everything — nights, reactions, quotes, memories — to a file you can keep in iCloud/Files. Import merges a backup in without losing newer entries.'));
   var ex = el('button','set-btn','📦 Export backup file');
   ex.addEventListener('click', exportBackup);

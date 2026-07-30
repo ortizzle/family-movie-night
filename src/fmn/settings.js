@@ -518,8 +518,30 @@ function renderSettings(app){
     });
     sy.appendChild(cg);
   }
-  /* data safety */
-  var ds = collapsible(app, '💾 Backups');
+  /* data safety.
+     The badge carries the answer without anybody having to expand the
+     section, because the whole point is noticing before it matters. */
+  var lb = lastBackup();
+  var lbAge = lb ? AZ.daysBetween(AZ.dateOf(lb.at), AZ.today()) : null;
+  var lbStale = !lb || lbAge >= 45;
+  var lbWhen = !lb ? 'Never'
+    : lbAge <= 0 ? 'Today'
+    : lbAge === 1 ? 'Yesterday'
+    : lbAge < 60 ? lbAge + ' days ago'
+    : Math.round(lbAge / 30) + ' months ago';
+  var ds = collapsible(app, '💾 Backups', { badge: lbWhen, badgeOn: !lbStale });
+  ds.appendChild(el('div','set-note', lb
+    ? 'Last backup: ' + lbWhen.toLowerCase() + (lb.by ? ' by ' + memberById(lb.by).name : '')
+      + ' · ' + AZ.pretty(AZ.dateOf(lb.at)) + '.'
+    : 'No backup file has been exported yet.'));
+  if (lbStale){
+    var warn = el('div','set-warn');
+    warn.appendChild(el('b', null, lb ? 'It’s been a while. ' : 'Worth doing once. '));
+    warn.appendChild(document.createTextNode(
+      'Every night, reaction, quote and memory lives on the phones and in the family gist — '
+      + 'a file in Files or Drive is the only copy that survives losing both.'));
+    ds.appendChild(warn);
+  }
   ds.appendChild(el('div','set-note','Export saves everything — nights, reactions, quotes, memories — to a file you can keep in iCloud/Files. Import merges a backup in without losing newer entries.'));
   var ex = el('button','set-btn','📦 Export backup file');
   ex.addEventListener('click', exportBackup);

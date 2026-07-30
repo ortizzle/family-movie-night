@@ -66,9 +66,17 @@ function renderHome(app){
   }
   var booked = upNext.night;
   var who = showBonus ? upNext.member : np;
-  inner.appendChild(el('div','label', showBonus
-    ? (soonestBonus.venue === 'theater' ? 'Bonus — at the theatre…' : 'Bonus movie…')
-    : booked ? 'Coming up…' : 'Up next…'));
+  /* movie night itself deserves a different announcement than "coming up",
+     and a slightly hotter bulb — see .screen.tonight */
+  var isTonight = upNext.date === AZ.today();
+  if (isTonight) screen.classList.add('tonight');
+  inner.appendChild(el('div','label' + (isTonight ? ' tonight' : ''), isTonight
+    ? (showBonus
+        ? (soonestBonus.venue === 'theater' ? 'Tonight — at the theatre' : 'Tonight’s bonus')
+        : booked ? 'Tonight’s feature' : 'Tonight')
+    : (showBonus
+        ? (soonestBonus.venue === 'theater' ? 'Bonus — at the theatre…' : 'Bonus movie…')
+        : booked ? 'Coming up…' : 'Up next…')));
   var pn = el('div','pickname', showBonus
     ? 'Family bonus 🎟️'
     : booked ? np.name + '’s pick 🍿'
@@ -87,15 +95,30 @@ function renderHome(app){
       var pimg = document.createElement('img');
       pimg.alt = '';
       pimg.src = TMDB_IMG + booked.posterPath;
-      pimg.addEventListener('error', function(){ pimg.remove(); });
+      pimg.addEventListener('error', function(){
+        pimg.remove();
+        pWrap.removeAttribute('role');
+        pWrap.removeAttribute('tabindex');
+      });
       pWrap.appendChild(pimg);
+      /* tapping the one-sheet opens the pre-show sheet for that movie */
+      pWrap.classList.add('poster-tap');
+      pWrap.setAttribute('role','button');
+      pWrap.setAttribute('tabindex','0');
+      pWrap.setAttribute('aria-label','Coming attractions for ' + booked.title);
     };
+    var openCA = function(){ if (pWrap.firstChild) openComingAttractions(booked); };
+    pWrap.addEventListener('click', openCA);
+    pWrap.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openCA(); }
+    });
     paintPoster();
     inner.appendChild(pWrap);
     inner.appendChild(el('div','booked-title', booked.title));
   }
-  inner.appendChild(el('div','showdate', booked
-    ? AZ.prettyLong(upNext.date)
+  inner.appendChild(el('div','showdate', isTonight
+    ? 'Tonight · ' + AZ.prettyLong(upNext.date)
+    : booked ? AZ.prettyLong(upNext.date)
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
   if (showBonus){
     // don't name the same person twice when the finder is also up next
@@ -104,17 +127,36 @@ function renderHome(app){
       ? finder.name + ' found this one · nobody loses a turn'
       : finder.name + ' found this one · nobody loses a turn, ' + np.name + ' still picks next'));
   }
-  /* where to find it — right where you look on the way to the couch */
+  /* the trailer and where to find it — right where you look on the way to
+     the couch. Both wait on the same cached facts, so they paint together. */
   if (booked){
+    var tWrap = el('div','screen-trailer');
+    inner.appendChild(tWrap);
     var wWrap = el('div','screen-watch');
     inner.appendChild(wWrap);
+    var paintTrailer = function(f){
+      while (tWrap.firstChild) tWrap.removeChild(tWrap.firstChild);
+      var tu = trailerUrl(f);
+      if (!tu) return;
+      var a = el('a','st-link','▶ Watch the trailer');
+      a.href = tu;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.setAttribute('aria-label','Watch the trailer for ' + booked.title + ' on YouTube');
+      tWrap.appendChild(a);
+    };
     var paintWatch = function(f){
       while (wWrap.firstChild) wWrap.removeChild(wWrap.firstChild);
       var wr = watchRow(f);
       if (wr) wWrap.appendChild(wr);
     };
+    paintTrailer(booked.facts);
     paintWatch(booked.facts);
-    ensureNightFacts(booked, function(f){ paintWatch(f); paintPoster(); });
+    ensureNightFacts(booked, function(f){
+      paintPoster();
+      paintTrailer(f);
+      paintWatch(f);
+    });
   }
   var rot = el('div','rotation');
   /* initials only, so the whole order fits on one line under the poster;
@@ -388,6 +430,6 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.2'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.3'));
   app.appendChild(footer);
 }

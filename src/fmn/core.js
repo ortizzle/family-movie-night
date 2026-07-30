@@ -37,6 +37,11 @@ var AZ = {
   today: function(){
     return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date());
   },
+  /* the Arizona calendar date a timestamp fell on — for ageing stored
+     stamps without ever drifting to UTC */
+  dateOf: function(ts){
+    return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date(ts));
+  },
   pretty: function(dateStr){
     var p = dateStr.split('-').map(Number);
     var d = new Date(p[0], p[1]-1, p[2]);
@@ -212,7 +217,7 @@ function tmdbSearch(query){
 function tmdbDetails(tmdbId){
   var cred = loadTmdbCred();
   if (!cred || !tmdbId) return Promise.reject(new Error('NO_KEY'));
-  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates,watch/providers';
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates,watch/providers,videos';
   var headers = {};
   if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
   else url += '&api_key=' + encodeURIComponent(cred.value);
@@ -220,6 +225,41 @@ function tmdbDetails(tmdbId){
     if (!res.ok) throw new Error('TMDB ' + res.status);
     return res.json();
   });
+}
+/* The trailer, for building hype at the dinner table. Official YouTube
+   trailers win over teasers and fan uploads; anything else is skipped
+   rather than risking a link to somebody's reaction video. */
+function trailerFrom(details){
+  try {
+    var list = (details.videos && details.videos.results) || [];
+    var best = null;
+    for (var i=0;i<list.length;i++){
+      var v = list[i];
+      if (v.site !== 'YouTube' || !v.key) continue;
+      if (v.type !== 'Trailer' && v.type !== 'Teaser') continue;
+      var score = (v.type === 'Trailer' ? 2 : 0) + (v.official ? 1 : 0);
+      if (!best || score > best.score) best = { score:score, key:v.key, name:v.name || 'Trailer' };
+    }
+    return best ? { key: best.key, name: best.name } : null;
+  } catch(e){ return null; }
+}
+/* just the videos, for topping up facts cached before trailers existed */
+function tmdbVideos(tmdbId){
+  var cred = loadTmdbCred();
+  if (!cred || !tmdbId) return Promise.resolve(null);
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '/videos';
+  var headers = {};
+  if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
+  else url += '?api_key=' + encodeURIComponent(cred.value);
+  return fetch(url, { headers: headers })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){ return d ? trailerFrom({ videos: d }) : null; })
+    .catch(function(){ return null; });
+}
+function trailerUrl(f){
+  return (f && f.trailer && f.trailer.key)
+    ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(f.trailer.key)
+    : null;
 }
 /* Where the family can actually watch it tonight. TMDB relays JustWatch
    data; we only want US, and only the names — logos would mean more
@@ -291,6 +331,8 @@ function buildFacts(tmdbId, fallbackTitle){
         tmdbScore: d.vote_average || null,
         imdbId: d.imdb_id || null,
         watch: usWatchFrom(d),
+        trailer: trailerFrom(d),
+        videosTried: true,
         fetchedAt: Date.now()
       };
       return omdbScores(f.imdbId).then(function(sc){
@@ -367,18 +409,27 @@ function ensureNightFacts(night, onDone){
   var f = night.facts;
   var haveCore = !!(f && f.fetchedAt);
   var wantsOmdb = haveCore && !f.imdb && !f.omdbTried && !!omdbKey() && !!f.imdbId;
+  /* facts cached before trailers existed have no video, so top those up the
+     same way rather than leaving old bookings without a trailer forever */
+  var wantsVideos = haveCore && !f.trailer && !f.videosTried && !!loadTmdbCred() && !!f.tmdbId;
 
-  if (haveCore && !wantsOmdb){ if (onDone) onDone(f); return; }
+  if (haveCore && !wantsOmdb && !wantsVideos){ if (onDone) onDone(f); return; }
 
-  if (wantsOmdb){
+  if (haveCore){
     if (onDone) onDone(f);            // paint what we already have
-    omdbScores(f.imdbId).then(function(sc){
+    Promise.all([
+      wantsOmdb ? omdbScores(f.imdbId) : Promise.resolve(null),
+      wantsVideos ? tmdbVideos(f.tmdbId) : Promise.resolve(null)
+    ]).then(function(res){
+      var sc = res[0], tr = res[1];
       var rec = data.records[night.id];
       if (!rec || rec.deleted) return;
       var merged = {};
       for (var k in f) merged[k] = f[k];
       if (sc){ merged.imdb = sc.imdb; merged.rt = sc.rt; merged.meta = sc.meta; }
-      merged.omdbTried = true;
+      if (wantsOmdb) merged.omdbTried = true;
+      if (tr) merged.trailer = tr;
+      if (wantsVideos) merged.videosTried = true;
       rec.facts = merged;
       rec.updatedAt = Date.now();
       saveData();

@@ -127,8 +127,14 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
     0 16px 30px rgba(90,70,45,.28),
     inset 0 -14px 30px rgba(58,46,40,.05), inset 0 6px 24px rgba(255,255,255,.9);
 }
+/* movie night itself — the projector runs a slightly hotter bulb */
+.screen.tonight{background:linear-gradient(180deg,#FFFDF7 0%,#FFF6E4 74%,#FBEBCE 100%)}
+:root[data-theme="light"] .screen.tonight{
+  background:linear-gradient(180deg,#FFFFFF 0%,#FFFAEE 70%,#FDF2DC 100%);
+}
 .screen-inner{position:relative;z-index:1}
 .screen .label{font-size:11px;letter-spacing:4px;color:var(--coral);text-transform:uppercase;font-weight:900}
+.screen .label.tonight{color:#A8620F}
 .screen .pickname{
   font-family:'Baloo 2',sans-serif;font-weight:800;
   font-size:clamp(24px,6.5vw,34px);margin-top:6px;line-height:1.15;
@@ -147,6 +153,18 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   background:#E9DEC8;
   box-shadow:0 10px 22px rgba(58,46,40,.35);
 }
+.screen .screen-poster.poster-tap img{cursor:pointer}
+.screen .screen-poster.poster-tap:active img{transform:scale(.98)}
+/* the trailer — always-light surface, so fixed inks (see the token rule) */
+.screen-trailer{margin-top:10px}
+.screen-trailer:empty{display:none}
+.screen-trailer .st-link{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:44px;padding:0 18px;border-radius:99px;text-decoration:none;
+  background:#FFF9EE;border:2px solid #E2D4BC;color:#A8620F;
+  font-size:13px;font-weight:900;letter-spacing:.3px;
+}
+.screen-trailer .st-link:active{background:#FFF3DE}
 .screen .rotation{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:16px;flex-wrap:wrap}
 /* initials only — four circles and arrows always fit one line at 390px */
 .rot-chip{
@@ -615,6 +633,27 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   text-align:center;font-size:10px;color:var(--muted);font-weight:800;letter-spacing:1px;
   margin-top:14px;text-transform:uppercase;
 }
+/* coming attractions — the pre-show sheet, on the after-credits overlay */
+.ca-poster{margin-top:16px;text-align:center}
+.ca-poster img{
+  width:170px;max-width:52%;border-radius:12px;border:3px solid var(--line);
+  box-shadow:0 14px 30px rgba(0,0,0,.4);
+}
+.ca-facts{justify-content:center;margin-top:14px}
+.ca-trailer{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  margin-top:14px;min-height:54px;border-radius:99px;text-decoration:none;
+  background:linear-gradient(135deg,#FFB454,#F0982F);color:#2A1B14;
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;
+}
+.ca-hype{
+  margin-top:10px;background:var(--card);border:2px solid var(--line);border-radius:16px;
+  padding:14px 16px;font-size:15px;font-weight:700;line-height:1.6;
+}
+.ca-heads{
+  margin-top:9px;background:rgba(255,180,84,.12);border:2px solid rgba(255,180,84,.36);
+  border-radius:12px;padding:12px 14px;font-size:13.5px;font-weight:700;line-height:1.55;
+}
 .ai-loading{text-align:center;margin-top:40px}
 .ai-loading .reel{font-size:44px;display:inline-block;animation:reelspin 1.6s linear infinite}
 .ai-loading .msg{margin-top:12px;color:var(--dim);font-weight:800;font-size:14px;letter-spacing:1px}
@@ -1005,6 +1044,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   font-size:11px;letter-spacing:3px;color:var(--amber);text-transform:uppercase;font-weight:900;
 }
 .set-note{font-size:12.5px;color:var(--dim);font-weight:600;line-height:1.55;margin-top:8px}
+/* a nudge, not an alarm — used when the last backup has gone stale */
+.set-warn{
+  margin-top:10px;background:rgba(255,180,84,.12);border:2px solid rgba(255,180,84,.38);
+  border-radius:12px;padding:11px 13px;font-size:13px;color:var(--cream);
+  font-weight:700;line-height:1.55;
+}
+.set-warn b{color:var(--amber);font-weight:900}
 .set-btn{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   min-height:50px;border-radius:14px;border:2px solid var(--line);

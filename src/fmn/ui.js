@@ -704,6 +704,15 @@ function openNightMenu(night){
       ? 'family bonus, ' + memberById(night.pickedBy).name + '’s find'
       : memberById(night.pickedBy).name + '’s pick')));
     var list = el('div','menu-list');
+    /* for a night that hasn't happened yet the pre-show sheet is the useful
+       one, and it's the only way in when there's no poster to tap */
+    if (!nightHappened(night)){
+      var ca = el('button','menu-item');
+      ca.appendChild(el('span','mi','🎟'));
+      ca.appendChild(document.createTextNode('Coming attractions'));
+      ca.addEventListener('click', function(){ close(); openComingAttractions(night); });
+      list.appendChild(ca);
+    }
     var open = el('button','menu-item');
     open.appendChild(el('span','mi','📖'));
     open.appendChild(document.createTextNode('Open the scrapbook'));
