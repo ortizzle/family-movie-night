@@ -149,6 +149,23 @@ every function that decides whose turn it is runs its input through
 `lineupSlots`. They still show in Coming Attractions, merged in by date at
 render time. If you add another rotation-aware function, filter it too.
 
+**"Watched" is a clock, not a reaction.** A night dated today counts as
+happened once `showEndMinutes()` has passed — 6:30pm plus the film's cached
+runtime plus 20 minutes, defaulting to two hours when there's no runtime. It
+used to flip as soon as any reaction had content, but the picker's "why I
+picked it" and their question for the family are both written *before* the
+movie: Kat filling hers in at breakfast dropped the card into the memory book
+and handed the projector to the next person mid-morning. Move the family's
+showtime by editing `SHOWTIME` in `core.js` and both the projector line and
+this rule follow.
+
+**A spent Friday stops being an open slot.** Once tonight's turn night has
+played, `nextOpenFriday()` skips to the following Friday. Without it the
+lineup keeps offering today's date, and anything genuinely sooner — a Sunday
+bonus — looks further out than the slot that already went, so the projector
+would announce an empty turn instead of the next actual movie. A bonus never
+spends the Friday; it never took the turn.
+
 **`rotation_anchor` restarts the order without logging a movie.** It only
 decides where the order picks back up; once a night actually happens on or
 after the anchor date, real nights drive the rotation again.
@@ -222,6 +239,7 @@ mistake would hide.
 
 ## Version history
 
+- **v3.4** — the projector waits for the closing credits, and a 6:30 showtime
 - **v3.3** — the poster on the projector screen, trailers, spoiler-free pre-show packs, a backup nudge
 - **v3.2** — cards in date order, and a Rotten Tomatoes link
 - **v3.1** — bonus nights that don't take a turn, and where you watched

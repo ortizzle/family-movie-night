@@ -704,12 +704,15 @@ function openNightMenu(night){
       ? 'family bonus, ' + memberById(night.pickedBy).name + '’s find'
       : memberById(night.pickedBy).name + '’s pick')));
     var list = el('div','menu-list');
-    /* for a night that hasn't happened yet the pre-show sheet is the useful
-       one, and it's the only way in when there's no poster to tap */
-    if (!nightHappened(night)){
+    /* For a night that hasn't happened yet the pre-show sheet is the useful
+       one, and it's the only way in when there's no poster to tap. It stays
+       on the menu afterwards whenever a pack was written — once the projector
+       moves on to the next movie, this is the only way back to those notes. */
+    var watched = nightHappened(night);
+    if (!watched || preShowFor(night.id)){
       var ca = el('button','menu-item');
       ca.appendChild(el('span','mi','🎟'));
-      ca.appendChild(document.createTextNode('Coming attractions'));
+      ca.appendChild(document.createTextNode(watched ? 'Pre-show notes' : 'Coming attractions'));
       ca.addEventListener('click', function(){ close(); openComingAttractions(night); });
       list.appendChild(ca);
     }

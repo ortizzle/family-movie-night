@@ -1376,6 +1376,20 @@ var AZ = {
   dateOf: function(ts){
     return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date(ts));
   },
+  /* minutes since midnight, Arizona — how the app knows whether tonight's
+     movie has actually played yet. The formatter is kept because this runs
+     once per night on every render. */
+  nowMinutes: function(){
+    if (!this._tf) this._tf = new Intl.DateTimeFormat('en-US', {
+      timeZone: this.tz, hourCycle: 'h23', hour: '2-digit', minute: '2-digit'
+    });
+    var h = 0, m = 0;
+    this._tf.formatToParts(new Date()).forEach(function(p){
+      if (p.type === 'hour') h = Number(p.value);
+      if (p.type === 'minute') m = Number(p.value);
+    });
+    return (h % 24) * 60 + m;
+  },
   pretty: function(dateStr){
     var p = dateStr.split('-').map(Number);
     var d = new Date(p[0], p[1]-1, p[2]);
@@ -1461,6 +1475,19 @@ if (window.matchMedia){
   window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function(){
     if (Store.get('motion', 'auto') === 'auto') applyMotion();
   });
+}
+
+/* ---------- showtime ----------
+   Movie night starts at 6:30. Two things read it: the line under the title on
+   the projector, and the rule for whether tonight's film has played yet. Move
+   the family's showtime here and both follow. */
+var SHOWTIME = { hour: 18, minute: 30 };
+function showtimeMinutes(){ return SHOWTIME.hour * 60 + SHOWTIME.minute; }
+function showtimeLabel(){
+  var h = SHOWTIME.hour % 12;
+  if (!h) h = 12;
+  return h + (SHOWTIME.minute ? ':' + String(SHOWTIME.minute).padStart(2,'0') : '')
+    + (SHOWTIME.hour >= 12 ? 'pm' : 'am');
 }
 
 /* ---------- the cast ---------- */
@@ -2025,11 +2052,22 @@ function rotationNext(memberId){
   }
   return MEMBERS[0];
 }
+/* When tonight's showing is over: the 6:30 start, the film's own runtime, and
+   a little for trailers and the popcorn pause. No runtime cached yet — a
+   hand-typed night, or no TMDB key — assume a two-hour movie. */
+function showEndMinutes(n){
+  var runtime = (n && n.facts && n.facts.runtime) ? n.facts.runtime : 120;
+  return showtimeMinutes() + runtime + 20;
+}
 function nightHappened(n){
   if (n.date < AZ.today()) return true;
   if (n.date > AZ.today()) return false;
-  // tonight: it has happened once somebody writes a reaction
-  return reactionsFor(n.id).some(rxHasContent);
+  /* Tonight. A night is NOT watched just because somebody wrote something —
+     the picker's "why I picked it" and their question for the family are both
+     written before the movie. Kat filling hers in at breakfast used to drop
+     the card into the memory book and hand the projector to the next person
+     mid-morning. It has happened once the film has had time to play. */
+  return AZ.nowMinutes() >= showEndMinutes(n);
 }
 function happenedNights(){            // newest first
   return nights().filter(nightHappened);
@@ -2070,6 +2108,13 @@ function setRotationAnchor(date, memberId){
    restart dated further out means the family is taking a break until then */
 function nextOpenFriday(){
   var a = rotationAnchor(), nf = AZ.nextFriday();
+  /* Tonight's Friday is spent once its movie has played. Without this the
+     lineup keeps offering today's date, and anything genuinely sooner — a
+     Sunday bonus, say — looks further out than the slot that already went.
+     A bonus doesn't spend the Friday; it never took the turn. */
+  if (nf === AZ.today() && turnNights(happenedNights()).some(function(n){ return n.date === nf; })){
+    nf = AZ.addDays(nf, 7);
+  }
   return (a && a.date > nf) ? a.date : nf;
 }
 /* nights that count toward the running order — everything since the restart */
@@ -3052,12 +3097,15 @@ function openNightMenu(night){
       ? 'family bonus, ' + memberById(night.pickedBy).name + '’s find'
       : memberById(night.pickedBy).name + '’s pick')));
     var list = el('div','menu-list');
-    /* for a night that hasn't happened yet the pre-show sheet is the useful
-       one, and it's the only way in when there's no poster to tap */
-    if (!nightHappened(night)){
+    /* For a night that hasn't happened yet the pre-show sheet is the useful
+       one, and it's the only way in when there's no poster to tap. It stays
+       on the menu afterwards whenever a pack was written — once the projector
+       moves on to the next movie, this is the only way back to those notes. */
+    var watched = nightHappened(night);
+    if (!watched || preShowFor(night.id)){
       var ca = el('button','menu-item');
       ca.appendChild(el('span','mi','🎟'));
-      ca.appendChild(document.createTextNode('Coming attractions'));
+      ca.appendChild(document.createTextNode(watched ? 'Pre-show notes' : 'Coming attractions'));
       ca.addEventListener('click', function(){ close(); openComingAttractions(night); });
       list.appendChild(ca);
     }
@@ -3950,12 +3998,18 @@ function openComingAttractions(night){
   function paint(){
     while (page.firstChild) page.removeChild(page.firstChild);
     var tonight = night.date === AZ.today();
-    page.appendChild(el('div','ai-kicker', tonight ? '🎬 Tonight’s feature' : '🎟 Coming attractions'));
+    var watched = nightHappened(night);
+    /* after the movie these are keepsake notes, not an announcement */
+    var when = watched ? AZ.prettyLong(night.date)
+      : (tonight ? 'tonight' : AZ.prettyLong(night.date))
+        + (night.venue !== 'theater' ? ' at ' + showtimeLabel() : '');
+    page.appendChild(el('div','ai-kicker', watched ? '🎟 Pre-show notes'
+      : tonight ? '🎬 Tonight’s feature' : '🎟 Coming attractions'));
     page.appendChild(el('div','ai-title', night.title));
     page.appendChild(el('div','ai-sub', (isBonus(night)
         ? memberById(night.pickedBy).name + '’s find · family bonus'
         : memberById(night.pickedBy).name + '’s pick')
-      + ' · ' + (tonight ? 'tonight' : AZ.prettyLong(night.date))));
+      + ' · ' + when));
 
     if (night.posterPath){
       var pw = el('div','ca-poster');
@@ -4338,9 +4392,12 @@ function renderHome(app){
     inner.appendChild(pWrap);
     inner.appendChild(el('div','booked-title', booked.title));
   }
+  /* a booked night at home starts at the family showtime; a trip to the
+     theatre keeps whatever time the cinema gave them */
+  var startsAt = (booked && booked.venue !== 'theater') ? ' · ' + showtimeLabel() : '';
   inner.appendChild(el('div','showdate', isTonight
-    ? 'Tonight · ' + AZ.prettyLong(upNext.date)
-    : booked ? AZ.prettyLong(upNext.date)
+    ? 'Tonight' + startsAt
+    : booked ? AZ.prettyLong(upNext.date) + startsAt
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
   if (showBonus){
     // don't name the same person twice when the finder is also up next
@@ -4652,7 +4709,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.3'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.4'));
   app.appendChild(footer);
 }
 

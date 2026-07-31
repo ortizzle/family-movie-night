@@ -857,12 +857,18 @@ function openComingAttractions(night){
   function paint(){
     while (page.firstChild) page.removeChild(page.firstChild);
     var tonight = night.date === AZ.today();
-    page.appendChild(el('div','ai-kicker', tonight ? '🎬 Tonight’s feature' : '🎟 Coming attractions'));
+    var watched = nightHappened(night);
+    /* after the movie these are keepsake notes, not an announcement */
+    var when = watched ? AZ.prettyLong(night.date)
+      : (tonight ? 'tonight' : AZ.prettyLong(night.date))
+        + (night.venue !== 'theater' ? ' at ' + showtimeLabel() : '');
+    page.appendChild(el('div','ai-kicker', watched ? '🎟 Pre-show notes'
+      : tonight ? '🎬 Tonight’s feature' : '🎟 Coming attractions'));
     page.appendChild(el('div','ai-title', night.title));
     page.appendChild(el('div','ai-sub', (isBonus(night)
         ? memberById(night.pickedBy).name + '’s find · family bonus'
         : memberById(night.pickedBy).name + '’s pick')
-      + ' · ' + (tonight ? 'tonight' : AZ.prettyLong(night.date))));
+      + ' · ' + when));
 
     if (night.posterPath){
       var pw = el('div','ca-poster');

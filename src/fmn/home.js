@@ -116,9 +116,12 @@ function renderHome(app){
     inner.appendChild(pWrap);
     inner.appendChild(el('div','booked-title', booked.title));
   }
+  /* a booked night at home starts at the family showtime; a trip to the
+     theatre keeps whatever time the cinema gave them */
+  var startsAt = (booked && booked.venue !== 'theater') ? ' · ' + showtimeLabel() : '';
   inner.appendChild(el('div','showdate', isTonight
-    ? 'Tonight · ' + AZ.prettyLong(upNext.date)
-    : booked ? AZ.prettyLong(upNext.date)
+    ? 'Tonight' + startsAt
+    : booked ? AZ.prettyLong(upNext.date) + startsAt
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
   if (showBonus){
     // don't name the same person twice when the finder is also up next
@@ -430,6 +433,6 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.3'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.4'));
   app.appendChild(footer);
 }
