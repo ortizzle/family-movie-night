@@ -237,22 +237,17 @@ function rotationNext(memberId){
   }
   return MEMBERS[0];
 }
-/* When tonight's showing is over: the 6:30 start, the film's own runtime, and
-   a little for trailers and the popcorn pause. No runtime cached yet — a
-   hand-typed night, or no TMDB key — assume a two-hour movie. */
-function showEndMinutes(n){
-  var runtime = (n && n.facts && n.facts.runtime) ? n.facts.runtime : 120;
-  return showtimeMinutes() + runtime + 20;
-}
 function nightHappened(n){
   if (n.date < AZ.today()) return true;
   if (n.date > AZ.today()) return false;
-  /* Tonight. A night is NOT watched just because somebody wrote something —
-     the picker's "why I picked it" and their question for the family are both
-     written before the movie. Kat filling hers in at breakfast used to drop
-     the card into the memory book and hand the projector to the next person
-     mid-morning. It has happened once the film has had time to play. */
-  return AZ.nowMinutes() >= showEndMinutes(n);
+  /* Tonight. The movie is over once somebody rates it. Stars specifically, and
+     nothing else: the picker's "why I picked it" and their question for the
+     family are both written before the movie, so counting any reaction content
+     meant Kat filling hers in at breakfast dropped the card into the memory
+     book and handed the projector to the next person mid-morning. A clock
+     doesn't work either — a late start, a long intermission or a pause for
+     popcorn all move the real ending. The first star is the honest signal. */
+  return reactionsFor(n.id).some(function(r){ return r.stars > 0; });
 }
 function happenedNights(){            // newest first
   return nights().filter(nightHappened);

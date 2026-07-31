@@ -42,20 +42,6 @@ var AZ = {
   dateOf: function(ts){
     return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date(ts));
   },
-  /* minutes since midnight, Arizona — how the app knows whether tonight's
-     movie has actually played yet. The formatter is kept because this runs
-     once per night on every render. */
-  nowMinutes: function(){
-    if (!this._tf) this._tf = new Intl.DateTimeFormat('en-US', {
-      timeZone: this.tz, hourCycle: 'h23', hour: '2-digit', minute: '2-digit'
-    });
-    var h = 0, m = 0;
-    this._tf.formatToParts(new Date()).forEach(function(p){
-      if (p.type === 'hour') h = Number(p.value);
-      if (p.type === 'minute') m = Number(p.value);
-    });
-    return (h % 24) * 60 + m;
-  },
   pretty: function(dateStr){
     var p = dateStr.split('-').map(Number);
     var d = new Date(p[0], p[1]-1, p[2]);
@@ -144,11 +130,10 @@ if (window.matchMedia){
 }
 
 /* ---------- showtime ----------
-   Movie night starts at 6:30. Two things read it: the line under the title on
-   the projector, and the rule for whether tonight's film has played yet. Move
-   the family's showtime here and both follow. */
+   Movie night starts at 6:30 — what the projector prints under the title.
+   It's a display time, not a deadline: whether tonight's film has played is
+   decided by somebody rating it, not by the clock. */
 var SHOWTIME = { hour: 18, minute: 30 };
-function showtimeMinutes(){ return SHOWTIME.hour * 60 + SHOWTIME.minute; }
 function showtimeLabel(){
   var h = SHOWTIME.hour % 12;
   if (!h) h = 12;
