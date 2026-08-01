@@ -993,12 +993,29 @@ function markBackup(){
   };
   saveData();
 }
+function backupPayload(){
+  return JSON.stringify(data, null, 2);
+}
+function backupFilename(){
+  return 'family-movie-night-backup-' + AZ.today() + '.json';
+}
+/* Can this phone hand a file straight to another app? On Android Chrome that
+   opens the system share sheet with Drive in it, which is the whole point.
+   Tested with a real .json File because the browser decides per file type —
+   if JSON isn't shareable here we'd rather show only the download button than
+   a button that quietly falls back every time. */
+function canShareBackup(){
+  try {
+    if (!navigator.share || !navigator.canShare) return false;
+    return navigator.canShare({ files: [ new File(['{}'], 'x.json', { type:'application/json' }) ] });
+  } catch(e){ return false; }
+}
 function exportBackup(){
   try {
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    var blob = new Blob([backupPayload()], { type:'application/json' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'family-movie-night-backup-' + AZ.today() + '.json';
+    a.download = backupFilename();
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1009,6 +1026,28 @@ function exportBackup(){
   } catch(e){
     toast('Export failed — try again');
   }
+}
+/* Straight into Drive: hand the file to the OS and let the share sheet pick
+   the app and the folder. The File has to be built before the await-free call
+   so the browser still counts this as the user's tap. */
+function shareBackup(){
+  if (!canShareBackup()){ exportBackup(); return; }
+  var file;
+  try {
+    file = new File([backupPayload()], backupFilename(), { type:'application/json' });
+  } catch(e){ exportBackup(); return; }
+  navigator.share({ files:[file], title:'Family Movie Night backup' })
+    .then(function(){
+      markBackup();
+      render();
+      toast('Backup sent 📦');
+    })
+    .catch(function(err){
+      // dismissing the sheet is a choice, not a failure — say nothing
+      if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError')) return;
+      toast('Share didn’t open — saved it as a download instead');
+      exportBackup();
+    });
 }
 function importBackup(file){
   var reader = new FileReader();

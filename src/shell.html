@@ -160,7 +160,7 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 .screen-trailer:empty{display:none}
 .screen-trailer .st-link{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  min-height:44px;padding:0 18px;border-radius:99px;text-decoration:none;
+  min-height:48px;padding:0 18px;border-radius:99px;text-decoration:none;
   background:#FFF9EE;border:2px solid #E2D4BC;color:#A8620F;
   font-size:13px;font-weight:900;letter-spacing:.3px;
 }
@@ -322,7 +322,7 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 .book-filter .bf-search{margin-top:0}
 .bf-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
 .bf-chip{
-  flex:1 1 0;min-width:72px;min-height:44px;padding:0 12px;
+  flex:1 1 0;min-width:72px;min-height:48px;padding:0 12px;
   border-radius:99px;border:2px solid var(--line);background:var(--card-2);
   color:var(--dim);font-weight:800;font-size:13.5px;
 }
@@ -557,7 +557,7 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .night .del{
   background:none;border:none;color:var(--muted);font-size:18px;padding:8px 10px;
-  position:absolute;top:4px;right:4px;min-width:44px;min-height:44px;z-index:2;
+  position:absolute;top:4px;right:4px;min-width:48px;min-height:48px;z-index:2;
   letter-spacing:1px;line-height:1;
 }
 .night .del:active{color:var(--amber)}
@@ -1030,7 +1030,7 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .set-head{
   display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;
-  border:none;padding:0;min-height:44px;color:var(--cream);
+  border:none;padding:0;min-height:48px;color:var(--cream);
 }
 .set-head .set-title{flex:1;margin:0}
 .set-head .chev{color:var(--muted);font-size:15px;font-weight:900;transition:transform .18s}
@@ -1084,6 +1084,11 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .set-btn:active{border-color:var(--amber)}
 .set-btn.warn{color:var(--coral)}
+/* the one you're meant to reach for — saving a copy somewhere real */
+.set-btn.primary{
+  background:linear-gradient(135deg,var(--amber),#F0982F);
+  border-color:transparent;color:#2A1B14;
+}
 .set-row{display:flex;gap:10px;margin-top:12px}
 .set-row .f-input{margin-top:0}
 .gist-id-row{

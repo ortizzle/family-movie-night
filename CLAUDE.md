@@ -19,8 +19,9 @@ building, fixing, or deploying anything.
   Never `onclick=` attributes, never `innerHTML` with user data.
 - Never `alert()`, `confirm()`, or `prompt()` — they behave badly in mobile
   Safari. Use the app's own modal.
-- Mobile Safari is the primary target: 44px minimum tap targets, no
-  hover-dependent UI, test at 390px.
+- Chrome on Android is the primary target — the whole family is on Pixels:
+  48dp minimum tap targets, no hover-dependent UI, test at 412px (and 390px,
+  the narrower case, so nothing clips on a smaller phone).
 - All dates through the Arizona helpers (`AZ.today()`, `AZ.addDays`, …). Never
   `toISOString().split('T')[0]` for "today" — it drifts to UTC.
 - localStorage is the source of truth; Gist sync uses safe merge with

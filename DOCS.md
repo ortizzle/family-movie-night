@@ -25,7 +25,7 @@ python3 build.py                                  # writes index.html
 git add -A && git commit -m "..." && git push     # publishes to GitHub Pages
 ```
 
-Pages takes about a minute. **Mobile Safari caches hard** — hard-refresh or add
+Pages takes about a minute. **Chrome on Android caches hard** — hard-refresh or add
 `?v=<something>` when checking the live site.
 
 **Never edit `index.html` directly** — it's generated, and the next build
@@ -134,7 +134,8 @@ overlay) must use a non-flipping token like `--on-dark`, or fixed hex. Using
 a modal is open or when an input has focus, otherwise a background sync wipes a
 half-typed gist token.
 
-**Mobile Safari is the target.** 44px minimum tap targets, no `:hover`-only
+**Chrome on Android is the target.** The whole family is on Pixels. 48dp
+minimum tap targets, no `:hover`-only
 interactions, no `alert`/`confirm`/`prompt` (they behave badly), no `onclick`
 attributes, no `innerHTML` with user data.
 
@@ -243,7 +244,8 @@ Settings → Backups exports a JSON file. That's the one to keep somewhere real.
 
 ## Testing
 
-Playwright drives a real headless Chromium at 390px. Before any deploy, run the
+Playwright drives a real headless Chromium at 412px (Pixel) and 390px (the
+narrower case). Before any deploy, run the
 smoke test in `~/.claude/skills/family-app-standards/references/smoke-test.md`.
 The hygiene greps, all of which should come back empty:
 

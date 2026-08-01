@@ -542,10 +542,20 @@ function renderSettings(app){
       + 'a file in Files or Drive is the only copy that survives losing both.'));
     ds.appendChild(warn);
   }
-  ds.appendChild(el('div','set-note','Export saves everything — nights, reactions, quotes, memories — to a file you can keep in iCloud/Files. Import merges a backup in without losing newer entries.'));
-  var ex = el('button','set-btn','📦 Export backup file');
+  ds.appendChild(el('div','set-note','Export saves everything — nights, reactions, quotes, memories — to one file. Import merges a backup back in without losing newer entries.'));
+  /* Straight to Drive where the phone supports it: the share sheet lets you
+     pick the app and the folder in two taps, which is the difference between
+     a backup that happens and one that doesn't. */
+  if (canShareBackup()){
+    var sh = el('button','set-btn primary','📤 Save a copy to Drive…');
+    sh.addEventListener('click', shareBackup);
+    ds.appendChild(sh);
+    ds.appendChild(el('div','set-note','Opens the share sheet — pick Google Drive (or any app) and choose the folder.'));
+  }
+  var ex = el('button','set-btn','📦 Download backup file');
   ex.addEventListener('click', exportBackup);
   ds.appendChild(ex);
+  ds.appendChild(el('div','set-note','Goes to your Downloads folder. Turn on Chrome ▸ Settings ▸ Downloads ▸ “Ask where to save files” and it’ll let you pick a Drive folder here too.'));
   var fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.accept = '.json,application/json';
