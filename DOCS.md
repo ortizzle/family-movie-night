@@ -180,7 +180,21 @@ for home-screen-installed apps — it fails silently, which is worse than not
 having it.
 
 **Streaming providers aren't in the keepsakes.** They'd be stale within a
-month. They show on the projector screen and in idea details only.
+month. They show on the projector screen, the pre-show sheet, and idea details.
+
+**Providers have their own clock; the rest of the facts never expire.**
+`ensureNightFacts` refuses to re-fetch once `fetchedAt` is set, which is right
+for a runtime but wrong for where a film streams — that changes month to
+month. `watchAt` ages separately and refreshes after a week, only for a night
+still coming up. It's stamped even when the call fails, so a flaky network
+can't cause a fetch on every render.
+
+**`watchRow` stays silent unless you ask it not to.** With no `title` in its
+options it returns `null` when TMDB knows of no US service, which keeps the
+projector screen short and idea cards tidy. The pre-show sheet passes a title,
+so it always renders — saying plainly that TMDB lists nothing and offering a
+JustWatch search instead. A blank space there reads as a bug; "we don't know"
+doesn't.
 
 **The projector screen only ever paints what's cached.** Poster, trailer and
 where-to-watch all read `night.facts`, then repaint from the one

@@ -892,9 +892,11 @@ function openComingAttractions(night){
         ta.setAttribute('aria-label','Watch the trailer for ' + night.title + ' on YouTube');
         page.appendChild(ta);
       }
-      var wr = watchRow(facts);
-      if (wr) page.appendChild(wr);
     }
+    /* always answers "where do we put this on?", even with no TMDB key and
+       even when nothing carries it — outside the facts block on purpose */
+    var wr = watchRow(facts, { title: night.title });
+    if (wr) page.appendChild(wr);
 
     if (loading){
       var ld = el('div','ai-loading');

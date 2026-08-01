@@ -399,6 +399,9 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   font-size:10.5px;font-weight:900;letter-spacing:1.1px;text-transform:uppercase;
   color:var(--muted);
 }
+.watch-row .wr-none{
+  margin-top:7px;font-size:13px;font-weight:600;line-height:1.5;color:var(--dim);
+}
 .watch-row .wr-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
 .watch-row .wr-pill{
   font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;
@@ -1677,6 +1680,7 @@ function buildFacts(tmdbId, fallbackTitle){
         tmdbScore: d.vote_average || null,
         imdbId: d.imdb_id || null,
         watch: usWatchFrom(d),
+        watchAt: Date.now(),
         trailer: trailerFrom(d),
         videosTried: true,
         fetchedAt: Date.now()
@@ -1713,11 +1717,41 @@ function rtChip(f, title, cls){
   a.setAttribute('aria-label', 'Rotten Tomatoes reviews for ' + title);
   return a;
 }
-/* the "where can we watch it" row */
-function watchRow(f){
-  if (!f || !f.watch) return null;
-  var w = f.watch;
+/* just the providers, for refreshing a booked movie before Friday */
+function tmdbProviders(tmdbId){
+  var cred = loadTmdbCred();
+  if (!cred || !tmdbId) return Promise.resolve(null);
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '/watch/providers';
+  var headers = {};
+  if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
+  else url += '?api_key=' + encodeURIComponent(cred.value);
+  return fetch(url, { headers: headers })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){ return d ? { watch: usWatchFrom({ 'watch/providers': d }) } : null; })
+    .catch(function(){ return null; });
+}
+/* the "where can we watch it" row.
+   Callers that would rather show nothing than a shrug — the projector screen,
+   idea cards — pass no title and get null back when TMDB knows of no US
+   service. Pass a title and the row always renders, saying so plainly and
+   handing over a search instead. */
+function watchRow(f, opts){
+  opts = opts || {};
+  var w = f && f.watch;
+  if (!w && !opts.title) return null;
   var wrap = el('div','watch-row');
+  if (!w){
+    wrap.appendChild(el('div','wr-lead', '🍿 Where to watch'));
+    wrap.appendChild(el('div','wr-none',
+      'TMDB doesn’t list a US service for this one. It may be rent-only, on a service TMDB doesn’t track, or waiting on the shelf.'));
+    var s = el('a','wr-link','Search JustWatch ↗');
+    s.href = 'https://www.justwatch.com/us/search?q=' + encodeURIComponent(opts.title);
+    s.target = '_blank';
+    s.rel = 'noopener noreferrer';
+    s.setAttribute('aria-label', 'Search JustWatch for where to watch ' + opts.title);
+    wrap.appendChild(s);
+    return wrap;
+  }
   var lead = el('div','wr-lead', w.stream.length ? '📺 Streaming on' : '💵 Rent or buy');
   wrap.appendChild(lead);
   var pills = el('div','wr-pills');
@@ -1758,16 +1792,24 @@ function ensureNightFacts(night, onDone){
   /* facts cached before trailers existed have no video, so top those up the
      same way rather than leaving old bookings without a trailer forever */
   var wantsVideos = haveCore && !f.trailer && !f.videosTried && !!loadTmdbCred() && !!f.tmdbId;
+  /* Where a film streams changes month to month, and the rest of the facts
+     never expire — so providers get their own clock. Only for a night still
+     coming up: that's when the answer matters, and it keeps watched nights
+     from re-fetching forever. */
+  var providerAge = Date.now() - (f && (f.watchAt || f.fetchedAt) || 0);
+  var wantsProviders = haveCore && !!loadTmdbCred() && !!f.tmdbId
+    && !nightHappened(night) && providerAge > 7 * 24 * 3600 * 1000;
 
-  if (haveCore && !wantsOmdb && !wantsVideos){ if (onDone) onDone(f); return; }
+  if (haveCore && !wantsOmdb && !wantsVideos && !wantsProviders){ if (onDone) onDone(f); return; }
 
   if (haveCore){
     if (onDone) onDone(f);            // paint what we already have
     Promise.all([
       wantsOmdb ? omdbScores(f.imdbId) : Promise.resolve(null),
-      wantsVideos ? tmdbVideos(f.tmdbId) : Promise.resolve(null)
+      wantsVideos ? tmdbVideos(f.tmdbId) : Promise.resolve(null),
+      wantsProviders ? tmdbProviders(f.tmdbId) : Promise.resolve(null)
     ]).then(function(res){
-      var sc = res[0], tr = res[1];
+      var sc = res[0], tr = res[1], pr = res[2];
       var rec = data.records[night.id];
       if (!rec || rec.deleted) return;
       var merged = {};
@@ -1776,6 +1818,10 @@ function ensureNightFacts(night, onDone){
       if (wantsOmdb) merged.omdbTried = true;
       if (tr) merged.trailer = tr;
       if (wantsVideos) merged.videosTried = true;
+      if (pr) merged.watch = pr.watch;
+      /* stamped even when the call failed, so a flaky network doesn't mean a
+         fetch on every single render */
+      if (wantsProviders) merged.watchAt = Date.now();
       rec.facts = merged;
       rec.updatedAt = Date.now();
       saveData();
@@ -4013,9 +4059,11 @@ function openComingAttractions(night){
         ta.setAttribute('aria-label','Watch the trailer for ' + night.title + ' on YouTube');
         page.appendChild(ta);
       }
-      var wr = watchRow(facts);
-      if (wr) page.appendChild(wr);
     }
+    /* always answers "where do we put this on?", even with no TMDB key and
+       even when nothing carries it — outside the facts block on purpose */
+    var wr = watchRow(facts, { title: night.title });
+    if (wr) page.appendChild(wr);
 
     if (loading){
       var ld = el('div','ai-loading');
