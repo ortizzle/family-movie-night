@@ -870,6 +870,7 @@ function openComingAttractions(night){
     page.appendChild(el('div','ai-title', night.title));
     page.appendChild(el('div','ai-sub', (isBonus(night)
         ? memberById(night.pickedBy).name + '’s find · family bonus'
+          + (night.venue === 'theater' ? ' at the theatre' : '')
         : memberById(night.pickedBy).name + '’s pick')
       + ' · ' + when));
 
@@ -898,7 +899,7 @@ function openComingAttractions(night){
     }
     /* always answers "where do we put this on?", even with no TMDB key and
        even when nothing carries it — outside the facts block on purpose */
-    var wr = watchRow(facts, { title: night.title });
+    var wr = watchRow(facts, { title: night.title, venue: night.venue });
     if (wr) page.appendChild(wr);
 
     if (loading){

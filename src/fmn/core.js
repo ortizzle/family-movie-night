@@ -393,26 +393,58 @@ function tmdbProviders(tmdbId){
     .then(function(d){ return d ? { watch: usWatchFrom({ 'watch/providers': d }) } : null; })
     .catch(function(){ return null; });
 }
+/* a link out to local showtimes, for anything you'd see on a big screen */
+function showtimesLink(title){
+  var a = el('a','wr-link','Find showtimes ↗');
+  a.href = 'https://www.google.com/search?q=' + encodeURIComponent(title + ' showtimes');
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.setAttribute('aria-label', 'Find showtimes for ' + title);
+  return a;
+}
 /* the "where can we watch it" row.
    Callers that would rather show nothing than a shrug — the projector screen,
    idea cards — pass no title and get null back when TMDB knows of no US
    service. Pass a title and the row always renders, saying so plainly and
-   handing over a search instead. */
+   handing over a search instead. Pass the night's venue too and a trip to the
+   cinema answers its own question. */
 function watchRow(f, opts){
   opts = opts || {};
   var w = f && f.watch;
+  /* Never tell the family a film they're buying tickets for might be
+     "waiting on the shelf" — the venue already settled where they're going. */
+  if (opts.venue === 'theater' && opts.title){
+    var tw = el('div','watch-row');
+    tw.appendChild(el('div','wr-lead','🎟 At the theatre'));
+    tw.appendChild(el('div','wr-none','This one’s a night out — you’re seeing it on the big screen.'));
+    tw.appendChild(showtimesLink(opts.title));
+    return tw;
+  }
   if (!w && !opts.title) return null;
   var wrap = el('div','watch-row');
   if (!w){
-    wrap.appendChild(el('div','wr-lead', '🍿 Where to watch'));
-    wrap.appendChild(el('div','wr-none',
-      'TMDB doesn’t list a US service for this one. It may be rent-only, on a service TMDB doesn’t track, or waiting on the shelf.'));
-    var s = el('a','wr-link','Search JustWatch ↗');
-    s.href = 'https://www.justwatch.com/us/search?q=' + encodeURIComponent(opts.title);
-    s.target = '_blank';
-    s.rel = 'noopener noreferrer';
-    s.setAttribute('aria-label', 'Search JustWatch for where to watch ' + opts.title);
-    wrap.appendChild(s);
+    /* "no provider" isn't one answer. A film four days out of the gate is in
+       cinemas, not missing — TMDB simply has nothing to list yet. */
+    var since = (f && f.released) ? AZ.daysBetween(f.released, AZ.today()) : null;
+    if (since !== null && since < 0){
+      wrap.appendChild(el('div','wr-lead','🎬 Not out yet'));
+      wrap.appendChild(el('div','wr-none','It hasn’t opened yet, so there’s nowhere to stream it.'));
+      wrap.appendChild(showtimesLink(opts.title));
+    } else if (since !== null && since <= 120){
+      wrap.appendChild(el('div','wr-lead','🎬 Still in theatres'));
+      wrap.appendChild(el('div','wr-none','Only just released, so it hasn’t reached a streaming service yet.'));
+      wrap.appendChild(showtimesLink(opts.title));
+    } else {
+      wrap.appendChild(el('div','wr-lead', '🍿 Where to watch'));
+      wrap.appendChild(el('div','wr-none',
+        'TMDB doesn’t list a US service for this one. It may be rent-only, on a service TMDB doesn’t track, or waiting on the shelf.'));
+      var s = el('a','wr-link','Search JustWatch ↗');
+      s.href = 'https://www.justwatch.com/us/search?q=' + encodeURIComponent(opts.title);
+      s.target = '_blank';
+      s.rel = 'noopener noreferrer';
+      s.setAttribute('aria-label', 'Search JustWatch for where to watch ' + opts.title);
+      wrap.appendChild(s);
+    }
     return wrap;
   }
   var lead = el('div','wr-lead', w.stream.length ? '📺 Streaming on' : '💵 Rent or buy');
