@@ -553,7 +553,8 @@ function renderSettings(app){
     ds.appendChild(el('div','set-note','Opens the share sheet — pick Google Drive (or any app) and choose the folder.'));
   }
   var ex = el('button','set-btn','📦 Download backup file');
-  ex.addEventListener('click', exportBackup);
+  // wrapped: passing it straight would hand the Event in as `silent`
+  ex.addEventListener('click', function(){ exportBackup(); });
   ds.appendChild(ex);
   ds.appendChild(el('div','set-note','Goes to your Downloads folder. Turn on Chrome ▸ Settings ▸ Downloads ▸ “Ask where to save files” and it’ll let you pick a Drive folder here too.'));
   var fileInput = document.createElement('input');

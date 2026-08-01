@@ -1018,7 +1018,11 @@ function shareableBackupType(){
   return null;
 }
 function canShareBackup(){ return !!shareableBackupType(); }
-function exportBackup(){
+/* `silent` is for the share fallback, which has its own message to deliver —
+   otherwise this toast lands on top of it and the reason is lost. Callers
+   wired straight to a click must wrap it, or the Event object arrives as
+   `silent` and quietly suppresses the confirmation. */
+function exportBackup(silent){
   try {
     var blob = new Blob([backupPayload()], { type:'application/json' });
     var a = document.createElement('a');
@@ -1030,9 +1034,11 @@ function exportBackup(){
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
     markBackup();
     render();
-    toast('Backup exported 📦');
+    if (!silent) toast('Backup exported 📦');
+    return true;
   } catch(e){
-    toast('Export failed — try again');
+    if (!silent) toast('Export failed — try again');
+    return false;
   }
 }
 /* Straight into Drive: hand the file to the OS and let the share sheet pick
@@ -1060,8 +1066,10 @@ function shareBackup(){
          look broken, so nothing silent survives here any more. */
       var instant = (Date.now() - opened) < 700;
       if (name === 'AbortError' && !instant) return;
+      /* save first, then speak — exportBackup's own toast would otherwise
+         land on top of this one and take the reason with it */
+      exportBackup(true);
       toast('Share didn’t open (' + name + ') — saved to Downloads instead');
-      exportBackup();
     });
 }
 function importBackup(file){
