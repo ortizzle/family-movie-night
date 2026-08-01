@@ -8,6 +8,16 @@
 /* ---------- RENDER: shared ---------- */
 var view = 'home';
 var quoteIndex = 0;
+/* Memory-book browsing state. Module-level so a background sync repaint
+   doesn't drop what someone was searching for. The filter itself never calls
+   render() — render() rebuilds the whole page, which would tear the search
+   box out from under the keyboard mid-word. It shows and hides cards that
+   are already on the page instead. */
+var bookQuery = '';
+var bookPicker = null;
+var bookExpanded = false;
+var BOOK_PAGE = 8;      // recent nights shown before "show all"
+var BOOK_FILTER_AT = 12; // book size that earns a filter row
 
 function renderHeader(app){
   var header = el('header');
@@ -323,7 +333,8 @@ function renderHome(app){
   divider.setAttribute('aria-hidden','true');
   app.appendChild(divider);
   app.appendChild(el('div','section-label','Our Movie Night Memory Book'));
-  app.appendChild(el('div','section-sub', list.length ? list.length + ' night' + (list.length===1?'':'s') + ' together 🍿' : ''));
+  var bookSub = el('div','section-sub', list.length ? list.length + ' night' + (list.length===1?'':'s') + ' together 🍿' : '');
+  app.appendChild(bookSub);
   if (!list.length){
     var es = el('div','empty-state');
     es.appendChild(el('div','big','🛋️🍿'));
@@ -331,10 +342,58 @@ function renderHome(app){
     es.appendChild(el('div', null, 'Log your first Friday movie and start filling it up.'));
     app.appendChild(es);
   }
+
+  /* the book's own controls, once it's big enough to be worth searching */
+  var bookCards = [];        // { night, el, upcoming } in render order
+  var splitEl = null;
+  var moreBtn = null;
+  var noHits = null;
+  if (list.length > BOOK_FILTER_AT){
+    var bf = el('div','book-filter');
+    var q = el('input','f-input bf-search');
+    q.type = 'search';
+    q.placeholder = 'Search the memory book…';
+    q.autocomplete = 'off';
+    q.value = bookQuery;
+    q.setAttribute('aria-label','Search movie nights by title');
+    q.addEventListener('input', function(){
+      bookQuery = q.value;
+      applyBookFilter();
+    });
+    bf.appendChild(q);
+    var chips = el('div','bf-chips');
+    MEMBERS.forEach(function(m){
+      var c = el('button','bf-chip' + (bookPicker === m.id ? ' on' : ''), m.name);
+      c.type = 'button';
+      c.setAttribute('aria-pressed', bookPicker === m.id ? 'true' : 'false');
+      if (bookPicker === m.id) c.style.background = m.onWhite;
+      c.addEventListener('click', function(){
+        bookPicker = (bookPicker === m.id) ? null : m.id;
+        // repaint the chips in place — a render() here would eat the search box
+        for (var i=0;i<chips.children.length;i++){
+          var kid = chips.children[i];
+          var on = kid._member === bookPicker;
+          kid.classList.toggle('on', on);
+          kid.setAttribute('aria-pressed', on ? 'true' : 'false');
+          kid.style.background = on ? memberById(kid._member).onWhite : '';
+        }
+        applyBookFilter();
+      });
+      c._member = m.id;
+      chips.appendChild(c);
+    });
+    bf.appendChild(chips);
+    app.appendChild(bf);
+    noHits = el('div','book-none','Nothing matches — try a different title or person.');
+    noHits.style.display = 'none';
+    app.appendChild(noHits);
+  }
+
   list.forEach(function(n, ni){
     // a quiet line where the calendar turns into the scrapbook
     if (upcoming.length && past.length && ni === upcoming.length){
-      app.appendChild(el('div','book-split','· already watched ·'));
+      splitEl = el('div','book-split','· already watched ·');
+      app.appendChild(splitEl);
     }
     var picker = memberById(n.pickedBy);
     var card = el('article','night');
@@ -439,7 +498,58 @@ function renderHome(app){
     card.appendChild(del);
 
     app.appendChild(card);
+    bookCards.push({ night:n, el:card, upcoming: ni < upcoming.length });
   });
+
+  /* "show all" only exists when something is actually being held back */
+  if (past.length > BOOK_PAGE){
+    moreBtn = el('button','book-more');
+    moreBtn.type = 'button';
+    moreBtn.addEventListener('click', function(){
+      bookExpanded = !bookExpanded;
+      applyBookFilter();
+      if (!bookExpanded) moreBtn.scrollIntoView({ block:'center' });
+    });
+    app.appendChild(moreBtn);
+  }
+
+  /* Show/hide already-built cards. Never re-renders, so the search box keeps
+     focus and the caret stays put while someone types. */
+  function applyBookFilter(){
+    var needle = bookQuery.trim().toLowerCase();
+    var filtering = !!needle || !!bookPicker;
+    var shownPast = 0, shownUpcoming = 0, matchedPast = 0;
+    bookCards.forEach(function(c){
+      var n = c.night;
+      var hit = (!needle || (n.title || '').toLowerCase().indexOf(needle) !== -1)
+        && (!bookPicker || n.pickedBy === bookPicker);
+      var show = hit;
+      if (hit && !c.upcoming){
+        matchedPast++;
+        /* the cap is a browsing convenience, not a filter — once someone is
+           searching they want every match, however far back it sits */
+        if (!filtering && !bookExpanded && matchedPast > BOOK_PAGE) show = false;
+      }
+      c.el.style.display = show ? '' : 'none';
+      if (show){ if (c.upcoming) shownUpcoming++; else shownPast++; }
+    });
+    if (splitEl) splitEl.style.display = (shownUpcoming && shownPast) ? '' : 'none';
+    if (noHits) noHits.style.display = (shownUpcoming + shownPast) ? 'none' : '';
+    if (moreBtn){
+      var hidden = matchedPast - shownPast;
+      var showBtn = !filtering && (hidden > 0 || bookExpanded);
+      moreBtn.style.display = showBtn ? '' : 'none';
+      moreBtn.textContent = bookExpanded
+        ? '▴ Show fewer'
+        : '▾ Show all ' + list.length + ' nights';
+    }
+    if (list.length){
+      bookSub.textContent = filtering
+        ? (shownUpcoming + shownPast) + ' of ' + list.length + ' nights'
+        : list.length + ' night' + (list.length===1?'':'s') + ' together 🍿';
+    }
+  }
+  applyBookFilter();
 
   var footer = el('footer');
   footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.4'));

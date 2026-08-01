@@ -317,6 +317,29 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   font-weight:900;color:var(--muted);margin:26px 0 4px;
 }
 
+/* ---- memory book: search, people filter, show-all ---- */
+.book-filter{margin:0 0 14px}
+.book-filter .bf-search{margin-top:0}
+.bf-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.bf-chip{
+  flex:1 1 0;min-width:72px;min-height:44px;padding:0 12px;
+  border-radius:99px;border:2px solid var(--line);background:var(--card-2);
+  color:var(--dim);font-weight:800;font-size:13.5px;
+}
+.bf-chip.on{color:#fff;border-color:transparent}
+.bf-chip:active{transform:scale(.98)}
+.book-none{
+  text-align:center;color:var(--dim);font-weight:700;font-size:14px;
+  line-height:1.6;margin:22px 0;
+}
+.book-more{
+  display:block;width:100%;min-height:48px;margin-top:16px;
+  border-radius:14px;border:2px dashed var(--line);background:none;
+  color:var(--dim);font-weight:800;font-size:13px;letter-spacing:1.5px;
+  text-transform:uppercase;
+}
+.book-more:active{border-style:solid;color:var(--cream)}
+
 /* ---- bonus nights ---- */
 .bonustag{
   display:inline-block;margin-left:7px;padding:3px 9px;border-radius:99px;
