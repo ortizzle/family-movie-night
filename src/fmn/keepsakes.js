@@ -1007,7 +1007,12 @@ function backupFilename(){
    at all, and the button stays hidden. */
 function shareableBackupType(){
   if (!navigator.share || !navigator.canShare) return null;
-  var types = ['application/json', 'text/plain'];
+  /* text/plain first, deliberately. Chrome answered canShare({application/json})
+     with yes on a Pixel and then threw NotAllowedError from share() — the
+     check can't be trusted for JSON, so lead with the type that's always on
+     the allowlist. The filename still ends in .json, which is what Drive
+     displays and what import reads; neither cares about the MIME type. */
+  var types = ['text/plain', 'application/json'];
   for (var i=0;i<types.length;i++){
     try {
       if (navigator.canShare({ files: [ new File(['{}'], 'backup.json', { type: types[i] }) ] })) {
