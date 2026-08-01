@@ -393,7 +393,7 @@ function renderHome(app){
       row.appendChild(who);
       if (me && me.id === m.id) row.appendChild(el('span','you-tag','you'));
       if (r && r.stars) row.appendChild(starsNode(r.stars));
-      var snippetText = r ? (r.thought || rxQuotes(r)[0] || rxMemories(r)[0] || r.scene || r.character || '') : '';
+      var snippetText = r ? (r.thought || rxQuotes(r)[0] || rxMemories(r)[0] || rxScenes(r)[0] || r.character || '') : '';
       if (snippetText){
         row.appendChild(el('span','snippet', snippetText));
       } else if (!r || !r.stars){

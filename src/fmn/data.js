@@ -208,9 +208,17 @@ function rxMemories(r){
   if (r.memories && r.memories.length) return r.memories;
   return r.memory ? [r.memory] : [];
 }
+/* Favorite scenes became a list the way quotes and memories did — one scene
+   was never enough for a movie worth talking about. `scene` is the single
+   value older records (and older phones) wrote. */
+function rxScenes(r){
+  if (!r) return [];
+  if (r.scenes && r.scenes.length) return r.scenes;
+  return r.scene ? [r.scene] : [];
+}
 function rxHasContent(r){
   return !!(r && (r.stars > 0 || (r.thought||'').length || (r.character||'').length ||
-    (r.scene||'').length || (r.why||'').length || rxQuotes(r).length || rxMemories(r).length || r.poll));
+    rxScenes(r).length || (r.why||'').length || rxQuotes(r).length || rxMemories(r).length || r.poll));
 }
 function reactionsFor(nightId){
   var out = [];

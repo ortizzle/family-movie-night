@@ -72,7 +72,7 @@ never removals — a hard delete resurrects on the next sync from another phone.
 | Type | Id shape | Holds |
 |---|---|---|
 | `night` | `night_<ts>_<rand>` | title, year, date, pickedBy, question, bonus, venue, posterPath, cached `facts` |
-| `reaction` | `rx_<nightId>_<member>` | stars, thought, character, scene, quotes[], memories[], poll, answer, why |
+| `reaction` | `rx_<nightId>_<member>` | stars, thought, character, scenes[], quotes[], memories[], poll, answer, why |
 | `preshow` | `pre_<nightId>` | spoiler-free pre-show notes for a booked night |
 | `shortlist` | `short_<slug>` | movies held for later |
 | `seen` | `seen_<slug>` | "we've already watched this" — keeps it off the Ideas shelves |
@@ -99,6 +99,14 @@ never sync: `me` (who's on this phone), `theme`, `motion`, `gist_token`,
 
 These are the ones that caused real bugs. Re-read before touching the relevant
 area.
+
+**The list-shaped reaction fields all read through a helper.** `rxQuotes`,
+`rxMemories` and `rxScenes` each prefer the plural array and fall back to the
+old singular field, because each started life as one value. Read them through
+the helper — never `r.scene` or `r.quote` directly — or records written by an
+earlier version go blank. Saving writes the array *and* mirrors the first
+entry into the singular field, so a phone still on the old build shows
+something rather than an empty page.
 
 **Dates are Arizona time.** Always `AZ.today()`, never
 `new Date().toISOString().split('T')[0]` — that drifts to UTC and shows

@@ -2054,9 +2054,17 @@ function rxMemories(r){
   if (r.memories && r.memories.length) return r.memories;
   return r.memory ? [r.memory] : [];
 }
+/* Favorite scenes became a list the way quotes and memories did — one scene
+   was never enough for a movie worth talking about. `scene` is the single
+   value older records (and older phones) wrote. */
+function rxScenes(r){
+  if (!r) return [];
+  if (r.scenes && r.scenes.length) return r.scenes;
+  return r.scene ? [r.scene] : [];
+}
 function rxHasContent(r){
   return !!(r && (r.stars > 0 || (r.thought||'').length || (r.character||'').length ||
-    (r.scene||'').length || (r.why||'').length || rxQuotes(r).length || rxMemories(r).length || r.poll));
+    rxScenes(r).length || (r.why||'').length || rxQuotes(r).length || rxMemories(r).length || r.poll));
 }
 function reactionsFor(nightId){
   var out = [];
@@ -2836,11 +2844,25 @@ function openReaction(night, member){
     character.value = existing ? (existing.character || '') : '';
     box.appendChild(character);
 
-    box.appendChild(el('div','f-label','🎞 Favorite scene'));
-    var scene = el('textarea','f-area');
-    scene.placeholder = 'Set the scene — which moment will you replay forever?';
-    scene.value = existing ? (existing.scene || '') : '';
-    box.appendChild(scene);
+    box.appendChild(el('div','f-label','🎞 Favorite scenes'));
+    var sceneList = el('div','multi-list');
+    function addSceneInput(val){
+      var s = el('textarea','f-area');
+      s.placeholder = sceneList.children.length
+        ? 'Another moment worth replaying…'
+        : 'Set the scene — which moment will you replay forever?';
+      s.value = val || '';
+      sceneList.appendChild(s);
+      return s;
+    }
+    var exScenes = rxScenes(existing);
+    if (exScenes.length) exScenes.forEach(function(s){ addSceneInput(s); });
+    else addSceneInput('');
+    box.appendChild(sceneList);
+    var moreS = el('button','linky','+ add another scene');
+    moreS.type = 'button';
+    moreS.addEventListener('click', function(){ addSceneInput('').focus(); });
+    box.appendChild(moreS);
 
     box.appendChild(el('div','f-label','Favorite quotes'));
     var quoteList = el('div','multi-list');
@@ -2917,11 +2939,19 @@ function openReaction(night, member){
         var mv = memList.children[j].value.trim();
         if (mv) memories.push(mv);
       }
+      var scenes = [];
+      for (var s=0;s<sceneList.children.length;s++){
+        var sv = sceneList.children[s].value.trim();
+        if (sv) scenes.push(sv);
+      }
       var id = 'rx_' + night.id + '_' + member.id;
       data.records[id] = {
         id:id, type:'reaction', nightId:night.id, member:member.id,
         stars:stars, why: (isPicker && why) ? why.value.trim() : (existing ? existing.why || '' : ''),
-        thought:thought.value.trim(), character:character.value.trim(), scene:scene.value.trim(),
+        thought:thought.value.trim(), character:character.value.trim(),
+        /* `scene` mirrors the first one so a phone still running the old
+           build shows something rather than a blank scene page */
+        scenes:scenes, scene:scenes[0] || '',
         quotes:quotes, memories:memories, poll:poll,
         answer: answer ? answer.value.trim() : (existing ? existing.answer || '' : ''),
         updatedAt: Date.now()
@@ -3296,18 +3326,21 @@ function buildNightKeepsake(container, night){
 
   /* favorite scenes — screenplay pages */
   var sceneMembers = MEMBERS.filter(function(m){
-    var r = reactionFor(night.id, m.id);
-    return r && r.scene;
+    return rxScenes(reactionFor(night.id, m.id)).length;
   });
   if (sceneMembers.length){
     var scSec = spSection('🎞 Favorite scenes');
     sceneMembers.forEach(function(m){
-      var r = reactionFor(night.id, m.id);
-      var pageEl = el('div','sp-scene');
-      pageEl.appendChild(el('div','slug', m.name + '’s favorite scene'));
-      pageEl.appendChild(el('div','cut','Cut to:'));
-      pageEl.appendChild(el('div','action', r.scene));
-      scSec.appendChild(pageEl);
+      /* one screenplay page per scene, so a second favorite doesn't get
+         crammed into the first one's slugline */
+      rxScenes(reactionFor(night.id, m.id)).forEach(function(sc, i){
+        var pageEl = el('div','sp-scene');
+        pageEl.appendChild(el('div','slug', m.name + '’s favorite scene'
+          + (i ? ' · ' + (i + 1) : '')));
+        pageEl.appendChild(el('div','cut','Cut to:'));
+        pageEl.appendChild(el('div','action', sc));
+        scSec.appendChild(pageEl);
+      });
     });
     container.appendChild(scSec);
   }
@@ -3572,7 +3605,7 @@ function collectionStats(list){
       var qn = rxQuotes(r).length, mn = rxMemories(r).length;
       pm.quotes += qn; pm.memories += mn;
       s.quotes += qn; s.memories += mn; nightQuotes += qn;
-      if (r.scene) s.scenes++;
+      s.scenes += rxScenes(r).length;
       if (r.poll){
         if (r.poll.laughed) s.laughs++;
         if (r.poll.cried) s.cries++;
@@ -4697,7 +4730,7 @@ function renderHome(app){
       row.appendChild(who);
       if (me && me.id === m.id) row.appendChild(el('span','you-tag','you'));
       if (r && r.stars) row.appendChild(starsNode(r.stars));
-      var snippetText = r ? (r.thought || rxQuotes(r)[0] || rxMemories(r)[0] || r.scene || r.character || '') : '';
+      var snippetText = r ? (r.thought || rxQuotes(r)[0] || rxMemories(r)[0] || rxScenes(r)[0] || r.character || '') : '';
       if (snippetText){
         row.appendChild(el('span','snippet', snippetText));
       } else if (!r || !r.stars){

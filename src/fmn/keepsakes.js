@@ -129,18 +129,21 @@ function buildNightKeepsake(container, night){
 
   /* favorite scenes — screenplay pages */
   var sceneMembers = MEMBERS.filter(function(m){
-    var r = reactionFor(night.id, m.id);
-    return r && r.scene;
+    return rxScenes(reactionFor(night.id, m.id)).length;
   });
   if (sceneMembers.length){
     var scSec = spSection('🎞 Favorite scenes');
     sceneMembers.forEach(function(m){
-      var r = reactionFor(night.id, m.id);
-      var pageEl = el('div','sp-scene');
-      pageEl.appendChild(el('div','slug', m.name + '’s favorite scene'));
-      pageEl.appendChild(el('div','cut','Cut to:'));
-      pageEl.appendChild(el('div','action', r.scene));
-      scSec.appendChild(pageEl);
+      /* one screenplay page per scene, so a second favorite doesn't get
+         crammed into the first one's slugline */
+      rxScenes(reactionFor(night.id, m.id)).forEach(function(sc, i){
+        var pageEl = el('div','sp-scene');
+        pageEl.appendChild(el('div','slug', m.name + '’s favorite scene'
+          + (i ? ' · ' + (i + 1) : '')));
+        pageEl.appendChild(el('div','cut','Cut to:'));
+        pageEl.appendChild(el('div','action', sc));
+        scSec.appendChild(pageEl);
+      });
     });
     container.appendChild(scSec);
   }
@@ -405,7 +408,7 @@ function collectionStats(list){
       var qn = rxQuotes(r).length, mn = rxMemories(r).length;
       pm.quotes += qn; pm.memories += mn;
       s.quotes += qn; s.memories += mn; nightQuotes += qn;
-      if (r.scene) s.scenes++;
+      s.scenes += rxScenes(r).length;
       if (r.poll){
         if (r.poll.laughed) s.laughs++;
         if (r.poll.cried) s.cries++;

@@ -417,11 +417,25 @@ function openReaction(night, member){
     character.value = existing ? (existing.character || '') : '';
     box.appendChild(character);
 
-    box.appendChild(el('div','f-label','🎞 Favorite scene'));
-    var scene = el('textarea','f-area');
-    scene.placeholder = 'Set the scene — which moment will you replay forever?';
-    scene.value = existing ? (existing.scene || '') : '';
-    box.appendChild(scene);
+    box.appendChild(el('div','f-label','🎞 Favorite scenes'));
+    var sceneList = el('div','multi-list');
+    function addSceneInput(val){
+      var s = el('textarea','f-area');
+      s.placeholder = sceneList.children.length
+        ? 'Another moment worth replaying…'
+        : 'Set the scene — which moment will you replay forever?';
+      s.value = val || '';
+      sceneList.appendChild(s);
+      return s;
+    }
+    var exScenes = rxScenes(existing);
+    if (exScenes.length) exScenes.forEach(function(s){ addSceneInput(s); });
+    else addSceneInput('');
+    box.appendChild(sceneList);
+    var moreS = el('button','linky','+ add another scene');
+    moreS.type = 'button';
+    moreS.addEventListener('click', function(){ addSceneInput('').focus(); });
+    box.appendChild(moreS);
 
     box.appendChild(el('div','f-label','Favorite quotes'));
     var quoteList = el('div','multi-list');
@@ -498,11 +512,19 @@ function openReaction(night, member){
         var mv = memList.children[j].value.trim();
         if (mv) memories.push(mv);
       }
+      var scenes = [];
+      for (var s=0;s<sceneList.children.length;s++){
+        var sv = sceneList.children[s].value.trim();
+        if (sv) scenes.push(sv);
+      }
       var id = 'rx_' + night.id + '_' + member.id;
       data.records[id] = {
         id:id, type:'reaction', nightId:night.id, member:member.id,
         stars:stars, why: (isPicker && why) ? why.value.trim() : (existing ? existing.why || '' : ''),
-        thought:thought.value.trim(), character:character.value.trim(), scene:scene.value.trim(),
+        thought:thought.value.trim(), character:character.value.trim(),
+        /* `scene` mirrors the first one so a phone still running the old
+           build shows something rather than a blank scene page */
+        scenes:scenes, scene:scenes[0] || '',
         quotes:quotes, memories:memories, poll:poll,
         answer: answer ? answer.value.trim() : (existing ? existing.answer || '' : ''),
         updatedAt: Date.now()
