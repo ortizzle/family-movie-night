@@ -2328,6 +2328,17 @@ function nightNearDate(dateStr){
   }
   return null;
 }
+/* Same lookup, but only nights that have actually been watched. "Recent
+   Fridays" needs this: the ±2 day window reaches forward, and nights() is
+   newest-first, so a bonus booked for Sunday would be returned as Friday's
+   movie and listed under "recent" before anybody had seen it. */
+function happenedNightNear(dateStr){
+  var list = nights();
+  for (var i=0;i<list.length;i++){
+    if (Math.abs(AZ.daysBetween(dateStr, list[i].date)) <= 2 && nightHappened(list[i])) return list[i];
+  }
+  return null;
+}
 function pollTally(nightId){
   var t = { laughed:[], cried:[], rewatch:[], seenBefore:[], answered:0 };
   MEMBERS.forEach(function(m){
@@ -4565,13 +4576,22 @@ function renderHome(app){
   });
   lineup.appendChild(el('div','lu-head second','🍿 Recent Fridays'));
   var lastFri = AZ.nextFriday();   // look back from the calendar, not from a break
-  for (var p=1; p<=4; p++){
+  /* Tonight's Friday joins the list the moment its movie counts as watched —
+     the same first-rating rule the projector and the memory book use. Waiting
+     for midnight left the film nowhere in this card for the rest of the
+     evening, and starting here lets the reaction dots fill in live as people
+     rate. An unwatched Friday stays out, so this never reads "no movie night"
+     at six in the evening. */
+  var firstBack = 1;
+  var tonightNight = (lastFri <= AZ.today()) ? happenedNightNear(lastFri) : null;
+  if (tonightNight) firstBack = 0;
+  for (var p=firstBack; p<firstBack+4; p++){
     var pf = AZ.addDays(lastFri, -7*p);
-    var night = nightNearDate(pf);
-    var prow = el('div','lu-row' + (p===4 ? ' last' : ''));
+    var night = happenedNightNear(pf);
+    var prow = el('div','lu-row' + (p === firstBack+3 ? ' last' : ''));
     var pdt = el('div','lu-date');
     pdt.appendChild(el('div','d1', AZ.monthDay(pf)));
-    pdt.appendChild(el('div','d2','Friday'));
+    pdt.appendChild(el('div','d2', pf === AZ.today() ? 'Tonight' : 'Friday'));
     prow.appendChild(pdt);
     if (night){
       prow.appendChild(el('div','lu-title', night.title));

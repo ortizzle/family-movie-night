@@ -228,13 +228,22 @@ function renderHome(app){
   });
   lineup.appendChild(el('div','lu-head second','🍿 Recent Fridays'));
   var lastFri = AZ.nextFriday();   // look back from the calendar, not from a break
-  for (var p=1; p<=4; p++){
+  /* Tonight's Friday joins the list the moment its movie counts as watched —
+     the same first-rating rule the projector and the memory book use. Waiting
+     for midnight left the film nowhere in this card for the rest of the
+     evening, and starting here lets the reaction dots fill in live as people
+     rate. An unwatched Friday stays out, so this never reads "no movie night"
+     at six in the evening. */
+  var firstBack = 1;
+  var tonightNight = (lastFri <= AZ.today()) ? happenedNightNear(lastFri) : null;
+  if (tonightNight) firstBack = 0;
+  for (var p=firstBack; p<firstBack+4; p++){
     var pf = AZ.addDays(lastFri, -7*p);
-    var night = nightNearDate(pf);
-    var prow = el('div','lu-row' + (p===4 ? ' last' : ''));
+    var night = happenedNightNear(pf);
+    var prow = el('div','lu-row' + (p === firstBack+3 ? ' last' : ''));
     var pdt = el('div','lu-date');
     pdt.appendChild(el('div','d1', AZ.monthDay(pf)));
-    pdt.appendChild(el('div','d2','Friday'));
+    pdt.appendChild(el('div','d2', pf === AZ.today() ? 'Tonight' : 'Friday'));
     prow.appendChild(pdt);
     if (night){
       prow.appendChild(el('div','lu-title', night.title));

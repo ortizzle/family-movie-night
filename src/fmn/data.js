@@ -482,6 +482,17 @@ function nightNearDate(dateStr){
   }
   return null;
 }
+/* Same lookup, but only nights that have actually been watched. "Recent
+   Fridays" needs this: the ±2 day window reaches forward, and nights() is
+   newest-first, so a bonus booked for Sunday would be returned as Friday's
+   movie and listed under "recent" before anybody had seen it. */
+function happenedNightNear(dateStr){
+  var list = nights();
+  for (var i=0;i<list.length;i++){
+    if (Math.abs(AZ.daysBetween(dateStr, list[i].date)) <= 2 && nightHappened(list[i])) return list[i];
+  }
+  return null;
+}
 function pollTally(nightId){
   var t = { laughed:[], cried:[], rewatch:[], seenBefore:[], answered:0 };
   MEMBERS.forEach(function(m){
