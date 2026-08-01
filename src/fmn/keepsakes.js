@@ -999,17 +999,25 @@ function backupPayload(){
 function backupFilename(){
   return 'family-movie-night-backup-' + AZ.today() + '.json';
 }
-/* Can this phone hand a file straight to another app? On Android Chrome that
-   opens the system share sheet with Drive in it, which is the whole point.
-   Tested with a real .json File because the browser decides per file type —
-   if JSON isn't shareable here we'd rather show only the download button than
-   a button that quietly falls back every time. */
-function canShareBackup(){
-  try {
-    if (!navigator.share || !navigator.canShare) return false;
-    return navigator.canShare({ files: [ new File(['{}'], 'x.json', { type:'application/json' }) ] });
-  } catch(e){ return false; }
+/* Which file type will this phone actually hand to another app? Chrome keeps
+   an allowlist and rejects anything off it — so ask about the real types in
+   preference order instead of assuming JSON is welcome. text/plain is the
+   safe one; the filename still ends in .json either way, which is what Drive
+   shows and what import reads. Returns null when sharing files isn't possible
+   at all, and the button stays hidden. */
+function shareableBackupType(){
+  if (!navigator.share || !navigator.canShare) return null;
+  var types = ['application/json', 'text/plain'];
+  for (var i=0;i<types.length;i++){
+    try {
+      if (navigator.canShare({ files: [ new File(['{}'], 'backup.json', { type: types[i] }) ] })) {
+        return types[i];
+      }
+    } catch(e){}
+  }
+  return null;
 }
+function canShareBackup(){ return !!shareableBackupType(); }
 function exportBackup(){
   try {
     var blob = new Blob([backupPayload()], { type:'application/json' });
@@ -1028,14 +1036,16 @@ function exportBackup(){
   }
 }
 /* Straight into Drive: hand the file to the OS and let the share sheet pick
-   the app and the folder. The File has to be built before the await-free call
-   so the browser still counts this as the user's tap. */
+   the app and the folder. The File is built before the call so the browser
+   still counts this as the user's tap. */
 function shareBackup(){
-  if (!canShareBackup()){ exportBackup(); return; }
+  var type = shareableBackupType();
+  if (!type){ exportBackup(); return; }
   var file;
   try {
-    file = new File([backupPayload()], backupFilename(), { type:'application/json' });
+    file = new File([backupPayload()], backupFilename(), { type: type });
   } catch(e){ exportBackup(); return; }
+  var opened = Date.now();
   navigator.share({ files:[file], title:'Family Movie Night backup' })
     .then(function(){
       markBackup();
@@ -1043,9 +1053,14 @@ function shareBackup(){
       toast('Backup sent 📦');
     })
     .catch(function(err){
-      // dismissing the sheet is a choice, not a failure — say nothing
-      if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError')) return;
-      toast('Share didn’t open — saved it as a download instead');
+      var name = (err && err.name) || 'Error';
+      /* A sheet somebody actually saw and dismissed comes back after a beat.
+         An instant AbortError means it never opened. NotAllowedError is never
+         a cancel — it's Android refusing — and swallowing it made this button
+         look broken, so nothing silent survives here any more. */
+      var instant = (Date.now() - opened) < 700;
+      if (name === 'AbortError' && !instant) return;
+      toast('Share didn’t open (' + name + ') — saved to Downloads instead');
       exportBackup();
     });
 }
