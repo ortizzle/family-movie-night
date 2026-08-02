@@ -734,32 +734,44 @@ function openAfterCredits(night){
     /* trivia round about this movie */
     if (pack.trivia && pack.trivia.length){
       page.appendChild(el('div','ai-sec-title','🎯 Tonight’s trivia round'));
-      pack.trivia.forEach(function(Q){
+      /* Answers stick per person: shut the sheet, come back tomorrow, and the
+         round is where you left it instead of offering you a second guess.
+         Nobody signed in has nowhere to save them, so those stay in memory. */
+      var me = whoAmI();
+      var saved = me ? triviaPicks(night.id, me.id, pack.updatedAt) : null;
+      pack.trivia.forEach(function(Q, qi){
         if (!Q || !Q.q || !Q.opts) return;
         var card = el('div','tq-card');
         card.style.marginTop = '10px';
         card.appendChild(el('div','tq-q', Q.q));
         var opts = el('div','tq-opts');
         var answered = false;
+        function reveal(choice, replaying){
+          if (answered) return;
+          answered = true;
+          var kids = opts.children;
+          for (var k=0;k<kids.length;k++){
+            kids[k].disabled = true;
+            if (k === Q.a) kids[k].classList.add('correct');
+            else if (k === choice) kids[k].classList.add('wrong');
+          }
+          if (choice === Q.a && !replaying) confettiBurst(12);
+          if (Q.note) card.appendChild(el('div','tq-note', (choice === Q.a ? '✓ Correct! ' : '✗ Not this time. ') + Q.note));
+        }
         Q.opts.forEach(function(opt, i){
           var b = el('button','tq-opt', opt);
           b.type = 'button';
           b.addEventListener('click', function(){
             if (answered) return;
-            answered = true;
-            var kids = opts.children;
-            for (var k=0;k<kids.length;k++){
-              kids[k].disabled = true;
-              if (k === Q.a) kids[k].classList.add('correct');
-              else if (k === i) kids[k].classList.add('wrong');
-            }
-            if (i === Q.a) confettiBurst(12);
-            if (Q.note) card.appendChild(el('div','tq-note', (i === Q.a ? '✓ Correct! ' : '✗ Not this time. ') + Q.note));
+            if (me) saveTriviaPick(night.id, me.id, pack.updatedAt, qi, i);
+            reveal(i, false);
           });
           opts.appendChild(b);
         });
         card.appendChild(opts);
         page.appendChild(card);
+        /* no confetti on a replay — it already fired the night they played */
+        if (saved && saved[qi] !== undefined) reveal(saved[qi], true);
       });
     }
 
@@ -1068,7 +1080,7 @@ function shareBackup(){
       /* save first, then speak — exportBackup's own toast would otherwise
          land on top of this one and take the reason with it */
       exportBackup(true);
-      toast('Share didn’t open (' + name + ') — saved to Downloads instead');
+      toast('Share sheet didn’t open — saved to Downloads instead');
     });
 }
 function importBackup(file){

@@ -228,6 +228,27 @@ function reactionsFor(nightId){
   }
   return out;
 }
+/* Trivia answers, one record per person per night, so reopening the
+   after-credits pack doesn't hand you a blank quiz you've already played.
+   Stamped with the pack's own `updatedAt`: "Make a fresh pack" writes new
+   questions, and answers to the old ones would land on the wrong rows. */
+function triviaPicks(nightId, memberId, packAt){
+  var r = data.records['tq_' + nightId + '_' + memberId];
+  if (!r || r.deleted || !r.picks) return null;
+  if (packAt && r.packAt !== packAt) return null;
+  return r.picks;
+}
+function saveTriviaPick(nightId, memberId, packAt, index, choice){
+  var id = 'tq_' + nightId + '_' + memberId;
+  var r = data.records[id];
+  if (!r || r.deleted || r.packAt !== packAt){
+    r = { id:id, type:'trivia', nightId:nightId, memberId:memberId, packAt:packAt, picks:{} };
+  }
+  r.picks[index] = choice;
+  r.updatedAt = Date.now();
+  data.records[id] = r;
+  saveData();
+}
 /* Wipe everything that was looked up *about a specific film* — the TMDB
    facts and poster, and the two AI packs, which are written from the title.
    Called when a night turns out to be a different movie than the one logged.
@@ -238,7 +259,9 @@ function forgetLookedUp(rec){
   delete rec.posterPath;
   delete rec.tmdbId;
   var now = Date.now();
-  ['pre_' + rec.id, 'ai_' + rec.id].forEach(function(id){
+  var ids = ['pre_' + rec.id, 'ai_' + rec.id];
+  MEMBERS.forEach(function(m){ ids.push('tq_' + rec.id + '_' + m.id); });
+  ids.forEach(function(id){
     var r = data.records[id];
     if (r && !r.deleted) data.records[id] = { id:id, type:r.type, deleted:true, updatedAt:now };
   });

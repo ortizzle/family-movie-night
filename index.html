@@ -2136,6 +2136,27 @@ function reactionsFor(nightId){
   }
   return out;
 }
+/* Trivia answers, one record per person per night, so reopening the
+   after-credits pack doesn't hand you a blank quiz you've already played.
+   Stamped with the pack's own `updatedAt`: "Make a fresh pack" writes new
+   questions, and answers to the old ones would land on the wrong rows. */
+function triviaPicks(nightId, memberId, packAt){
+  var r = data.records['tq_' + nightId + '_' + memberId];
+  if (!r || r.deleted || !r.picks) return null;
+  if (packAt && r.packAt !== packAt) return null;
+  return r.picks;
+}
+function saveTriviaPick(nightId, memberId, packAt, index, choice){
+  var id = 'tq_' + nightId + '_' + memberId;
+  var r = data.records[id];
+  if (!r || r.deleted || r.packAt !== packAt){
+    r = { id:id, type:'trivia', nightId:nightId, memberId:memberId, packAt:packAt, picks:{} };
+  }
+  r.picks[index] = choice;
+  r.updatedAt = Date.now();
+  data.records[id] = r;
+  saveData();
+}
 /* Wipe everything that was looked up *about a specific film* — the TMDB
    facts and poster, and the two AI packs, which are written from the title.
    Called when a night turns out to be a different movie than the one logged.
@@ -2146,7 +2167,9 @@ function forgetLookedUp(rec){
   delete rec.posterPath;
   delete rec.tmdbId;
   var now = Date.now();
-  ['pre_' + rec.id, 'ai_' + rec.id].forEach(function(id){
+  var ids = ['pre_' + rec.id, 'ai_' + rec.id];
+  MEMBERS.forEach(function(m){ ids.push('tq_' + rec.id + '_' + m.id); });
+  ids.forEach(function(id){
     var r = data.records[id];
     if (r && !r.deleted) data.records[id] = { id:id, type:r.type, deleted:true, updatedAt:now };
   });
@@ -4114,32 +4137,44 @@ function openAfterCredits(night){
     /* trivia round about this movie */
     if (pack.trivia && pack.trivia.length){
       page.appendChild(el('div','ai-sec-title','🎯 Tonight’s trivia round'));
-      pack.trivia.forEach(function(Q){
+      /* Answers stick per person: shut the sheet, come back tomorrow, and the
+         round is where you left it instead of offering you a second guess.
+         Nobody signed in has nowhere to save them, so those stay in memory. */
+      var me = whoAmI();
+      var saved = me ? triviaPicks(night.id, me.id, pack.updatedAt) : null;
+      pack.trivia.forEach(function(Q, qi){
         if (!Q || !Q.q || !Q.opts) return;
         var card = el('div','tq-card');
         card.style.marginTop = '10px';
         card.appendChild(el('div','tq-q', Q.q));
         var opts = el('div','tq-opts');
         var answered = false;
+        function reveal(choice, replaying){
+          if (answered) return;
+          answered = true;
+          var kids = opts.children;
+          for (var k=0;k<kids.length;k++){
+            kids[k].disabled = true;
+            if (k === Q.a) kids[k].classList.add('correct');
+            else if (k === choice) kids[k].classList.add('wrong');
+          }
+          if (choice === Q.a && !replaying) confettiBurst(12);
+          if (Q.note) card.appendChild(el('div','tq-note', (choice === Q.a ? '✓ Correct! ' : '✗ Not this time. ') + Q.note));
+        }
         Q.opts.forEach(function(opt, i){
           var b = el('button','tq-opt', opt);
           b.type = 'button';
           b.addEventListener('click', function(){
             if (answered) return;
-            answered = true;
-            var kids = opts.children;
-            for (var k=0;k<kids.length;k++){
-              kids[k].disabled = true;
-              if (k === Q.a) kids[k].classList.add('correct');
-              else if (k === i) kids[k].classList.add('wrong');
-            }
-            if (i === Q.a) confettiBurst(12);
-            if (Q.note) card.appendChild(el('div','tq-note', (i === Q.a ? '✓ Correct! ' : '✗ Not this time. ') + Q.note));
+            if (me) saveTriviaPick(night.id, me.id, pack.updatedAt, qi, i);
+            reveal(i, false);
           });
           opts.appendChild(b);
         });
         card.appendChild(opts);
         page.appendChild(card);
+        /* no confetti on a replay — it already fired the night they played */
+        if (saved && saved[qi] !== undefined) reveal(saved[qi], true);
       });
     }
 
@@ -4448,7 +4483,7 @@ function shareBackup(){
       /* save first, then speak — exportBackup's own toast would otherwise
          land on top of this one and take the reason with it */
       exportBackup(true);
-      toast('Share didn’t open (' + name + ') — saved to Downloads instead');
+      toast('Share sheet didn’t open — saved to Downloads instead');
     });
 }
 function importBackup(file){

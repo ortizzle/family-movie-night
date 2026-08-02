@@ -149,6 +149,12 @@ backup is a `.txt`; import accepts both extensions and parses by content. A
 `share()` rejection is also not always a cancel: an `AbortError` back in under
 700ms means the sheet never opened, so fall back rather than going quiet.
 
+**Trivia answers belong to a person and a pack.** `tq_<nightId>_<memberId>`
+holds one person's picks, stamped with the pack's `updatedAt`. The stamp is
+the point: "Make a fresh pack" writes different questions, and last week's
+answers would land on the wrong rows. Signed out, the round still plays — it
+just doesn't save, because there's nobody to save it for.
+
 **Retitling a night means it was a different movie.** `openEditNight` calls
 `forgetLookedUp()` whenever the title or year changes: `facts`, `posterPath`,
 `tmdbId` are dropped and the pre-show/after-credits packs are tombstoned.
@@ -282,8 +288,8 @@ mistake would hide.
 
 ## Version history
 
-- **v3.5** — a nudge to text whoever hasn't reacted yet; fixing a night's title
-  forgets the wrong movie's poster and facts
+- **v3.5** — a nudge to text whoever hasn't reacted yet; trivia answers stay
+  answered; fixing a night's title forgets the wrong movie's poster and facts
 - **v3.4** — the projector waits for the closing credits, and a 6:30 showtime
 - **v3.3** — the poster on the projector screen, trailers, spoiler-free pre-show packs, a backup nudge
 - **v3.2** — cards in date order, and a Rotten Tomatoes link
