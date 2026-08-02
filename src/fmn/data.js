@@ -228,6 +228,21 @@ function reactionsFor(nightId){
   }
   return out;
 }
+/* Wipe everything that was looked up *about a specific film* — the TMDB
+   facts and poster, and the two AI packs, which are written from the title.
+   Called when a night turns out to be a different movie than the one logged.
+   The packs are tombstoned rather than dropped so a phone that already synced
+   them doesn't merge the old movie's write-up straight back in. */
+function forgetLookedUp(rec){
+  delete rec.facts;
+  delete rec.posterPath;
+  delete rec.tmdbId;
+  var now = Date.now();
+  ['pre_' + rec.id, 'ai_' + rec.id].forEach(function(id){
+    var r = data.records[id];
+    if (r && !r.deleted) data.records[id] = { id:id, type:r.type, deleted:true, updatedAt:now };
+  });
+}
 /* Anything said *after* the movie. `why` is the picker's intro, written days
    ahead of the show, so it can't count here — otherwise whoever found the
    film is the one person the nudge never reaches. */

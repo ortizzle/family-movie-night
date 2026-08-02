@@ -140,12 +140,22 @@ interactions, no `alert`/`confirm`/`prompt` (they behave badly), no `onclick`
 attributes, no `innerHTML` with user data.
 
 **Share text, not files, when text will do.** The nudge shares a string, which
-every Android target accepts. Sharing a *file* is fussier: Chrome answered
-`canShare({ files: [application/json] })` with yes on a Pixel and then threw
-`NotAllowedError` from `share()`, so the backup picks the first MIME type that
-survives both — `text/plain` before `application/json`. And a `share()`
-rejection is not always a cancel: an `AbortError` that comes back in under
+every Android target accepts. Sharing a *file* is fussier, and the two checks
+disagree: `canShare()` looks only at the MIME type, but `share()` also runs the
+**filename extension** past an allowlist that doesn't include `.json`. That's
+the `NotAllowedError` a Pixel throws on a file `canShare()` just approved —
+and why switching the type to `text/plain` alone didn't fix it. The shared
+backup is a `.txt`; import accepts both extensions and parses by content. A
+`share()` rejection is also not always a cancel: an `AbortError` back in under
 700ms means the sheet never opened, so fall back rather than going quiet.
+
+**Retitling a night means it was a different movie.** `openEditNight` calls
+`forgetLookedUp()` whenever the title or year changes: `facts`, `posterPath`,
+`tmdbId` are dropped and the pre-show/after-credits packs are tombstoned.
+Without it the old film's poster and runtime stick forever, because
+`ensureNightFacts` never refetches once `fetchedAt` is stamped. Reactions are
+never touched — only the family knows whether the typo or the viewing was the
+mistake.
 
 ---
 
@@ -272,7 +282,8 @@ mistake would hide.
 
 ## Version history
 
-- **v3.5** — a nudge to text whoever hasn't reacted yet
+- **v3.5** — a nudge to text whoever hasn't reacted yet; fixing a night's title
+  forgets the wrong movie's poster and facts
 - **v3.4** — the projector waits for the closing credits, and a 6:30 showtime
 - **v3.3** — the poster on the projector screen, trailers, spoiler-free pre-show packs, a backup nudge
 - **v3.2** — cards in date order, and a Rotten Tomatoes link

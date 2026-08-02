@@ -619,6 +619,24 @@ function openEditNight(night){
     yInput.value = night.year || '';
     box.appendChild(yInput);
 
+    /* Say out loud what a retitle costs, but only once they've actually
+       changed it — a standing warning on a form nobody's touched is noise. */
+    var swapNote = el('div','set-note','');
+    swapNote.style.display = 'none';
+    box.appendChild(swapNote);
+    function paintSwapNote(){
+      var changed = tInput.value.trim() !== (night.title || '') ||
+        (Number(yInput.value) || null) !== (night.year || null);
+      swapNote.style.display = changed ? '' : 'none';
+      if (changed){
+        swapNote.textContent = 'Different movie — the poster, facts and any '
+          + 'pre-show notes are for “' + night.title + '”, so they’ll be looked '
+          + 'up fresh. Everyone’s reactions stay put.';
+      }
+    }
+    tInput.addEventListener('input', paintSwapNote);
+    yInput.addEventListener('input', paintSwapNote);
+
     box.appendChild(el('div','f-label','Movie night date'));
     var dInput = el('input','f-input');
     dInput.type = 'date';
@@ -701,8 +719,19 @@ function openEditNight(night){
       if (!title){ toast('The movie still needs a title'); return; }
       var rec = data.records[night.id];
       if (!rec || rec.deleted){ close(); return; }
+      var year = Number(yInput.value) || null;
+      /* Correcting the title means this row was the wrong film. Everything
+         TMDB and Claude derived from the old one — poster, runtime, rating,
+         certificate, trailer, where-to-watch, the pre-show pack — describes
+         that other movie, and `ensureNightFacts` never refetches once
+         `fetchedAt` is stamped, so leaving it behind pins the wrong poster to
+         the right night forever. Drop it and let it fetch again. Reactions
+         stay: those are the family's own words, and only they know whether
+         the typo or the viewing was the mistake. */
+      var swapped = (title !== rec.title) || (year !== (rec.year || null));
+      if (swapped) forgetLookedUp(rec);
       rec.title = title;
-      rec.year = Number(yInput.value) || null;
+      rec.year = year;
       rec.date = dInput.value || rec.date;
       rec.pickedBy = picked;
       rec.question = qInput.value.trim();
@@ -712,7 +741,7 @@ function openEditNight(night){
       saveData();
       close();
       render();
-      toast('Movie night updated');
+      toast(swapped ? 'Movie swapped — looking up the new one 🎬' : 'Movie night updated');
     });
     row.appendChild(cancel); row.appendChild(save);
     box.appendChild(row);

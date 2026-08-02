@@ -2136,6 +2136,21 @@ function reactionsFor(nightId){
   }
   return out;
 }
+/* Wipe everything that was looked up *about a specific film* — the TMDB
+   facts and poster, and the two AI packs, which are written from the title.
+   Called when a night turns out to be a different movie than the one logged.
+   The packs are tombstoned rather than dropped so a phone that already synced
+   them doesn't merge the old movie's write-up straight back in. */
+function forgetLookedUp(rec){
+  delete rec.facts;
+  delete rec.posterPath;
+  delete rec.tmdbId;
+  var now = Date.now();
+  ['pre_' + rec.id, 'ai_' + rec.id].forEach(function(id){
+    var r = data.records[id];
+    if (r && !r.deleted) data.records[id] = { id:id, type:r.type, deleted:true, updatedAt:now };
+  });
+}
 /* Anything said *after* the movie. `why` is the picker's intro, written days
    ahead of the show, so it can't count here — otherwise whoever found the
    film is the one person the nudge never reaches. */
@@ -3132,6 +3147,24 @@ function openEditNight(night){
     yInput.value = night.year || '';
     box.appendChild(yInput);
 
+    /* Say out loud what a retitle costs, but only once they've actually
+       changed it — a standing warning on a form nobody's touched is noise. */
+    var swapNote = el('div','set-note','');
+    swapNote.style.display = 'none';
+    box.appendChild(swapNote);
+    function paintSwapNote(){
+      var changed = tInput.value.trim() !== (night.title || '') ||
+        (Number(yInput.value) || null) !== (night.year || null);
+      swapNote.style.display = changed ? '' : 'none';
+      if (changed){
+        swapNote.textContent = 'Different movie — the poster, facts and any '
+          + 'pre-show notes are for “' + night.title + '”, so they’ll be looked '
+          + 'up fresh. Everyone’s reactions stay put.';
+      }
+    }
+    tInput.addEventListener('input', paintSwapNote);
+    yInput.addEventListener('input', paintSwapNote);
+
     box.appendChild(el('div','f-label','Movie night date'));
     var dInput = el('input','f-input');
     dInput.type = 'date';
@@ -3214,8 +3247,19 @@ function openEditNight(night){
       if (!title){ toast('The movie still needs a title'); return; }
       var rec = data.records[night.id];
       if (!rec || rec.deleted){ close(); return; }
+      var year = Number(yInput.value) || null;
+      /* Correcting the title means this row was the wrong film. Everything
+         TMDB and Claude derived from the old one — poster, runtime, rating,
+         certificate, trailer, where-to-watch, the pre-show pack — describes
+         that other movie, and `ensureNightFacts` never refetches once
+         `fetchedAt` is stamped, so leaving it behind pins the wrong poster to
+         the right night forever. Drop it and let it fetch again. Reactions
+         stay: those are the family's own words, and only they know whether
+         the typo or the viewing was the mistake. */
+      var swapped = (title !== rec.title) || (year !== (rec.year || null));
+      if (swapped) forgetLookedUp(rec);
       rec.title = title;
-      rec.year = Number(yInput.value) || null;
+      rec.year = year;
       rec.date = dInput.value || rec.date;
       rec.pickedBy = picked;
       rec.question = qInput.value.trim();
@@ -3225,7 +3269,7 @@ function openEditNight(night){
       saveData();
       close();
       render();
-      toast('Movie night updated');
+      toast(swapped ? 'Movie swapped — looking up the new one 🎬' : 'Movie night updated');
     });
     row.appendChild(cancel); row.appendChild(save);
     box.appendChild(row);
@@ -4332,30 +4376,24 @@ function markBackup(){
 function backupPayload(){
   return JSON.stringify(data, null, 2);
 }
-function backupFilename(){
-  return 'family-movie-night-backup-' + AZ.today() + '.json';
+function backupFilename(ext){
+  return 'family-movie-night-backup-' + AZ.today() + '.' + (ext || 'json');
 }
-/* Which file type will this phone actually hand to another app? Chrome keeps
-   an allowlist and rejects anything off it — so ask about the real types in
-   preference order instead of assuming JSON is welcome. text/plain is the
-   safe one; the filename still ends in .json either way, which is what Drive
-   shows and what import reads. Returns null when sharing files isn't possible
-   at all, and the button stays hidden. */
+/* Chrome vets a shared file twice and the two checks disagree. `canShare()`
+   only looks at the MIME type, but `share()` also runs the *filename
+   extension* past an allowlist — and `.json` isn't on it. That's the whole
+   story behind the NotAllowedError on a Pixel: canShare({application/json})
+   said yes, switching the type to text/plain didn't help, because the name
+   still ended in .json. So the shared copy is a .txt, and only text/plain is
+   offered. It's the same JSON inside; import reads it either way.
+   Returns null when sharing files isn't possible at all — the button hides. */
+var SHARE_BACKUP_EXT = 'txt';
 function shareableBackupType(){
   if (!navigator.share || !navigator.canShare) return null;
-  /* text/plain first, deliberately. Chrome answered canShare({application/json})
-     with yes on a Pixel and then threw NotAllowedError from share() — the
-     check can't be trusted for JSON, so lead with the type that's always on
-     the allowlist. The filename still ends in .json, which is what Drive
-     displays and what import reads; neither cares about the MIME type. */
-  var types = ['text/plain', 'application/json'];
-  for (var i=0;i<types.length;i++){
-    try {
-      if (navigator.canShare({ files: [ new File(['{}'], 'backup.json', { type: types[i] }) ] })) {
-        return types[i];
-      }
-    } catch(e){}
-  }
+  try {
+    var probe = new File(['{}'], backupFilename(SHARE_BACKUP_EXT), { type:'text/plain' });
+    if (navigator.canShare({ files: [probe] })) return 'text/plain';
+  } catch(e){}
   return null;
 }
 function canShareBackup(){ return !!shareableBackupType(); }
@@ -4390,7 +4428,7 @@ function shareBackup(){
   if (!type){ exportBackup(); return; }
   var file;
   try {
-    file = new File([backupPayload()], backupFilename(), { type: type });
+    file = new File([backupPayload()], backupFilename(SHARE_BACKUP_EXT), { type: type });
   } catch(e){ exportBackup(); return; }
   var opened = Date.now();
   navigator.share({ files:[file], title:'Family Movie Night backup' })
@@ -7407,7 +7445,9 @@ function renderSettings(app){
   ds.appendChild(el('div','set-note','Goes to your Downloads folder. Turn on Chrome ▸ Settings ▸ Downloads ▸ “Ask where to save files” and it’ll let you pick a Drive folder here too.'));
   var fileInput = document.createElement('input');
   fileInput.type = 'file';
-  fileInput.accept = '.json,application/json';
+  /* .txt because that's what the share sheet writes — Chrome won't hand
+     another app a .json. Same JSON inside; the reader doesn't care. */
+  fileInput.accept = '.json,.txt,application/json,text/plain';
   fileInput.style.display = 'none';
   fileInput.addEventListener('change', function(){
     if (fileInput.files && fileInput.files[0]) importBackup(fileInput.files[0]);

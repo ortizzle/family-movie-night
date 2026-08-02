@@ -996,30 +996,24 @@ function markBackup(){
 function backupPayload(){
   return JSON.stringify(data, null, 2);
 }
-function backupFilename(){
-  return 'family-movie-night-backup-' + AZ.today() + '.json';
+function backupFilename(ext){
+  return 'family-movie-night-backup-' + AZ.today() + '.' + (ext || 'json');
 }
-/* Which file type will this phone actually hand to another app? Chrome keeps
-   an allowlist and rejects anything off it — so ask about the real types in
-   preference order instead of assuming JSON is welcome. text/plain is the
-   safe one; the filename still ends in .json either way, which is what Drive
-   shows and what import reads. Returns null when sharing files isn't possible
-   at all, and the button stays hidden. */
+/* Chrome vets a shared file twice and the two checks disagree. `canShare()`
+   only looks at the MIME type, but `share()` also runs the *filename
+   extension* past an allowlist — and `.json` isn't on it. That's the whole
+   story behind the NotAllowedError on a Pixel: canShare({application/json})
+   said yes, switching the type to text/plain didn't help, because the name
+   still ended in .json. So the shared copy is a .txt, and only text/plain is
+   offered. It's the same JSON inside; import reads it either way.
+   Returns null when sharing files isn't possible at all — the button hides. */
+var SHARE_BACKUP_EXT = 'txt';
 function shareableBackupType(){
   if (!navigator.share || !navigator.canShare) return null;
-  /* text/plain first, deliberately. Chrome answered canShare({application/json})
-     with yes on a Pixel and then threw NotAllowedError from share() — the
-     check can't be trusted for JSON, so lead with the type that's always on
-     the allowlist. The filename still ends in .json, which is what Drive
-     displays and what import reads; neither cares about the MIME type. */
-  var types = ['text/plain', 'application/json'];
-  for (var i=0;i<types.length;i++){
-    try {
-      if (navigator.canShare({ files: [ new File(['{}'], 'backup.json', { type: types[i] }) ] })) {
-        return types[i];
-      }
-    } catch(e){}
-  }
+  try {
+    var probe = new File(['{}'], backupFilename(SHARE_BACKUP_EXT), { type:'text/plain' });
+    if (navigator.canShare({ files: [probe] })) return 'text/plain';
+  } catch(e){}
   return null;
 }
 function canShareBackup(){ return !!shareableBackupType(); }
@@ -1054,7 +1048,7 @@ function shareBackup(){
   if (!type){ exportBackup(); return; }
   var file;
   try {
-    file = new File([backupPayload()], backupFilename(), { type: type });
+    file = new File([backupPayload()], backupFilename(SHARE_BACKUP_EXT), { type: type });
   } catch(e){ exportBackup(); return; }
   var opened = Date.now();
   navigator.share({ files:[file], title:'Family Movie Night backup' })

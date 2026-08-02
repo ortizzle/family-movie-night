@@ -559,7 +559,9 @@ function renderSettings(app){
   ds.appendChild(el('div','set-note','Goes to your Downloads folder. Turn on Chrome ▸ Settings ▸ Downloads ▸ “Ask where to save files” and it’ll let you pick a Drive folder here too.'));
   var fileInput = document.createElement('input');
   fileInput.type = 'file';
-  fileInput.accept = '.json,application/json';
+  /* .txt because that's what the share sheet writes — Chrome won't hand
+     another app a .json. Same JSON inside; the reader doesn't care. */
+  fileInput.accept = '.json,.txt,application/json,text/plain';
   fileInput.style.display = 'none';
   fileInput.addEventListener('change', function(){
     if (fileInput.files && fileInput.files[0]) importBackup(fileInput.files[0]);
