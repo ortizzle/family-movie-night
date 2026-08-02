@@ -139,6 +139,14 @@ minimum tap targets, no `:hover`-only
 interactions, no `alert`/`confirm`/`prompt` (they behave badly), no `onclick`
 attributes, no `innerHTML` with user data.
 
+**Share text, not files, when text will do.** The nudge shares a string, which
+every Android target accepts. Sharing a *file* is fussier: Chrome answered
+`canShare({ files: [application/json] })` with yes on a Pixel and then threw
+`NotAllowedError` from `share()`, so the backup picks the first MIME type that
+survives both — `text/plain` before `application/json`. And a `share()`
+rejection is not always a cancel: an `AbortError` that comes back in under
+700ms means the sheet never opened, so fall back rather than going quiet.
+
 ---
 
 ## Design decisions worth remembering
@@ -264,6 +272,7 @@ mistake would hide.
 
 ## Version history
 
+- **v3.5** — a nudge to text whoever hasn't reacted yet
 - **v3.4** — the projector waits for the closing credits, and a 6:30 showtime
 - **v3.3** — the poster on the projector screen, trailers, spoiler-free pre-show packs, a backup nudge
 - **v3.2** — cards in date order, and a Rotten Tomatoes link

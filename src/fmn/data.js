@@ -228,6 +228,19 @@ function reactionsFor(nightId){
   }
   return out;
 }
+/* Anything said *after* the movie. `why` is the picker's intro, written days
+   ahead of the show, so it can't count here — otherwise whoever found the
+   film is the one person the nudge never reaches. */
+function rxHasReaction(r){
+  return !!(r && (r.stars > 0 || (r.thought||'').length || (r.character||'').length ||
+    rxScenes(r).length || rxQuotes(r).length || rxMemories(r).length || r.poll));
+}
+/* Who hasn't said a word about a night yet. Bonus films are the reason this
+   exists — nobody's turn came up, so nobody feels on the hook, and the
+   scrapbook page sits half empty. */
+function membersWaitingOn(nightId){
+  return MEMBERS.filter(function(m){ return !rxHasReaction(reactionFor(nightId, m.id)); });
+}
 function familyAvg(nightId){
   var rs = reactionsFor(nightId).filter(function(r){ return r.stars > 0; });
   if (!rs.length) return null;

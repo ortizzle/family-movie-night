@@ -718,6 +718,45 @@ function openEditNight(night){
     box.appendChild(row);
   });
 }
+/* Where the app lives, for pasting into a text. Query strings are
+   cache-busters and hashes are modal state — neither belongs in a link
+   somebody else is going to tap. */
+function appUrl(){
+  return location.origin + location.pathname;
+}
+function nudgeText(night, waiting){
+  var lines = [];
+  lines.push('🍿 ' + night.title + (night.year ? ' (' + night.year + ')' : ''));
+  lines.push(memberNames(waiting) + ' — we still need your stars and your favorite bit!');
+  lines.push('Open Family Movie Night, tap the night, and add what you thought.');
+  var url = appUrl();
+  if (/^https?:/.test(url)) lines.push(url);
+  return lines.join('\n');
+}
+function copyNudge(text){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text)
+      .then(function(){ toast('Nudge copied — paste it into your texts 📋'); })
+      .catch(function(){ toast('Couldn’t copy the nudge — try again'); });
+    return;
+  }
+  toast('Couldn’t copy the nudge — try again');
+}
+function nudgeFamily(night){
+  var waiting = membersWaitingOn(night.id);
+  if (!waiting.length){ toast('Everyone’s already weighed in ✓'); return; }
+  var text = nudgeText(night, waiting);
+  if (!navigator.share){ copyNudge(text); return; }
+  /* Same instant-rejection tell the backup share uses: a sheet the user
+     actually saw and dismissed takes longer than this to come back. */
+  var opened = Date.now();
+  navigator.share({ title:'Family Movie Night', text: text })
+    .catch(function(err){
+      var name = (err && err.name) || 'Error';
+      if (name === 'AbortError' && (Date.now() - opened) >= 700) return;
+      copyNudge(text);
+    });
+}
 /* the ⋯ button on each night card */
 function openNightMenu(night){
   openModal(function(box, close){
@@ -737,6 +776,20 @@ function openNightMenu(night){
       ca.appendChild(document.createTextNode(watched ? 'Pre-show notes' : 'Coming attractions'));
       ca.addEventListener('click', function(){ close(); openComingAttractions(night); });
       list.appendChild(ca);
+    }
+    /* A bonus film nobody's turn produced is the one that goes unrated, so
+       once the night has happened and somebody still owes a reaction, offer
+       the text. It disappears the moment the last person writes something. */
+    var waiting = watched ? membersWaitingOn(night.id) : [];
+    if (waiting.length){
+      var nudge = el('button','menu-item');
+      nudge.appendChild(el('span','mi','📣'));
+      var stack = el('div','mstack');
+      stack.appendChild(el('span', null, 'Nudge the family'));
+      stack.appendChild(el('span','mnote', 'Still waiting on ' + memberNames(waiting)));
+      nudge.appendChild(stack);
+      nudge.addEventListener('click', function(){ close(); nudgeFamily(night); });
+      list.appendChild(nudge);
     }
     var open = el('button','menu-item');
     open.appendChild(el('span','mi','📖'));
