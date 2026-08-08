@@ -19,6 +19,33 @@ var bookExpanded = false;
 var BOOK_PAGE = 8;      // recent nights shown before "show all"
 var BOOK_FILTER_AT = 12; // book size that earns a filter row
 
+/* Jumping from a Recent Fridays row down to that night's card. The card may
+   be filtered out, or sitting past the "show all" cap, so clear the browsing
+   state on the way — landing on a card the book is currently hiding would
+   scroll to nothing. render() rebuilds everything, so the scroll waits for
+   the new card and happens in renderHome once it exists. */
+var pendingJump = null;
+function jumpToNight(nightId){
+  bookQuery = '';
+  bookPicker = null;
+  bookExpanded = true;
+  pendingJump = nightId;
+  render();
+}
+function runPendingJump(){
+  if (!pendingJump) return;
+  var card = document.getElementById('night-' + pendingJump);
+  pendingJump = null;
+  if (!card) return;
+  var smooth = document.documentElement.classList.contains('motion-on');
+  requestAnimationFrame(function(){
+    card.scrollIntoView({ block:'center', behavior: smooth ? 'smooth' : 'auto' });
+    /* a beat of highlight, so it's obvious which card you were sent to */
+    card.classList.add('landed');
+    setTimeout(function(){ card.classList.remove('landed'); }, 1800);
+  });
+}
+
 function renderHeader(app){
   var header = el('header');
   var h1 = el('h1');
@@ -140,37 +167,12 @@ function renderHome(app){
       ? finder.name + ' found this one · nobody loses a turn'
       : finder.name + ' found this one · nobody loses a turn, ' + np.name + ' still picks next'));
   }
-  /* the trailer and where to find it — right where you look on the way to
-     the couch. Both wait on the same cached facts, so they paint together. */
-  if (booked){
-    var tWrap = el('div','screen-trailer');
-    inner.appendChild(tWrap);
-    var wWrap = el('div','screen-watch');
-    inner.appendChild(wWrap);
-    var paintTrailer = function(f){
-      while (tWrap.firstChild) tWrap.removeChild(tWrap.firstChild);
-      var tu = trailerUrl(f);
-      if (!tu) return;
-      var a = el('a','st-link','▶ Watch the trailer');
-      a.href = tu;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.setAttribute('aria-label','Watch the trailer for ' + booked.title + ' on YouTube');
-      tWrap.appendChild(a);
-    };
-    var paintWatch = function(f){
-      while (wWrap.firstChild) wWrap.removeChild(wWrap.firstChild);
-      var wr = watchRow(f);
-      if (wr) wWrap.appendChild(wr);
-    };
-    paintTrailer(booked.facts);
-    paintWatch(booked.facts);
-    ensureNightFacts(booked, function(f){
-      paintPoster();
-      paintTrailer(f);
-      paintWatch(f);
-    });
-  }
+  /* The screen stays a marquee: poster, title, date, showtime. The trailer,
+     where it's streaming and the rest of the detail all live one tap away on
+     the pre-show sheet — printing them here made the projector tall enough to
+     push the lineup off the phone, and said the same thing twice. The facts
+     still get fetched, because the poster comes with them. */
+  if (booked) ensureNightFacts(booked, function(){ paintPoster(); });
   var rot = el('div','rotation');
   /* initials only, so the whole order fits on one line under the poster;
      the full names live in the label for screen readers */
@@ -268,6 +270,19 @@ function renderHome(app){
         pd.appendChild(dot);
       });
       prow.appendChild(pd);
+      /* This row is the shortcut to the night itself. Reading the dots and
+         wanting the detail behind them is the whole reason to look here, and
+         the card can be a long way down a full memory book. */
+      prow.classList.add('lu-jump');
+      prow.setAttribute('role','button');
+      prow.setAttribute('tabindex','0');
+      prow.setAttribute('aria-label','Open ' + night.title + ' from ' + AZ.pretty(pf));
+      (function(target){
+        prow.addEventListener('click', function(){ jumpToNight(target.id); });
+        prow.addEventListener('keydown', function(e){
+          if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); jumpToNight(target.id); }
+        });
+      })(night);
     } else {
       prow.appendChild(el('div','lu-title skip','no movie night 😴'));
     }
@@ -397,6 +412,7 @@ function renderHome(app){
     }
     var picker = memberById(n.pickedBy);
     var card = el('article','night');
+    card.id = 'night-' + n.id;   // the anchor a Recent Fridays row jumps to
 
     var head = el('div','head');
     var poster = el('div','poster');
@@ -552,6 +568,8 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.4'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.5'));
   app.appendChild(footer);
+
+  runPendingJump();   // cards exist now — safe to scroll to one
 }

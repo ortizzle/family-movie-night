@@ -155,16 +155,6 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 }
 .screen .screen-poster.poster-tap img{cursor:pointer}
 .screen .screen-poster.poster-tap:active img{transform:scale(.98)}
-/* the trailer — always-light surface, so fixed inks (see the token rule) */
-.screen-trailer{margin-top:10px}
-.screen-trailer:empty{display:none}
-.screen-trailer .st-link{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  min-height:48px;padding:0 18px;border-radius:99px;text-decoration:none;
-  background:#FFF9EE;border:2px solid #E2D4BC;color:#A8620F;
-  font-size:13px;font-weight:900;letter-spacing:.3px;
-}
-.screen-trailer .st-link:active{background:#FFF3DE}
 .screen .rotation{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:16px;flex-wrap:wrap}
 /* initials only — four circles and arrows always fit one line at 390px */
 .rot-chip{
@@ -256,6 +246,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   border-bottom:2px dashed #453648;padding:6px 2px;
 }
 .lu-row.last{border-bottom:none}
+/* a Recent Fridays row is a shortcut down to that night's card */
+.lu-row.lu-jump{cursor:pointer;border-radius:10px;margin:0 -4px;padding-left:6px;padding-right:6px}
+.lu-row.lu-jump:active{background:rgba(255,239,217,.07)}
+.lu-row.lu-jump:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.lu-row.lu-jump .lu-title::after{
+  content:'›';margin-left:7px;color:var(--dim);font-weight:900;
+}
 .lu-date{width:72px;flex-shrink:0}
 .lu-date .d1{font-weight:900;font-size:13px}
 .lu-date .d2{font-size:10px;color:var(--dim);font-weight:800;letter-spacing:.5px;text-transform:uppercase}
@@ -435,16 +432,6 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   display:inline-block;margin-top:8px;font-size:12px;font-weight:900;
   color:var(--amber);text-decoration:none;min-height:24px;
 }
-/* on the projector screen the surface is always light, so use fixed inks */
-.screen-watch:empty{display:none}
-.screen-watch .watch-row{
-  background:rgba(35,26,20,.05);border-color:rgba(35,26,20,.18);
-  text-align:left;margin-top:14px;
-}
-.screen-watch .wr-lead{color:#6B5A46}
-.screen-watch .wr-pill{background:#FFF;color:#231A14;border-color:rgba(35,26,20,.2)}
-.screen-watch .wr-pill.muted{background:transparent;color:#6B5A46}
-.screen-watch .wr-link{color:#A8620F}
 
 /* ---- put it to a vote ---- */
 .vote-start{
@@ -523,6 +510,9 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   border:2px solid var(--line);border-radius:20px;padding:18px 14px 12px;
   box-shadow:0 8px 24px rgba(0,0,0,.25);
 }
+/* where a Recent Fridays tap lands — a beat of amber, then back to normal */
+.night.landed{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,180,84,.30),0 8px 24px rgba(0,0,0,.25)}
+html.motion-on .night.landed{transition:border-color .25s ease,box-shadow .25s ease}
 .night::before,.night::after{
   content:'';position:absolute;width:66px;height:20px;border-radius:2px;
   background:var(--tape);border:1px solid var(--tape-line);

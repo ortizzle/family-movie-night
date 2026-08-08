@@ -533,16 +533,29 @@ function nightNearDate(dateStr){
   }
   return null;
 }
-/* Same lookup, but only nights that have actually been watched. "Recent
-   Fridays" needs this: the ±2 day window reaches forward, and nights() is
-   newest-first, so a bonus booked for Sunday would be returned as Friday's
-   movie and listed under "recent" before anybody had seen it. */
+/* Which watched movie belongs on a given Friday's row.
+   The ±2 day window is here because a Friday film sometimes actually gets
+   played on Saturday. But it used to hand back whichever match came first in
+   newest-first order, so a Sunday bonus outranked the turn night watched on
+   the Friday itself — the Friday row showed the wrong movie. Order that
+   properly instead:
+     1. something watched on the day, turn night before bonus
+     2. otherwise the nearest turn night in the window
+   A bonus only ever claims the day it was actually watched. It doesn't stand
+   in for a Friday that has its own movie, and it doesn't fill an empty one —
+   a bonus is an extra night, not a substitute for the round. */
 function happenedNightNear(dateStr){
-  var list = nights();
-  for (var i=0;i<list.length;i++){
-    if (Math.abs(AZ.daysBetween(dateStr, list[i].date)) <= 2 && nightHappened(list[i])) return list[i];
-  }
-  return null;
+  var best = null, bestScore = Infinity;
+  nights().forEach(function(n){
+    if (!nightHappened(n)) return;
+    var off = Math.abs(AZ.daysBetween(dateStr, n.date));
+    if (off > 2) return;
+    if (isBonus(n) && off !== 0) return;
+    /* exact date first, then turn nights, then whatever sits closest */
+    var score = (off === 0 ? 0 : 100) + (isBonus(n) ? 10 : 0) + off;
+    if (score < bestScore){ best = n; bestScore = score; }
+  });
+  return best;
 }
 function pollTally(nightId){
   var t = { laughed:[], cried:[], rewatch:[], seenBefore:[], answered:0 };

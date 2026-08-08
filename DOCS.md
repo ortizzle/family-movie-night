@@ -149,6 +149,19 @@ backup is a `.txt`; import accepts both extensions and parses by content. A
 `share()` rejection is also not always a cancel: an `AbortError` back in under
 700ms means the sheet never opened, so fall back rather than going quiet.
 
+**A Friday row belongs to that Friday's movie.** `happenedNightNear` keeps a
+±2 day window, because a Friday film sometimes actually gets played on
+Saturday — but it ranks candidates instead of taking the first one `nights()`
+happens to return. Exact date first, turn night before bonus, then nearest. A
+bonus only ever claims the day it was watched: it never outranks the Friday's
+own film, and it never fills an empty Friday, because a bonus is an extra
+night, not a substitute for the round.
+
+**The projector screen is a marquee, not a page.** Poster, title, date,
+showtime, rotation — that's the whole budget. The trailer, streaming, facts
+and pre-show notes live behind the poster tap. Putting them on the screen
+itself pushed the lineup off the phone and said everything twice.
+
 **Trivia answers belong to a person and a pack.** `tq_<nightId>_<memberId>`
 holds one person's picks, stamped with the pack's `updatedAt`. The stamp is
 the point: "Make a fresh pack" writes different questions, and last week's
@@ -289,7 +302,8 @@ mistake would hide.
 ## Version history
 
 - **v3.5** — a nudge to text whoever hasn't reacted yet; trivia answers stay
-  answered; fixing a night's title forgets the wrong movie's poster and facts
+  answered; fixing a night's title forgets the wrong movie's poster and facts;
+  a leaner projector screen, and Recent Fridays rows that jump to the night
 - **v3.4** — the projector waits for the closing credits, and a 6:30 showtime
 - **v3.3** — the poster on the projector screen, trailers, spoiler-free pre-show packs, a backup nudge
 - **v3.2** — cards in date order, and a Rotten Tomatoes link
