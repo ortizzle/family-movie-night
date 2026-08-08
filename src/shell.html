@@ -1308,6 +1308,91 @@ footer{
   text-transform:uppercase;line-height:2;font-weight:800;
 }
 
+
+/* ---------- the night scrapbook's printed layout ----------
+   Applied as a class rather than living in @media print, because the fitter
+   has to lay this out and measure it *before* the print dialog opens. JS adds
+   .sp-fit just before printing and takes it off afterwards; .sp-fit-measure
+   parks the page off-screen at the real page width while it is being sized.
+   Sheet one is the night; sheet two is what it left behind. Each pours into
+   its own columns and finishes on its own piece of paper — a column block
+   that crosses a page break costs most of a page. */
+.sp-fit-measure{position:fixed !important;left:-10000px !important;top:0 !important;z-index:-1}
+.scrap-page.sp-fit{
+  max-width:none;width:7.5in;font-size:12.5px;padding:0.22in 0.82in;margin:0;
+}
+.sp-fit .sp-sheet{
+  column-count:var(--sp-cols,2);column-gap:0.28in;margin-top:0.10in;
+  orphans:2;widows:2;
+}
+.sp-fit .sp-sheet.two{margin-top:0}
+.sp-fit .sp-sheet-head{
+  column-span:all;font-size:calc(26px * var(--sp-scale,1));
+  margin:0 0 0.07in;padding-bottom:0.05in;
+}
+/* Sections may run from one column into the next — pinning each whole section
+   to one column is what left half a column empty beneath a section too tall
+   to fit beside it. The pieces inside stay whole, and a heading never gets
+   stranded without its first item. */
+.sp-fit .sp-sheet .sp-section{
+  break-inside:auto;
+  margin:0 0 calc(0.10in * var(--sp-scale,1));
+}
+.sp-fit .sp-sec-title{
+  break-after:avoid;page-break-after:avoid;
+  font-size:calc(10px * var(--sp-scale,1));margin-bottom:3px;
+}
+/* the compact blocks stay whole — splitting four poll rows across a column
+   boundary saves nothing and reads as two half-tables */
+.sp-fit .sp-sheet .sp-section[data-k="poll"],
+.sp-fit .sp-sheet .sp-section[data-k="rates"],
+.sp-fit .sp-sheet .sp-section[data-k="chars"],
+.sp-fit .sp-rate,.sp-fit .sp-note,.sp-fit .sp-char-line,.sp-fit .sp-comic-wrap,
+.sp-fit .sp-scene,.sp-fit .sp-strip,.sp-fit .sp-poll-row,.sp-fit .sp-why,.sp-fit .sp-asked{
+  /* all three, because column, page and legacy break rules are each honoured
+     by a different part of the pipeline */
+  break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;
+}
+/* masthead — poster and vitals shoulder to shoulder across the top */
+.sp-fit .sp-title{font-size:calc(25px * var(--sp-scale,1));line-height:1.1}
+.sp-fit .sp-date{font-size:calc(18px * var(--sp-scale,1));margin-top:2px}
+.sp-fit .sp-kicker{margin-top:0}
+.sp-fit .sp-head{gap:0.24in;margin-top:0.12in;align-items:center;justify-content:center}
+.sp-fit .sp-polaroid{padding:8px 8px 0;transform:rotate(-1.8deg)}
+.sp-fit .sp-polaroid .ph{width:1.45in;height:2.1in}
+.sp-fit .sp-polaroid .cap{font-size:calc(15px * var(--sp-scale,1));margin-top:5px}
+.sp-fit .sp-headside{padding-top:0;gap:9px;align-items:flex-start}
+.sp-fit .sp-facts{justify-content:flex-start;margin-top:5px;max-width:3.2in}
+.sp-fit .sp-fact{font-size:calc(9px * var(--sp-scale,1))}
+/* the furniture itself — same scrapbook, less air around it */
+.sp-fit .sp-why{padding:10px 13px}
+.sp-fit .sp-why .why-text{margin-top:4px;line-height:1.25;font-size:calc(18px * var(--sp-scale,1))}
+.sp-fit .sp-sticky{font-size:calc(18px * var(--sp-scale,1))}
+.sp-fit .sp-rates{gap:6px;margin-top:6px}
+.sp-fit .sp-rate{padding:6px 9px}
+.sp-fit .sp-note{padding:7px 10px;margin-top:5px;font-size:calc(13px * var(--sp-scale,1))}
+.sp-fit .sp-char-line{margin-top:5px;font-size:calc(18px * var(--sp-scale,1));line-height:1.25}
+.sp-fit .sp-asked{font-size:calc(18px * var(--sp-scale,1));padding:8px 11px}
+.sp-fit .sp-comic-wrap{margin-top:8px}
+.sp-fit .sp-comic{padding:9px 12px;font-size:calc(13.5px * var(--sp-scale,1))}
+.sp-fit .sp-comic-wrap .sp-tags{margin-top:12px;margin-left:22px}
+.sp-fit .sp-comic-wrap.flip .sp-tags{margin-left:24px;margin-right:24px}
+.sp-fit .sp-scene{
+  padding:9px 11px;margin-top:5px;
+  font-size:calc(11px * var(--sp-scale,1));line-height:1.38;
+}
+/* the slug and its "Cut to:" share a line — six scene cards each spending a
+   line on the label added up to most of a column */
+.sp-fit .sp-scene .slug{display:inline}
+.sp-fit .sp-scene .cut{float:right;margin-top:0}
+.sp-fit .sp-scene .action{margin-top:4px;clear:both}
+.sp-fit .sp-strip{padding:8px 11px;margin-top:5px}
+/* the tape tail is decoration; in a narrow column it would overhang */
+.sp-fit .sp-strip::before{width:34px;left:14px}
+.sp-fit .sp-poll-row{margin-top:6px;font-size:calc(12.5px * var(--sp-scale,1))}
+.sp-fit .sp-waiting{margin-top:0.14in;font-size:calc(17px * var(--sp-scale,1));column-span:all}
+.sp-fit .sp-foot{margin-top:0.14in}
+
 /* ============ PRINT (keepsake PDFs — US Letter book pages) ============ */
 /* Keepsake PDF: US Letter book page, framed by a filmstrip on both edges.
    The sprocket gutters also pull the text in to a comfortable reading
@@ -1346,84 +1431,9 @@ footer{
   .yb-night,.sp-section{page-break-inside:avoid}
   .yb-year{font-size:64px}
 
-  /* ---------- the night scrapbook, dealt onto two sheets ----------
-     Sheet one is the night; sheet two is what it left behind. Each pours into
-     its own columns and finishes on its own piece of paper — a column block
-     that crosses a page break costs most of a page. --sp-scale and --sp-cols
-     are set just before printing, and only move for a chatty night. */
-  .sp-sheet{
-    column-count:var(--sp-cols,2);column-gap:0.28in;margin-top:0.10in;
-    orphans:2;widows:2;
-  }
-  .sp-sheet.two{break-before:page;page-break-before:always;margin-top:0}
-  .sp-sheet-head{
-    column-span:all;font-size:calc(26px * var(--sp-scale,1));
-    margin:0 0 0.07in;padding-bottom:0.05in;
-  }
-  /* Sections may run from one column into the next — pinning each whole
-     section to one column is what left half a column empty beneath a section
-     too tall to fit beside it. The pieces inside stay whole, and a heading
-     never gets stranded without its first item. */
-  .sp-sheet .sp-section{
-    break-inside:auto;
-    margin:0 0 calc(0.10in * var(--sp-scale,1));
-  }
-  .sp-sec-title{
-    break-after:avoid;page-break-after:avoid;
-    font-size:calc(10px * var(--sp-scale,1));margin-bottom:3px;
-  }
-  /* the compact blocks stay whole — splitting four poll rows across a column
-     boundary saves nothing and reads as two half-tables */
-  .sp-sheet .sp-section[data-k="poll"],
-  .sp-sheet .sp-section[data-k="rates"],
-  .sp-sheet .sp-section[data-k="chars"],
-  .sp-rate,.sp-note,.sp-char-line,.sp-comic-wrap,.sp-scene,.sp-strip,
-  .sp-poll-row,.sp-why,.sp-asked{
-    /* all three, because column, page and legacy break rules are each
-       honoured by a different part of the pipeline */
-    break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;
-  }
-
-  /* masthead — poster and vitals shoulder to shoulder across the top */
-  .sp-title{font-size:calc(25px * var(--sp-scale,1));line-height:1.1}
-  .sp-date{font-size:calc(18px * var(--sp-scale,1));margin-top:2px}
-  .sp-kicker{margin-top:0}
-  .sp-head{gap:0.24in;margin-top:0.12in;align-items:center;justify-content:center}
-  .sp-polaroid{padding:8px 8px 0;transform:rotate(-1.8deg)}
-  .sp-polaroid .ph{width:1.45in;height:2.1in}
-  .sp-polaroid .cap{font-size:calc(15px * var(--sp-scale,1));margin-top:5px}
-  .sp-headside{padding-top:0;gap:9px;align-items:flex-start}
-  .sp-facts{justify-content:flex-start;margin-top:5px;max-width:3.2in}
-  .sp-fact{font-size:calc(9px * var(--sp-scale,1))}
-
-  /* the furniture itself — same scrapbook, less air around it */
-  .sp-why{padding:10px 13px}
-  .sp-why .why-text{margin-top:4px;line-height:1.25;font-size:calc(18px * var(--sp-scale,1))}
-  .sp-sticky{font-size:calc(18px * var(--sp-scale,1))}
-  .sp-rates{gap:6px;margin-top:6px}
-  .sp-rate{padding:6px 9px}
-  .sp-note{padding:7px 10px;margin-top:5px;font-size:calc(13px * var(--sp-scale,1))}
-  .sp-char-line{margin-top:5px;font-size:calc(18px * var(--sp-scale,1));line-height:1.25}
-  .sp-asked{font-size:calc(18px * var(--sp-scale,1));padding:8px 11px}
-  .sp-comic-wrap{margin-top:8px}
-  .sp-comic{padding:9px 12px;font-size:calc(13.5px * var(--sp-scale,1))}
-  .sp-comic-wrap .sp-tags{margin-top:12px;margin-left:22px}
-  .sp-comic-wrap.flip .sp-tags{margin-left:24px;margin-right:24px}
-  .sp-scene{
-    padding:9px 11px;margin-top:5px;
-    font-size:calc(11px * var(--sp-scale,1));line-height:1.38;
-  }
-  /* the slug and its "Cut to:" share a line — six scene cards each spending a
-     line on the label added up to most of a column */
-  .sp-scene .slug{display:inline}
-  .sp-scene .cut{float:right;margin-top:0}
-  .sp-scene .action{margin-top:4px;clear:both}
-  .sp-strip{padding:8px 11px;margin-top:5px}
-  /* the tape tail is decoration; in a narrow column it would overhang */
-  .sp-strip::before{width:34px;left:14px}
-  .sp-poll-row{margin-top:6px;font-size:calc(12.5px * var(--sp-scale,1))}
-  .sp-waiting{margin-top:0.14in;font-size:calc(17px * var(--sp-scale,1));column-span:all}
-  .sp-foot{margin-top:0.14in}
+  /* pagination only — everything about how the sheets are laid out lives in
+     .sp-fit, so the fitter can measure the real thing before printing it */
+  .sp-sheet.two{break-before:page;page-break-before:always}
 }
 </style>
 </head>

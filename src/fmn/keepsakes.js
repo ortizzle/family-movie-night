@@ -216,52 +216,151 @@ function creditLine(n){
     ? 'Family bonus · ' + picker.name + '’s find'
     : picker.name + '’s pick';
 }
-/* How much writing a night's keepsake has to hold. Two printed columns give
-   the layout a lot of headroom, so this only has to answer one question: is
-   this a chatty night? Every entry costs its text plus the furniture around
-   it — a tag, a bubble tail, a screenplay slug — which is why short items are
-   charged a flat overhead rather than just their characters. */
-function keepsakeWeight(night){
-  var w = 0;
-  MEMBERS.forEach(function(m){
-    var r = reactionFor(night.id, m.id);
-    if (!r) return;
-    function add(text, overhead){ if (text) w += String(text).length + overhead; }
-    add(r.why, 90);
-    add(r.thought, 60);
-    add(r.character, 40);
-    add(r.answer, 55);
-    rxQuotes(r).forEach(function(q){ add(q, 110); });
-    rxScenes(r).forEach(function(sc){ add(sc, 120); });
-    rxMemories(r).forEach(function(t){ add(t, 70); });
-    if (r.stars > 0) w += 40;
-    if (r.poll) w += 15;
+/* ---------- fitting the keepsake onto two sheets ----------
+   Everything here is measured, not predicted. The first version estimated
+   heights from character counts and was wrong in exactly the way that hurts:
+   deleting a few quotes moved the estimate, moved the split, and printed
+   FOUR pages with most of two of them blank. A sheet that overruns its page
+   by a millimetre pushes the next sheet a whole page later, so the only
+   honest answer is to lay it out at the real page size and look at it.
+
+   The page box is US Letter less the 0.5in @page margin: 7.5 x 10 inches,
+   which at CSS 96dpi is 720 x 960. The budget is deliberately a little under
+   that: measuring off-screen and paginating for real differ by a percent or
+   two, printers round differently again, and a sheet one percent over costs
+   a whole page. Three tenths of an inch of slack is cheap insurance. */
+var FIT_PAGE_H = 960;
+var FIT_BUDGET = 930;
+/* preference order: full size in two columns, then a third column — it buys
+   about half a page again and costs nothing in legibility — and only then
+   smaller type, down to where it stops being comfortable to read. */
+var FIT_PLANS = (function(){
+  var out = [];
+  [2, 3].forEach(function(cols){
+    [1, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.66].forEach(function(scale){
+      out.push({ cols: cols, scale: scale });
+    });
   });
-  if (night.question) w += 90;
-  return w;
+  /* two columns at full size first, then widen before shrinking */
+  return out.sort(function(a, b){
+    return (b.scale - a.scale) || (a.cols - b.cols);
+  });
+})();
+
+/* Lay the given split out and report what each sheet would cost on paper. */
+function fitMeasure(page, parts){
+  var pad = 0.22 * 96;
+  function h(elm){ return elm ? elm.getBoundingClientRect().height : 0; }
+  var masthead = h(parts.kicker) + h(parts.title) + h(parts.date) + h(parts.head);
+  return {
+    one: pad + masthead + h(parts.one),
+    two: parts.two.firstChild ? pad + h(parts.two) + h(parts.waiting) + h(parts.foot) + pad : 0
+  };
 }
-/* Two sheets, always — a keepsake that spills onto a third stops matching the
-   rest of the binder. A chatty night gets a narrower column before it gets
-   smaller type, because a third column buys about half a page again while
-   costing nothing in legibility. Only past that does the type come down, and
-   only to where it's still comfortable to read. Measured against a real night
-   with all four of them writing: two columns at full size hold about 4,200. */
-var KEEPSAKE_FITS = 4200;
-function keepsakeFit(night){
-  var w = keepsakeWeight(night);
-  if (w <= KEEPSAKE_FITS) return { cols:2, scale:1 };
-  if (w <= KEEPSAKE_FITS * 1.25) return { cols:2, scale: KEEPSAKE_FITS / w };
-  var roomy = KEEPSAKE_FITS * 1.38;
-  return { cols:3, scale: Math.max(0.64, Math.min(1, roomy / w)) };
+/* Deal the first `cut` sections onto sheet one and the rest onto sheet two. */
+function fitDeal(parts, cut){
+  parts.secs.forEach(function(sec, i){
+    (i < cut ? parts.one : parts.two).appendChild(sec);
+  });
+  var banner = parts.two.querySelector('.sp-sheet-head');
+  if (cut >= parts.secs.length){
+    if (banner) banner.remove();
+  } else if (!banner){
+    parts.two.insertBefore(el('div','sp-sheet-head','What we kept 🍿'), parts.two.firstChild);
+  }
+  parts.two.style.display = (cut >= parts.secs.length) ? 'none' : '';
 }
+/* Choose the split, the column count and the type size. Returns the plan it
+   settled on so the caller can say what happened. */
+function fitScrapbook(page){
+  var parts = {
+    secs: Array.prototype.slice.call(page.querySelectorAll('.sp-section')),
+    one: page.querySelector('.sp-sheet.one'),
+    two: page.querySelector('.sp-sheet.two'),
+    kicker: page.querySelector('.sp-kicker'),
+    title: page.querySelector('.sp-title'),
+    date: page.querySelector('.sp-date'),
+    head: page.querySelector('.sp-head'),
+    waiting: page.querySelector('.sp-waiting'),
+    foot: page.querySelector('.sp-foot')
+  };
+  if (!parts.one || !parts.two || !parts.secs.length) return null;
+
+  page.classList.add('sp-fit', 'sp-fit-measure');
+  var best = null;
+  for (var p = 0; p < FIT_PLANS.length && !best; p++){
+    var plan = FIT_PLANS[p];
+    page.style.setProperty('--sp-cols', plan.cols);
+    page.style.setProperty('--sp-scale', plan.scale);
+    /* everything on one sheet is the nicest answer when it fits — a single
+       well-filled page beats two thin ones */
+    var candidates = [];
+    for (var cut = 1; cut <= parts.secs.length; cut++) candidates.push(cut);
+    var winner = null, winnerCost = Infinity;
+    candidates.forEach(function(cut){
+      fitDeal(parts, cut);
+      var m = fitMeasure(page, parts);
+      if (m.one > FIT_BUDGET || m.two > FIT_BUDGET) return;
+      /* prefer the split that leaves the two sheets most even; a single sheet
+         costs nothing and wins outright */
+      var cost = m.two ? Math.abs(m.one - m.two) : -1;
+      if (cost < winnerCost){ winnerCost = cost; winner = cut; }
+    });
+    if (winner !== null) best = { cols: plan.cols, scale: plan.scale, cut: winner };
+  }
+  if (!best){
+    /* More writing than two readable pages can hold. Rather than lose any of
+       it, take the smallest type and spill — but still split where the two
+       sheets come out closest to even, so the overflow is a few lines onto a
+       third page instead of one crammed sheet beside a half-empty one. */
+    var last = FIT_PLANS[FIT_PLANS.length - 1];
+    page.style.setProperty('--sp-cols', last.cols);
+    page.style.setProperty('--sp-scale', last.scale);
+    /* Fill sheet one right up to the page and let only sheet two run over.
+       Evening the two out is the tempting move and it is the wrong one: two
+       sheets at 101% spill a little onto a page each, which is four sheets
+       with two of them nearly blank — the exact shape of the bug this whole
+       routine exists to kill. */
+    var packed = 1;
+    for (var c = 1; c <= parts.secs.length; c++){
+      fitDeal(parts, c);
+      if (fitMeasure(page, parts).one <= FIT_BUDGET) packed = c;
+    }
+    best = { cols: last.cols, scale: last.scale, cut: packed, overflowed: true };
+  }
+  page.style.setProperty('--sp-cols', best.cols);
+  page.style.setProperty('--sp-scale', best.scale);
+  fitDeal(parts, best.cut);
+  page.classList.remove('sp-fit-measure');
+  return best;
+}
+/* Ctrl+P and the browser's own menu never touch our button, so the fit has to
+   hang off the event as well — an unfitted scrapbook prints as one default
+   column. Taking .sp-fit off again waits for afterprint: strip it any earlier
+   and the layout can be gone before the printer has read it. */
+window.addEventListener('beforeprint', function(){
+  var page = document.querySelector('.scrap-overlay .scrap-page');
+  if (!page || page.classList.contains('sp-fit')) return;
+  page.classList.add('sp-fit');
+  if (page.querySelector('.sp-sheet')) fitScrapbook(page);
+});
+window.addEventListener('afterprint', function(){
+  var page = document.querySelector('.scrap-page.sp-fit');
+  /* the fit layout is for paper only — left on, the overlay becomes a
+     two-column letter page on a phone */
+  if (page) page.classList.remove('sp-fit', 'sp-fit-measure');
+});
 function printButton(page, night){
   var pb = el('button','sp-print','🖨️ Save as PDF keepsake');
   pb.addEventListener('click', function(){
-    if (night){
-      var fit = keepsakeFit(night);
-      page.style.setProperty('--sp-scale', fit.scale.toFixed(3));
-      page.style.setProperty('--sp-cols', fit.cols);
-    }
+    /* Every keepsake wants the print typography; only the night scrapbook has
+       sheets to solve. The yearbook and the collection share these .sp-*
+       styles, so leaving .sp-fit off them printed their pages at screen size.
+       They hand this function their cover, not the page, so climb to the
+       sheet the styles are actually written against. */
+    var sheet = page.closest ? (page.closest('.scrap-page') || page) : page;
+    sheet.classList.add('sp-fit');
+    if (night) fitScrapbook(sheet);
     window.print();
   });
   page.appendChild(pb);
@@ -343,7 +442,9 @@ function openScrapbook(night){
      the page ends, sheet two begins.
      Running order is the night as it happened first, then what it left
      behind. The poll sits early because it's night-of data, not a keepsake.
-     Anything unkeyed keeps its place at the end rather than disappearing. */
+     Anything unkeyed keeps its place at the end rather than disappearing.
+     Where the cut actually falls is fitScrapbook's job, at print time, once
+     there is something real to measure. */
   var built = el('div');
   buildNightKeepsake(built, night);
   var ORDER = ['why','rates','poll','thoughts','asked','chars','quotes','scenes','memories'];
@@ -354,33 +455,11 @@ function openScrapbook(night){
     var ib = ORDER.indexOf(b.getAttribute('data-k'));
     return (ia < 0 ? ORDER.length : ia) - (ib < 0 ? ORDER.length : ib);
   });
-
-  /* Where sheet one ends. A fixed split reads well until one night is all
-     quotes and the next all thoughts, and then one sheet overflows while the
-     other sits half empty — so the cut goes wherever it evens the two out.
-     Sheet one gives its top third to the masthead, which is why it takes the
-     smaller share of the writing. A night short enough for one sheet is never
-     cut at all: one well-filled page beats two thin ones. */
-  var weights = secs.map(function(x){ return x.textContent.length + x.children.length * 45; });
-  var total = weights.reduce(function(a, b){ return a + b; }, 0);
-  var SHEET_ONE_SHARE = 0.37;
-  var cut = secs.length;
-  if (keepsakeWeight(night) > 1800 && total > 0){
-    var best = Infinity, running = 0;
-    for (var si = 1; si < secs.length; si++){
-      running += weights[si - 1];
-      var miss = Math.abs(running / total - SHEET_ONE_SHARE);
-      if (miss < best){ best = miss; cut = si; }
-    }
-  }
   var sheetOne = el('div','sp-sheet one');
   var sheetTwo = el('div','sp-sheet two');
-  secs.forEach(function(x, i){ (i < cut ? sheetOne : sheetTwo).appendChild(x); });
+  secs.forEach(function(x){ sheetOne.appendChild(x); });
   page.appendChild(sheetOne);
-  if (sheetTwo.firstChild){
-    sheetTwo.insertBefore(el('div','sp-sheet-head','What we kept 🍿'), sheetTwo.firstChild);
-    page.appendChild(sheetTwo);
-  }
+  page.appendChild(sheetTwo);
 
   var waiting = MEMBERS.filter(function(m){ return !rxHasContent(reactionFor(night.id, m.id)); });
   if (waiting.length){

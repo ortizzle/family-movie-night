@@ -168,16 +168,31 @@ scrapbook was split into two `.sp-sheet` blocks with the page break *between*
 them. Each sheet's columns start and finish on one piece of paper. Anything
 else reaching for `columns` in print needs the same treatment.
 
-**The scrapbook prints on two sheets, and the cut moves.** `openScrapbook`
-reorders sections into narrative order, then picks the split point closest to
-leaving 37% of the writing on sheet one — sheet one gives its top third to the
-masthead, so an even split of the *page* is an uneven split of the words. A
-fixed split read fine until one night was all quotes and the next all
-thoughts. Under ~1,800 of `keepsakeWeight` there's no cut at all: one
-well-filled page beats two thin ones. `keepsakeFit` then holds it to two
-sheets — a third column first, since that buys about half a page again for
-free, and smaller type only after that, down to a readable floor. Past roughly
-twice a very full night it still runs over, which is deliberate: the
+**The scrapbook's print layout is measured, never predicted.** `fitScrapbook`
+lays the page out off-screen at the real page size and reads the heights back,
+then picks the split, the column count and the type size that actually fit.
+The first version estimated all that from character counts, and it failed in
+the way that hurts: deleting a few quotes moved the estimate, moved the split,
+and printed *four* pages with most of two of them blank. A sheet that overruns
+its page by a millimetre pushes the next sheet a page later, so guessing is
+not good enough.
+
+Three things that follow from it, each learned the expensive way:
+
+- The layout lives in `.sp-fit`, not inside `@media print` — the fitter has to
+  apply and measure it before the print dialog exists. JS adds the class on
+  the button and on `beforeprint`, and drops it on `afterprint`; left on, the
+  overlay becomes a two-column Letter page on a phone. Every keepsake gets the
+  class (they share the `.sp-*` styles); only the night scrapbook has sheets
+  to solve, and they hand `printButton` their cover, so it climbs to
+  `.scrap-page` first.
+- The budget is 930px against a 960px page. Measuring off-screen and
+  paginating for real differ by a percent or two, and a percent costs a page.
+- When nothing fits, fill sheet one to capacity and let only sheet two spill.
+  Evening the two out is the tempting move and it is wrong: two sheets at 101%
+  spill a little onto a page each, which is four sheets with two nearly blank.
+
+Past what two readable pages hold it still runs over, deliberately — the
 alternative is 5pt type or dropping someone's memory.
 
 **Trivia answers belong to a person and a pack.** `tq_<nightId>_<memberId>`
