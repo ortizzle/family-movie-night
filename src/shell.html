@@ -843,6 +843,12 @@ html.motion-on .night.landed{transition:border-color .25s ease,box-shadow .25s e
   width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:9px;font-weight:900;color:#fff;border:2px solid #D9C6A4;background:transparent;color:#B49670;
 }
+/* the second sheet's banner — on paper it heads page two, on screen it's the
+   same turn in the story, so it gets the same treatment either way */
+.sp-sheet-head{
+  font-family:'Caveat',cursive;font-size:26px;color:#8A6A44;text-align:center;
+  margin:26px 0 4px;border-bottom:2px dashed #D9C6A4;padding-bottom:8px;
+}
 .sp-waiting{margin-top:30px;text-align:center;font-family:'Caveat',cursive;font-size:20px;color:#8A6A44}
 .sp-foot{
   margin-top:30px;text-align:center;font-size:9px;letter-spacing:3px;text-transform:uppercase;
@@ -1338,12 +1344,86 @@ footer{
   .ks-cover{padding-top:1.1in}
   .ks-page{page-break-after:always}
   .yb-night,.sp-section{page-break-inside:avoid}
-  .sp-title{font-size:24px}
-  .sp-comic{font-size:14px}
-  .sp-scene{font-size:11.5px;line-height:1.5}
-  .sp-note{font-size:13px}
-  .sp-sticky,.sp-why .why-text{font-size:17px}
   .yb-year{font-size:64px}
+
+  /* ---------- the night scrapbook, dealt onto two sheets ----------
+     Sheet one is the night; sheet two is what it left behind. Each pours into
+     its own columns and finishes on its own piece of paper — a column block
+     that crosses a page break costs most of a page. --sp-scale and --sp-cols
+     are set just before printing, and only move for a chatty night. */
+  .sp-sheet{
+    column-count:var(--sp-cols,2);column-gap:0.28in;margin-top:0.10in;
+    orphans:2;widows:2;
+  }
+  .sp-sheet.two{break-before:page;page-break-before:always;margin-top:0}
+  .sp-sheet-head{
+    column-span:all;font-size:calc(26px * var(--sp-scale,1));
+    margin:0 0 0.07in;padding-bottom:0.05in;
+  }
+  /* Sections may run from one column into the next — pinning each whole
+     section to one column is what left half a column empty beneath a section
+     too tall to fit beside it. The pieces inside stay whole, and a heading
+     never gets stranded without its first item. */
+  .sp-sheet .sp-section{
+    break-inside:auto;
+    margin:0 0 calc(0.10in * var(--sp-scale,1));
+  }
+  .sp-sec-title{
+    break-after:avoid;page-break-after:avoid;
+    font-size:calc(10px * var(--sp-scale,1));margin-bottom:3px;
+  }
+  /* the compact blocks stay whole — splitting four poll rows across a column
+     boundary saves nothing and reads as two half-tables */
+  .sp-sheet .sp-section[data-k="poll"],
+  .sp-sheet .sp-section[data-k="rates"],
+  .sp-sheet .sp-section[data-k="chars"],
+  .sp-rate,.sp-note,.sp-char-line,.sp-comic-wrap,.sp-scene,.sp-strip,
+  .sp-poll-row,.sp-why,.sp-asked{
+    /* all three, because column, page and legacy break rules are each
+       honoured by a different part of the pipeline */
+    break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;
+  }
+
+  /* masthead — poster and vitals shoulder to shoulder across the top */
+  .sp-title{font-size:calc(25px * var(--sp-scale,1));line-height:1.1}
+  .sp-date{font-size:calc(18px * var(--sp-scale,1));margin-top:2px}
+  .sp-kicker{margin-top:0}
+  .sp-head{gap:0.24in;margin-top:0.12in;align-items:center;justify-content:center}
+  .sp-polaroid{padding:8px 8px 0;transform:rotate(-1.8deg)}
+  .sp-polaroid .ph{width:1.45in;height:2.1in}
+  .sp-polaroid .cap{font-size:calc(15px * var(--sp-scale,1));margin-top:5px}
+  .sp-headside{padding-top:0;gap:9px;align-items:flex-start}
+  .sp-facts{justify-content:flex-start;margin-top:5px;max-width:3.2in}
+  .sp-fact{font-size:calc(9px * var(--sp-scale,1))}
+
+  /* the furniture itself — same scrapbook, less air around it */
+  .sp-why{padding:10px 13px}
+  .sp-why .why-text{margin-top:4px;line-height:1.25;font-size:calc(18px * var(--sp-scale,1))}
+  .sp-sticky{font-size:calc(18px * var(--sp-scale,1))}
+  .sp-rates{gap:6px;margin-top:6px}
+  .sp-rate{padding:6px 9px}
+  .sp-note{padding:7px 10px;margin-top:5px;font-size:calc(13px * var(--sp-scale,1))}
+  .sp-char-line{margin-top:5px;font-size:calc(18px * var(--sp-scale,1));line-height:1.25}
+  .sp-asked{font-size:calc(18px * var(--sp-scale,1));padding:8px 11px}
+  .sp-comic-wrap{margin-top:8px}
+  .sp-comic{padding:9px 12px;font-size:calc(13.5px * var(--sp-scale,1))}
+  .sp-comic-wrap .sp-tags{margin-top:12px;margin-left:22px}
+  .sp-comic-wrap.flip .sp-tags{margin-left:24px;margin-right:24px}
+  .sp-scene{
+    padding:9px 11px;margin-top:5px;
+    font-size:calc(11px * var(--sp-scale,1));line-height:1.38;
+  }
+  /* the slug and its "Cut to:" share a line — six scene cards each spending a
+     line on the label added up to most of a column */
+  .sp-scene .slug{display:inline}
+  .sp-scene .cut{float:right;margin-top:0}
+  .sp-scene .action{margin-top:4px;clear:both}
+  .sp-strip{padding:8px 11px;margin-top:5px}
+  /* the tape tail is decoration; in a narrow column it would overhang */
+  .sp-strip::before{width:34px;left:14px}
+  .sp-poll-row{margin-top:6px;font-size:calc(12.5px * var(--sp-scale,1))}
+  .sp-waiting{margin-top:0.14in;font-size:calc(17px * var(--sp-scale,1));column-span:all}
+  .sp-foot{margin-top:0.14in}
 }
 </style>
 </head>

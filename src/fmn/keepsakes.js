@@ -11,8 +11,11 @@ function spTag(m){
   t.style.background = m.onWhite;
   return t;
 }
-function spSection(title){
+/* `key` names the section so the scrapbook can deal it onto the right sheet.
+   Nothing else reads it — the yearbook keeps every section in one flow. */
+function spSection(title, key){
   var s = el('div','sp-section');
+  if (key) s.setAttribute('data-k', key);
   s.appendChild(el('div','sp-sec-title', title));
   return s;
 }
@@ -24,7 +27,7 @@ function buildNightKeepsake(container, night){
 
   /* why the picker chose it */
   if (pickerRx && pickerRx.why){
-    var whySec = spSection('🎬 Why ' + picker.name + ' picked it');
+    var whySec = spSection('🎬 Why ' + picker.name + ' picked it', 'why');
     var why = el('div','sp-why');
     why.appendChild(spTag(picker));
     why.appendChild(el('div','why-text','“' + pickerRx.why + '”'));
@@ -38,7 +41,7 @@ function buildNightKeepsake(container, night){
     return r && r.stars > 0;
   });
   if (rated.length){
-    var rateSec = spSection('⭐ Our ratings');
+    var rateSec = spSection('⭐ Our ratings', 'rates');
     var rates = el('div','sp-rates');
     rated.forEach(function(m){
       var r = reactionFor(night.id, m.id);
@@ -57,7 +60,7 @@ function buildNightKeepsake(container, night){
     return r && r.thought;
   });
   if (thoughts.length){
-    var thoSec = spSection('💭 What we thought');
+    var thoSec = spSection('💭 What we thought', 'thoughts');
     thoughts.forEach(function(m, i){
       var r = reactionFor(night.id, m.id);
       var note = el('div','sp-note');
@@ -76,7 +79,7 @@ function buildNightKeepsake(container, night){
       return r && r.answer;
     });
     if (ansMembers.length){
-      var qaSec = spSection('❓ ' + memberById(night.pickedBy).name + ' asked');
+      var qaSec = spSection('❓ ' + memberById(night.pickedBy).name + ' asked', 'asked');
       var asked = el('div','sp-asked', night.question);
       qaSec.appendChild(asked);
       ansMembers.forEach(function(m, i){
@@ -97,7 +100,7 @@ function buildNightKeepsake(container, night){
     return r && r.character;
   });
   if (chars.length){
-    var chSec = spSection('🌟 Favorite characters');
+    var chSec = spSection('🌟 Favorite characters', 'chars');
     chars.forEach(function(m){
       var r = reactionFor(night.id, m.id);
       var line = el('div','sp-char-line');
@@ -112,7 +115,7 @@ function buildNightKeepsake(container, night){
      Matching lines from different people share one bubble. */
   var qGroups = nightQuoteGroups(night.id);
   if (qGroups.length){
-    var qSec = spSection('💬 Quotes we kept');
+    var qSec = spSection('💬 Quotes we kept', 'quotes');
     qGroups.forEach(function(g, qi){
       var wrap = el('div','sp-comic-wrap' + (qi % 2 ? ' flip' : ''));
       var bubble = el('div','sp-comic', g.text);
@@ -132,7 +135,7 @@ function buildNightKeepsake(container, night){
     return rxScenes(reactionFor(night.id, m.id)).length;
   });
   if (sceneMembers.length){
-    var scSec = spSection('🎞 Favorite scenes');
+    var scSec = spSection('🎞 Favorite scenes', 'scenes');
     sceneMembers.forEach(function(m){
       /* one screenplay page per scene, so a second favorite doesn't get
          crammed into the first one's slugline */
@@ -150,7 +153,7 @@ function buildNightKeepsake(container, night){
 
   /* memories */
   var anyMems = false;
-  var mSec = spSection('📌 Memories from the couch');
+  var mSec = spSection('📌 Memories from the couch', 'memories');
   var mi = 0;
   MEMBERS.forEach(function(m){
     var r = reactionFor(night.id, m.id);
@@ -170,7 +173,7 @@ function buildNightKeepsake(container, night){
   /* the family poll */
   var tally = pollTally(night.id);
   if (tally.answered){
-    var pSec = spSection('🗳 The family poll');
+    var pSec = spSection('🗳 The family poll', 'poll');
     [
       { label:'😂 Did we laugh?', list:tally.laughed },
       { label:'😢 Did we cry?', list:tally.cried },
@@ -213,11 +216,58 @@ function creditLine(n){
     ? 'Family bonus · ' + picker.name + '’s find'
     : picker.name + '’s pick';
 }
-function printButton(page){
+/* How much writing a night's keepsake has to hold. Two printed columns give
+   the layout a lot of headroom, so this only has to answer one question: is
+   this a chatty night? Every entry costs its text plus the furniture around
+   it — a tag, a bubble tail, a screenplay slug — which is why short items are
+   charged a flat overhead rather than just their characters. */
+function keepsakeWeight(night){
+  var w = 0;
+  MEMBERS.forEach(function(m){
+    var r = reactionFor(night.id, m.id);
+    if (!r) return;
+    function add(text, overhead){ if (text) w += String(text).length + overhead; }
+    add(r.why, 90);
+    add(r.thought, 60);
+    add(r.character, 40);
+    add(r.answer, 55);
+    rxQuotes(r).forEach(function(q){ add(q, 110); });
+    rxScenes(r).forEach(function(sc){ add(sc, 120); });
+    rxMemories(r).forEach(function(t){ add(t, 70); });
+    if (r.stars > 0) w += 40;
+    if (r.poll) w += 15;
+  });
+  if (night.question) w += 90;
+  return w;
+}
+/* Two sheets, always — a keepsake that spills onto a third stops matching the
+   rest of the binder. A chatty night gets a narrower column before it gets
+   smaller type, because a third column buys about half a page again while
+   costing nothing in legibility. Only past that does the type come down, and
+   only to where it's still comfortable to read. Measured against a real night
+   with all four of them writing: two columns at full size hold about 4,200. */
+var KEEPSAKE_FITS = 4200;
+function keepsakeFit(night){
+  var w = keepsakeWeight(night);
+  if (w <= KEEPSAKE_FITS) return { cols:2, scale:1 };
+  if (w <= KEEPSAKE_FITS * 1.25) return { cols:2, scale: KEEPSAKE_FITS / w };
+  var roomy = KEEPSAKE_FITS * 1.38;
+  return { cols:3, scale: Math.max(0.64, Math.min(1, roomy / w)) };
+}
+function printButton(page, night){
   var pb = el('button','sp-print','🖨️ Save as PDF keepsake');
-  pb.addEventListener('click', function(){ window.print(); });
+  pb.addEventListener('click', function(){
+    if (night){
+      var fit = keepsakeFit(night);
+      page.style.setProperty('--sp-scale', fit.scale.toFixed(3));
+      page.style.setProperty('--sp-cols', fit.cols);
+    }
+    window.print();
+  });
   page.appendChild(pb);
-  page.appendChild(el('div','sp-print-hint','In the print dialog choose “Save as PDF” — that file is the keepsake.'));
+  page.appendChild(el('div','sp-print-hint', night
+    ? 'In the print dialog choose “Save as PDF” — two sheets, ready for the binder.'
+    : 'In the print dialog choose “Save as PDF” — that file is the keepsake.'));
 }
 
 /* ---------- night scrapbook overlay ---------- */
@@ -286,14 +336,58 @@ function openScrapbook(night){
   head.appendChild(side);
   page.appendChild(head);
 
-  buildNightKeepsake(page, night);
+  /* Two sheets, each a self-contained pair of columns. That structure matters
+     more than it looks: a column block that straddles a page break makes
+     Chrome throw away most of a page, which is how a two-page keepsake
+     printed as three. Nothing here ever crosses a boundary — sheet one ends,
+     the page ends, sheet two begins.
+     Running order is the night as it happened first, then what it left
+     behind. The poll sits early because it's night-of data, not a keepsake.
+     Anything unkeyed keeps its place at the end rather than disappearing. */
+  var built = el('div');
+  buildNightKeepsake(built, night);
+  var ORDER = ['why','rates','poll','thoughts','asked','chars','quotes','scenes','memories'];
+  var secs = [];
+  while (built.firstChild) secs.push(built.removeChild(built.firstChild));
+  secs.sort(function(a, b){
+    var ia = ORDER.indexOf(a.getAttribute('data-k'));
+    var ib = ORDER.indexOf(b.getAttribute('data-k'));
+    return (ia < 0 ? ORDER.length : ia) - (ib < 0 ? ORDER.length : ib);
+  });
+
+  /* Where sheet one ends. A fixed split reads well until one night is all
+     quotes and the next all thoughts, and then one sheet overflows while the
+     other sits half empty — so the cut goes wherever it evens the two out.
+     Sheet one gives its top third to the masthead, which is why it takes the
+     smaller share of the writing. A night short enough for one sheet is never
+     cut at all: one well-filled page beats two thin ones. */
+  var weights = secs.map(function(x){ return x.textContent.length + x.children.length * 45; });
+  var total = weights.reduce(function(a, b){ return a + b; }, 0);
+  var SHEET_ONE_SHARE = 0.37;
+  var cut = secs.length;
+  if (keepsakeWeight(night) > 1800 && total > 0){
+    var best = Infinity, running = 0;
+    for (var si = 1; si < secs.length; si++){
+      running += weights[si - 1];
+      var miss = Math.abs(running / total - SHEET_ONE_SHARE);
+      if (miss < best){ best = miss; cut = si; }
+    }
+  }
+  var sheetOne = el('div','sp-sheet one');
+  var sheetTwo = el('div','sp-sheet two');
+  secs.forEach(function(x, i){ (i < cut ? sheetOne : sheetTwo).appendChild(x); });
+  page.appendChild(sheetOne);
+  if (sheetTwo.firstChild){
+    sheetTwo.insertBefore(el('div','sp-sheet-head','What we kept 🍿'), sheetTwo.firstChild);
+    page.appendChild(sheetTwo);
+  }
 
   var waiting = MEMBERS.filter(function(m){ return !rxHasContent(reactionFor(night.id, m.id)); });
   if (waiting.length){
     page.appendChild(el('div','sp-waiting',
       'still waiting on ' + waiting.map(function(m){ return m.name; }).join(' & ') + ' … 🍿'));
   }
-  printButton(page);
+  printButton(page, night);
   var ac = el('button','sp-after','✨ After-credits pack for this movie');
   ac.addEventListener('click', function(){ overlay.remove(); openAfterCredits(night); });
   page.appendChild(ac);

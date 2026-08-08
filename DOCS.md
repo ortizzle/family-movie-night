@@ -162,6 +162,24 @@ showtime, rotation — that's the whole budget. The trailer, streaming, facts
 and pre-show notes live behind the poster tap. Putting them on the screen
 itself pushed the lineup off the phone and said everything twice.
 
+**A multi-column block must never straddle a page break.** Chrome throws away
+most of a page when it does — the two-page keepsake printed as three until the
+scrapbook was split into two `.sp-sheet` blocks with the page break *between*
+them. Each sheet's columns start and finish on one piece of paper. Anything
+else reaching for `columns` in print needs the same treatment.
+
+**The scrapbook prints on two sheets, and the cut moves.** `openScrapbook`
+reorders sections into narrative order, then picks the split point closest to
+leaving 37% of the writing on sheet one — sheet one gives its top third to the
+masthead, so an even split of the *page* is an uneven split of the words. A
+fixed split read fine until one night was all quotes and the next all
+thoughts. Under ~1,800 of `keepsakeWeight` there's no cut at all: one
+well-filled page beats two thin ones. `keepsakeFit` then holds it to two
+sheets — a third column first, since that buys about half a page again for
+free, and smaller type only after that, down to a readable floor. Past roughly
+twice a very full night it still runs over, which is deliberate: the
+alternative is 5pt type or dropping someone's memory.
+
 **Trivia answers belong to a person and a pack.** `tq_<nightId>_<memberId>`
 holds one person's picks, stamped with the pack's `updatedAt`. The stamp is
 the point: "Make a fresh pack" writes different questions, and last week's
@@ -303,7 +321,8 @@ mistake would hide.
 
 - **v3.5** — a nudge to text whoever hasn't reacted yet; trivia answers stay
   answered; fixing a night's title forgets the wrong movie's poster and facts;
-  a leaner projector screen, and Recent Fridays rows that jump to the night
+  a leaner projector screen; Recent Fridays rows that jump to the night; and
+  the scrapbook keepsake condensed onto two printed sheets
 - **v3.4** — the projector waits for the closing credits, and a 6:30 showtime
 - **v3.3** — the poster on the projector screen, trailers, spoiler-free pre-show packs, a backup nudge
 - **v3.2** — cards in date order, and a Rotten Tomatoes link
