@@ -149,6 +149,14 @@ backup is a `.txt`; import accepts both extensions and parses by content. A
 `share()` rejection is also not always a cancel: an `AbortError` back in under
 700ms means the sheet never opened, so fall back rather than going quiet.
 
+**A Friday row shows the score, not who showed up.** The initials used to sit
+there, one per person, lit when they'd written something — but everybody is at
+movie night, so they only ever said the same thing. The row carries
+`familyAvg` as stars plus the number instead. A night only appears here once
+somebody has rated it, so there is always a score; when fewer than four have
+rated, the count rides alongside, because an average of two isn't the
+family's.
+
 **A Friday row belongs to that Friday's movie.** `happenedNightNear` keeps a
 ±2 day window, because a Friday film sometimes actually gets played on
 Saturday — but it ranks candidates instead of taking the first one `nights()`

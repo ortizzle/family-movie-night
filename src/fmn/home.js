@@ -259,16 +259,29 @@ function renderHome(app){
     prow.appendChild(pdt);
     if (night){
       prow.appendChild(el('div','lu-title', night.title));
-      var pd = el('div','pdots');
-      MEMBERS.forEach(function(m){
+      /* What the family made of it, rather than who turned up — everybody is
+         at movie night, so the initials only ever said the same thing. A
+         night is only listed here once somebody has rated it, so there is
+         always a score to show. When not everyone has rated yet the count
+         goes alongside, because an average of two isn't the family's. */
+      var rated = MEMBERS.filter(function(m){
         var r = reactionFor(night.id, m.id);
-        var dot = el('span','pdot' + (rxHasContent(r) ? '' : ' off'), m.name.charAt(0));
-        if (rxHasContent(r)){
-          dot.style.background = m.color;
-          dot.style.borderColor = m.color;
-        }
-        pd.appendChild(dot);
+        return r && r.stars > 0;
       });
+      var avg = familyAvg(night.id);
+      var pd = el('div','lu-score');
+      if (avg !== null){
+        var st = starsNode(avg, 'stars lu-stars');
+        st.setAttribute('aria-hidden','true');
+        pd.appendChild(st);
+        pd.appendChild(el('span','num', avg.toFixed(1)));
+        if (rated.length < MEMBERS.length){
+          pd.appendChild(el('span','part', rated.length + '/' + MEMBERS.length));
+        }
+        pd.setAttribute('aria-label', 'Family score ' + avg.toFixed(1) + ' out of 5'
+          + (rated.length < MEMBERS.length
+              ? ', from ' + rated.length + ' of ' + MEMBERS.length : ''));
+      }
       prow.appendChild(pd);
       /* This row is the shortcut to the night itself. Reading the dots and
          wanting the detail behind them is the whole reason to look here, and

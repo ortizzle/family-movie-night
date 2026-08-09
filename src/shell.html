@@ -267,12 +267,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .lu-title.skip{color:var(--muted);font-style:italic;font-weight:600}
 .lu-fill{flex:1}
-.pdots{display:flex;gap:4px;flex-shrink:0}
-.pdot{
-  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:9px;font-weight:900;color:#2A1B14;border:2px solid var(--line);background:transparent;
-}
-.pdot.off{color:var(--muted)}
+/* the family's score on a Recent Fridays row */
+.lu-score{display:flex;align-items:baseline;gap:5px;flex-shrink:0}
+.lu-score .lu-stars{font-size:12px;color:var(--star-off);letter-spacing:0}
+.lu-score .lu-stars .fill{color:var(--star)}
+.lu-score .num{font-size:12.5px;font-weight:900;color:var(--cream)}
+/* only shown when somebody still hasn't rated it */
+.lu-score .part{font-size:10px;font-weight:800;color:var(--muted)}
 
 /* quote wall — comic speech bubble */
 .quotewall{margin-top:30px;cursor:pointer;-webkit-user-select:none;user-select:none;display:flex;flex-direction:column;align-items:center}

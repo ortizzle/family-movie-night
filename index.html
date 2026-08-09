@@ -267,12 +267,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .lu-title.skip{color:var(--muted);font-style:italic;font-weight:600}
 .lu-fill{flex:1}
-.pdots{display:flex;gap:4px;flex-shrink:0}
-.pdot{
-  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:9px;font-weight:900;color:#2A1B14;border:2px solid var(--line);background:transparent;
-}
-.pdot.off{color:var(--muted)}
+/* the family's score on a Recent Fridays row */
+.lu-score{display:flex;align-items:baseline;gap:5px;flex-shrink:0}
+.lu-score .lu-stars{font-size:12px;color:var(--star-off);letter-spacing:0}
+.lu-score .lu-stars .fill{color:var(--star)}
+.lu-score .num{font-size:12.5px;font-weight:900;color:var(--cream)}
+/* only shown when somebody still hasn't rated it */
+.lu-score .part{font-size:10px;font-weight:800;color:var(--muted)}
 
 /* quote wall — comic speech bubble */
 .quotewall{margin-top:30px;cursor:pointer;-webkit-user-select:none;user-select:none;display:flex;flex-direction:column;align-items:center}
@@ -5142,16 +5143,29 @@ function renderHome(app){
     prow.appendChild(pdt);
     if (night){
       prow.appendChild(el('div','lu-title', night.title));
-      var pd = el('div','pdots');
-      MEMBERS.forEach(function(m){
+      /* What the family made of it, rather than who turned up — everybody is
+         at movie night, so the initials only ever said the same thing. A
+         night is only listed here once somebody has rated it, so there is
+         always a score to show. When not everyone has rated yet the count
+         goes alongside, because an average of two isn't the family's. */
+      var rated = MEMBERS.filter(function(m){
         var r = reactionFor(night.id, m.id);
-        var dot = el('span','pdot' + (rxHasContent(r) ? '' : ' off'), m.name.charAt(0));
-        if (rxHasContent(r)){
-          dot.style.background = m.color;
-          dot.style.borderColor = m.color;
-        }
-        pd.appendChild(dot);
+        return r && r.stars > 0;
       });
+      var avg = familyAvg(night.id);
+      var pd = el('div','lu-score');
+      if (avg !== null){
+        var st = starsNode(avg, 'stars lu-stars');
+        st.setAttribute('aria-hidden','true');
+        pd.appendChild(st);
+        pd.appendChild(el('span','num', avg.toFixed(1)));
+        if (rated.length < MEMBERS.length){
+          pd.appendChild(el('span','part', rated.length + '/' + MEMBERS.length));
+        }
+        pd.setAttribute('aria-label', 'Family score ' + avg.toFixed(1) + ' out of 5'
+          + (rated.length < MEMBERS.length
+              ? ', from ' + rated.length + ' of ' + MEMBERS.length : ''));
+      }
       prow.appendChild(pd);
       /* This row is the shortcut to the night itself. Reading the dots and
          wanting the detail behind them is the whole reason to look here, and
