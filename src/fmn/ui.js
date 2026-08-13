@@ -730,9 +730,19 @@ function openEditNight(night){
          the typo or the viewing was the mistake. */
       var swapped = (title !== rec.title) || (year !== (rec.year || null));
       if (swapped) forgetLookedUp(rec);
+      /* Pushing a movie back leaves its old Friday empty, and an empty Friday
+         reads as an open one — so the lineup hands it straight back to the
+         same person and they turn up on two Fridays in a row. Ask, at the one
+         moment the answer is obvious. Only for a move *later*, only when the
+         old date is a Friday still ahead of us, and only if nothing else has
+         claimed it. */
+      var wasDate = rec.date;
+      var newDate = dInput.value || rec.date;
+      var vacated = (newDate > wasDate && wasDate >= AZ.today() && AZ.isFriday(wasDate)
+        && !isSkipped(wasDate)) ? wasDate : null;
       rec.title = title;
       rec.year = year;
-      rec.date = dInput.value || rec.date;
+      rec.date = newDate;
       rec.pickedBy = picked;
       rec.question = qInput.value.trim();
       rec.bonus = eBonus;
@@ -742,6 +752,7 @@ function openEditNight(night){
       close();
       render();
       toast(swapped ? 'Movie swapped — looking up the new one 🎬' : 'Movie night updated');
+      if (vacated) askSkipVacated(vacated);
     });
     row.appendChild(cancel); row.appendChild(save);
     box.appendChild(row);
@@ -785,6 +796,49 @@ function nudgeFamily(night){
       if (name === 'AbortError' && (Date.now() - opened) >= 700) return;
       copyNudge(text);
     });
+}
+/* The Friday a movie just moved off. Left alone it goes back in the rota and
+   the same person comes up again the week before their own film. */
+function askSkipVacated(date){
+  var picker = pickerForDate(date);
+  confirmModal({
+    title: 'Skip ' + AZ.pretty(date) + '?',
+    message: 'That Friday is empty now. Skip it and nobody loses a turn — '
+      + (picker ? picker.name + ' still picks' : 'the order picks up')
+      + ' the next Friday you’re on. Leave it and it stays open for a pick.',
+    confirmText: 'Skip that Friday',
+    cancelText: 'Leave it open',
+    onConfirm: function(){
+      setSkipped(date, true);
+      render();
+      toast('Friday off — nobody loses a turn 😴');
+    }
+  });
+}
+/* Taking a Friday off, and putting it back. Nobody's turn is spent either
+   way — the point of a skip is that the order waits for you. */
+function openSkipFriday(date, currentlySkipped){
+  var picker = pickerForDate(date);
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, currentlySkipped ? 'Movie night back on?' : 'Skip this Friday?'));
+    box.appendChild(el('div','msub', AZ.prettyLong(date)));
+    box.appendChild(el('p', null, currentlySkipped
+      ? 'This Friday goes back on the calendar and picks up where the order left off.'
+      : 'No movie night this week. Nobody loses their turn — '
+        + (picker ? picker.name + ' still picks' : 'the order picks up') + ' the next Friday you’re on.'));
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Never mind');
+    cancel.addEventListener('click', close);
+    var go = el('button','btn-gold', currentlySkipped ? 'Put it back' : 'Skip it');
+    go.addEventListener('click', function(){
+      setSkipped(date, !currentlySkipped);
+      close();
+      render();
+      toast(currentlySkipped ? 'Movie night’s back on 🍿' : 'Friday off — nobody loses a turn 😴');
+    });
+    row.appendChild(cancel); row.appendChild(go);
+    box.appendChild(row);
+  });
 }
 /* the ⋯ button on each night card */
 function openNightMenu(night){

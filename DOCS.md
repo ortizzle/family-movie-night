@@ -83,6 +83,7 @@ never removals — a hard delete resurrects on the next sync from another phone.
 | `ballot` | `ballot_<member>_<round>` | one person's movie vote |
 | `oballot` | `oballot_<year>_<cat>_<member>` | one person's Ortizzle vote |
 | `rotation` | `rotation_anchor` | pins a Friday to a person, restarting the turn order |
+| `skip` | `skip_<YYYY-MM-DD>` | a Friday the family took off — no movie night, no turn spent |
 | `setting` | `settings_*` | TMDB/OMDb keys, Ortizzle date, sample dismissal, last backup |
 
 Per-person records (`ballot_`, `oballot_`, `rx_`) are deliberately separate
@@ -148,6 +149,18 @@ and why switching the type to `text/plain` alone didn't fix it. The shared
 backup is a `.txt`; import accepts both extensions and parses by content. A
 `share()` rejection is also not always a cancel: an `AbortError` back in under
 700ms means the sheet never opened, so fall back rather than going quiet.
+
+**An empty Friday and a skipped one are different things.** Without a way to
+say "no movie night this week", an empty Friday reads as an open one — so
+moving a booked film a week later handed its old Friday straight back to the
+same person, and they came up on two Fridays in a row. That's what `skip`
+records are for. `lineupSlots` gives a skipped Friday a row (visible and
+reversible) but doesn't count it toward `count` and doesn't `take()` a turn,
+so the order waits. Anything asking *whose* turn it is has to filter through
+`openSlots()` first — a skipped Friday has `member: null`, and the projector
+announcing one as the next movie night was the first thing that broke.
+Skipped Fridays are also neutral in `fridayStreak`: stepped over, neither
+counted nor held against the family.
 
 **A Friday row shows the score, not who showed up.** The initials used to sit
 there, one per person, lit when they'd written something — but everybody is at
@@ -342,6 +355,7 @@ mistake would hide.
 
 ## Version history
 
+- **v3.6** — skip a Friday without anyone losing their turn
 - **v3.5** — a nudge to text whoever hasn't reacted yet; trivia answers stay
   answered; fixing a night's title forgets the wrong movie's poster and facts;
   a leaner projector screen; Recent Fridays rows that jump to the night; and

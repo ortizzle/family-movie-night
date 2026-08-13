@@ -246,6 +246,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   border-bottom:2px dashed #453648;padding:6px 2px;
 }
 .lu-row.last{border-bottom:none}
+/* a Friday the family has taken off */
+.lu-row.skipped .lu-pick{color:var(--muted);font-style:italic}
+.lu-row .dot.skip{background:transparent;border:2px dashed var(--line);color:var(--muted)}
+/* an open or skipped Friday can be toggled from the row */
+.lu-row.lu-tap{cursor:pointer;border-radius:10px;margin:0 -4px;padding-left:6px;padding-right:6px}
+.lu-row.lu-tap:active{background:rgba(255,239,217,.07)}
+.lu-row.lu-tap:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 /* a Recent Fridays row is a shortcut down to that night's card */
 .lu-row.lu-jump{cursor:pointer;border-radius:10px;margin:0 -4px;padding-left:6px;padding-right:6px}
 .lu-row.lu-jump:active{background:rgba(255,239,217,.07)}

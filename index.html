@@ -246,6 +246,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   border-bottom:2px dashed #453648;padding:6px 2px;
 }
 .lu-row.last{border-bottom:none}
+/* a Friday the family has taken off */
+.lu-row.skipped .lu-pick{color:var(--muted);font-style:italic}
+.lu-row .dot.skip{background:transparent;border:2px dashed var(--line);color:var(--muted)}
+/* an open or skipped Friday can be toggled from the row */
+.lu-row.lu-tap{cursor:pointer;border-radius:10px;margin:0 -4px;padding-left:6px;padding-right:6px}
+.lu-row.lu-tap:active{background:rgba(255,239,217,.07)}
+.lu-row.lu-tap:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 /* a Recent Fridays row is a shortcut down to that night's card */
 .lu-row.lu-jump{cursor:pointer;border-radius:10px;margin:0 -4px;padding-left:6px;padding-right:6px}
 .lu-row.lu-jump:active{background:rgba(255,239,217,.07)}
@@ -1516,6 +1523,9 @@ var AZ = {
     var dd = String(d.getDate()).padStart(2,'0');
     return d.getFullYear() + '-' + mm + '-' + dd;
   },
+  isFriday: function(dateStr){
+    return this.daysBetween(this.nextFriday(), dateStr) % 7 === 0;
+  },
   nextFriday: function(){
     var t = this.today().split('-').map(Number);
     var d = new Date(t[0], t[1]-1, t[2]);
@@ -2375,6 +2385,28 @@ function rotationOrderFrom(member){
   for (var j=0;j<MEMBERS.length;j++) out.push(MEMBERS[(start + j) % MEMBERS.length]);
   return out;
 }
+/* ---------- skipped Fridays ----------
+   A Friday nobody is watching a movie on. Without this an empty Friday is
+   indistinguishable from an open one, so moving a booked night a week later
+   handed the Friday you were trying to skip straight back to the same person
+   — and they turned up twice, on back-to-back weeks.
+   A skip does not spend anybody's turn: whoever was up is still up when the
+   family resumes. Skips are per-date records so several can be in play at
+   once (a holiday, a week away), and they tombstone like everything else. */
+function skipId(date){ return 'skip_' + date; }
+function isSkipped(date){
+  var r = data.records[skipId(date)];
+  return !!(r && !r.deleted);
+}
+function setSkipped(date, on){
+  var id = skipId(date);
+  if (on){
+    data.records[id] = { id:id, type:'skip', date:date, updatedAt: Date.now() };
+  } else if (data.records[id]){
+    data.records[id] = { id:id, type:'skip', deleted:true, updatedAt: Date.now() };
+  }
+  saveData();
+}
 function lineupSlots(count){
   var sched = turnNights(scheduledNights());
   var placed = {}, slots = [];
@@ -2392,7 +2424,11 @@ function lineupSlots(count){
     }
     if (!cycle.length) cycle = order.slice();
   }
-  while (slots.length < count){
+  /* Skipped Fridays get a row so the break is visible and reversible, but
+     they don't count against `count` and they don't take a turn. The guard is
+     a backstop: a run of skips shouldn't be able to spin forever. */
+  var filled = 0, guard = 0;
+  while (filled < count && guard++ < 400){
     var hit = null;
     for (var i=0;i<sched.length;i++){
       if (placed[sched[i].id]) continue;
@@ -2402,10 +2438,16 @@ function lineupSlots(count){
       placed[hit.id] = true;
       take(hit.pickedBy);
       slots.push({ date:hit.date, member:memberById(hit.pickedBy), title:hit.title, night:hit });
+      filled++;
+    } else if (isSkipped(cursor)){
+      /* a movie booked here would have been caught above, so this really is
+         a Friday off — no member, because nobody's turn is being spent */
+      slots.push({ date: cursor, title: null, night: null, member: null, skipped: true });
     } else {
       var who = cycle[0];
       take(who.id);
       slots.push({ date: cursor, title: null, night: null, member: who });
+      filled++;
     }
     cursor = AZ.addDays(cursor, 7);
   }
@@ -2416,21 +2458,25 @@ function lineupSlots(count){
   });
   return slots;
 }
-/* who is up next — whoever owns the very next slot on the calendar */
+/* whoever owns the next slot that's actually happening — a skipped Friday
+   belongs to nobody, so it can't answer "whose turn is it" */
+function openSlots(list){
+  return list.filter(function(s){ return !s.skipped; });
+}
 function nextPicker(){
-  return lineupSlots(1)[0].member;
+  return openSlots(lineupSlots(1))[0].member;
 }
 /* default picker when logging a brand-new night — the first Friday nobody
    has booked yet, so two people don't get booked into one slot */
 function pickerForNewNight(){
-  var slots = lineupSlots(8);
+  var slots = openSlots(lineupSlots(8));
   for (var i=0;i<slots.length;i++) if (!slots[i].night) return slots[i].member;
   return rotationNext(slots[slots.length-1].member.id);
 }
 /* whose Friday a given date is, if it's one we're projecting */
 function pickerForDate(date){
   if (!date) return null;
-  var slots = lineupSlots(12);
+  var slots = openSlots(lineupSlots(12));
   for (var i=0;i<slots.length;i++){
     if (Math.abs(AZ.daysBetween(slots[i].date, date)) <= 3) return slots[i].member;
   }
@@ -3375,9 +3421,19 @@ function openEditNight(night){
          the typo or the viewing was the mistake. */
       var swapped = (title !== rec.title) || (year !== (rec.year || null));
       if (swapped) forgetLookedUp(rec);
+      /* Pushing a movie back leaves its old Friday empty, and an empty Friday
+         reads as an open one — so the lineup hands it straight back to the
+         same person and they turn up on two Fridays in a row. Ask, at the one
+         moment the answer is obvious. Only for a move *later*, only when the
+         old date is a Friday still ahead of us, and only if nothing else has
+         claimed it. */
+      var wasDate = rec.date;
+      var newDate = dInput.value || rec.date;
+      var vacated = (newDate > wasDate && wasDate >= AZ.today() && AZ.isFriday(wasDate)
+        && !isSkipped(wasDate)) ? wasDate : null;
       rec.title = title;
       rec.year = year;
-      rec.date = dInput.value || rec.date;
+      rec.date = newDate;
       rec.pickedBy = picked;
       rec.question = qInput.value.trim();
       rec.bonus = eBonus;
@@ -3387,6 +3443,7 @@ function openEditNight(night){
       close();
       render();
       toast(swapped ? 'Movie swapped — looking up the new one 🎬' : 'Movie night updated');
+      if (vacated) askSkipVacated(vacated);
     });
     row.appendChild(cancel); row.appendChild(save);
     box.appendChild(row);
@@ -3430,6 +3487,49 @@ function nudgeFamily(night){
       if (name === 'AbortError' && (Date.now() - opened) >= 700) return;
       copyNudge(text);
     });
+}
+/* The Friday a movie just moved off. Left alone it goes back in the rota and
+   the same person comes up again the week before their own film. */
+function askSkipVacated(date){
+  var picker = pickerForDate(date);
+  confirmModal({
+    title: 'Skip ' + AZ.pretty(date) + '?',
+    message: 'That Friday is empty now. Skip it and nobody loses a turn — '
+      + (picker ? picker.name + ' still picks' : 'the order picks up')
+      + ' the next Friday you’re on. Leave it and it stays open for a pick.',
+    confirmText: 'Skip that Friday',
+    cancelText: 'Leave it open',
+    onConfirm: function(){
+      setSkipped(date, true);
+      render();
+      toast('Friday off — nobody loses a turn 😴');
+    }
+  });
+}
+/* Taking a Friday off, and putting it back. Nobody's turn is spent either
+   way — the point of a skip is that the order waits for you. */
+function openSkipFriday(date, currentlySkipped){
+  var picker = pickerForDate(date);
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, currentlySkipped ? 'Movie night back on?' : 'Skip this Friday?'));
+    box.appendChild(el('div','msub', AZ.prettyLong(date)));
+    box.appendChild(el('p', null, currentlySkipped
+      ? 'This Friday goes back on the calendar and picks up where the order left off.'
+      : 'No movie night this week. Nobody loses their turn — '
+        + (picker ? picker.name + ' still picks' : 'the order picks up') + ' the next Friday you’re on.'));
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Never mind');
+    cancel.addEventListener('click', close);
+    var go = el('button','btn-gold', currentlySkipped ? 'Put it back' : 'Skip it');
+    go.addEventListener('click', function(){
+      setSkipped(date, !currentlySkipped);
+      close();
+      render();
+      toast(currentlySkipped ? 'Movie night’s back on 🍿' : 'Friday off — nobody loses a turn 😴');
+    });
+    row.appendChild(cancel); row.appendChild(go);
+    box.appendChild(row);
+  });
 }
 /* the ⋯ button on each night card */
 function openNightMenu(night){
@@ -4975,8 +5075,10 @@ function renderHome(app){
   var b2 = el('span','burn b2'); b2.setAttribute('aria-hidden','true');
   screen.appendChild(b1); screen.appendChild(b2);
   var inner = el('div','screen-inner');
-  // the very next slot on the calendar, booked or not
-  var upNext = lineupSlots(1)[0];
+  /* the very next slot on the calendar, booked or not — but never a Friday
+     the family has taken off, or the marquee would announce a night that
+     isn't happening */
+  var upNext = openSlots(lineupSlots(1))[0];
   // a bonus night sooner than the next turn is the next thing happening, and
   // worth announcing — but it never changes whose turn it is
   var soonestBonus = bonusNights()[0];
@@ -5104,21 +5206,50 @@ function renderHome(app){
     dt.appendChild(el('div','d2', away === 0 ? 'Tonight!' : away === 1 ? 'Tomorrow'
       : away < 0 ? 'overdue' : 'in ' + away + ' days'));
     row.appendChild(dt);
-    var lp = el('div','lu-pick');
-    var ld = el('span','dot', slot.member.name.charAt(0));
-    ld.style.background = slot.member.color;
-    lp.appendChild(ld);
-    var lname = el('span', null, slot.bonus
-      ? 'Family bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
-      : slot.member.name + '’s pick');
-    lname.style.color = slot.bonus ? 'var(--dim)' : memberInk(slot.member);
-    lp.appendChild(lname);
-    row.appendChild(lp);
-    if (slot.title){
-      var bt = el('div','lu-title', slot.title);
-      row.appendChild(bt);
-    } else {
+    if (slot.skipped){
+      /* a Friday off. It keeps its row so the gap is something the family
+         chose rather than something that looks broken, and so it can be put
+         back with one tap. */
+      row.classList.add('skipped');
+      var sp = el('div','lu-pick');
+      sp.appendChild(el('span','dot skip','—'));
+      sp.appendChild(el('span', null, 'No movie night'));
+      row.appendChild(sp);
       row.appendChild(el('div','lu-fill'));
+    } else {
+      var lp = el('div','lu-pick');
+      var ld = el('span','dot', slot.member.name.charAt(0));
+      ld.style.background = slot.member.color;
+      lp.appendChild(ld);
+      var lname = el('span', null, slot.bonus
+        ? 'Family bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
+        : slot.member.name + '’s pick');
+      lname.style.color = slot.bonus ? 'var(--dim)' : memberInk(slot.member);
+      lp.appendChild(lname);
+      row.appendChild(lp);
+      if (slot.title){
+        var bt = el('div','lu-title', slot.title);
+        row.appendChild(bt);
+      } else {
+        row.appendChild(el('div','lu-fill'));
+      }
+    }
+    /* An unbooked Friday can be taken off the calendar, and a skipped one put
+       back. A Friday with a movie on it isn't offered — move or delete the
+       movie first, which is a decision about the film, not the date. */
+    if (!slot.night && !slot.bonus && slot.date >= today){
+      row.classList.add('lu-tap');
+      row.setAttribute('role','button');
+      row.setAttribute('tabindex','0');
+      row.setAttribute('aria-label', (slot.skipped ? 'Put movie night back on ' : 'Skip movie night on ')
+        + AZ.pretty(slot.date));
+      (function(d, off){
+        function toggle(){ openSkipFriday(d, off); }
+        row.addEventListener('click', toggle);
+        row.addEventListener('keydown', function(e){
+          if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+        });
+      })(slot.date, !!slot.skipped);
     }
     lineup.appendChild(row);
   });
@@ -5465,7 +5596,7 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.5'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.6'));
   app.appendChild(footer);
 
   runPendingJump();   // cards exist now — safe to scroll to one
@@ -6874,11 +7005,15 @@ function mean(arr){
   for (var i=0;i<arr.length;i++) s += arr[i];
   return s / arr.length;
 }
+/* A Friday the family deliberately took off doesn't break the run — they
+   didn't miss movie night, they moved it. It doesn't add to the count
+   either; it just isn't held against them. */
 function fridayStreak(){
-  var streak = 0;
+  var streak = 0, guard = 0;
   var f = AZ.addDays(AZ.nextFriday(), -7);
-  while (nightNearDate(f)){
-    streak++;
+  while (guard++ < 400){
+    if (nightNearDate(f)) streak++;
+    else if (!isSkipped(f)) break;
     f = AZ.addDays(f, -7);
   }
   return streak;

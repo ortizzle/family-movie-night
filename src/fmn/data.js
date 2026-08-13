@@ -386,6 +386,28 @@ function rotationOrderFrom(member){
   for (var j=0;j<MEMBERS.length;j++) out.push(MEMBERS[(start + j) % MEMBERS.length]);
   return out;
 }
+/* ---------- skipped Fridays ----------
+   A Friday nobody is watching a movie on. Without this an empty Friday is
+   indistinguishable from an open one, so moving a booked night a week later
+   handed the Friday you were trying to skip straight back to the same person
+   — and they turned up twice, on back-to-back weeks.
+   A skip does not spend anybody's turn: whoever was up is still up when the
+   family resumes. Skips are per-date records so several can be in play at
+   once (a holiday, a week away), and they tombstone like everything else. */
+function skipId(date){ return 'skip_' + date; }
+function isSkipped(date){
+  var r = data.records[skipId(date)];
+  return !!(r && !r.deleted);
+}
+function setSkipped(date, on){
+  var id = skipId(date);
+  if (on){
+    data.records[id] = { id:id, type:'skip', date:date, updatedAt: Date.now() };
+  } else if (data.records[id]){
+    data.records[id] = { id:id, type:'skip', deleted:true, updatedAt: Date.now() };
+  }
+  saveData();
+}
 function lineupSlots(count){
   var sched = turnNights(scheduledNights());
   var placed = {}, slots = [];
@@ -403,7 +425,11 @@ function lineupSlots(count){
     }
     if (!cycle.length) cycle = order.slice();
   }
-  while (slots.length < count){
+  /* Skipped Fridays get a row so the break is visible and reversible, but
+     they don't count against `count` and they don't take a turn. The guard is
+     a backstop: a run of skips shouldn't be able to spin forever. */
+  var filled = 0, guard = 0;
+  while (filled < count && guard++ < 400){
     var hit = null;
     for (var i=0;i<sched.length;i++){
       if (placed[sched[i].id]) continue;
@@ -413,10 +439,16 @@ function lineupSlots(count){
       placed[hit.id] = true;
       take(hit.pickedBy);
       slots.push({ date:hit.date, member:memberById(hit.pickedBy), title:hit.title, night:hit });
+      filled++;
+    } else if (isSkipped(cursor)){
+      /* a movie booked here would have been caught above, so this really is
+         a Friday off — no member, because nobody's turn is being spent */
+      slots.push({ date: cursor, title: null, night: null, member: null, skipped: true });
     } else {
       var who = cycle[0];
       take(who.id);
       slots.push({ date: cursor, title: null, night: null, member: who });
+      filled++;
     }
     cursor = AZ.addDays(cursor, 7);
   }
@@ -427,21 +459,25 @@ function lineupSlots(count){
   });
   return slots;
 }
-/* who is up next — whoever owns the very next slot on the calendar */
+/* whoever owns the next slot that's actually happening — a skipped Friday
+   belongs to nobody, so it can't answer "whose turn is it" */
+function openSlots(list){
+  return list.filter(function(s){ return !s.skipped; });
+}
 function nextPicker(){
-  return lineupSlots(1)[0].member;
+  return openSlots(lineupSlots(1))[0].member;
 }
 /* default picker when logging a brand-new night — the first Friday nobody
    has booked yet, so two people don't get booked into one slot */
 function pickerForNewNight(){
-  var slots = lineupSlots(8);
+  var slots = openSlots(lineupSlots(8));
   for (var i=0;i<slots.length;i++) if (!slots[i].night) return slots[i].member;
   return rotationNext(slots[slots.length-1].member.id);
 }
 /* whose Friday a given date is, if it's one we're projecting */
 function pickerForDate(date){
   if (!date) return null;
-  var slots = lineupSlots(12);
+  var slots = openSlots(lineupSlots(12));
   for (var i=0;i<slots.length;i++){
     if (Math.abs(AZ.daysBetween(slots[i].date, date)) <= 3) return slots[i].member;
   }

@@ -32,11 +32,15 @@ function mean(arr){
   for (var i=0;i<arr.length;i++) s += arr[i];
   return s / arr.length;
 }
+/* A Friday the family deliberately took off doesn't break the run — they
+   didn't miss movie night, they moved it. It doesn't add to the count
+   either; it just isn't held against them. */
 function fridayStreak(){
-  var streak = 0;
+  var streak = 0, guard = 0;
   var f = AZ.addDays(AZ.nextFriday(), -7);
-  while (nightNearDate(f)){
-    streak++;
+  while (guard++ < 400){
+    if (nightNearDate(f)) streak++;
+    else if (!isSkipped(f)) break;
     f = AZ.addDays(f, -7);
   }
   return streak;

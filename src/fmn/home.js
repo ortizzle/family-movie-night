@@ -91,8 +91,10 @@ function renderHome(app){
   var b2 = el('span','burn b2'); b2.setAttribute('aria-hidden','true');
   screen.appendChild(b1); screen.appendChild(b2);
   var inner = el('div','screen-inner');
-  // the very next slot on the calendar, booked or not
-  var upNext = lineupSlots(1)[0];
+  /* the very next slot on the calendar, booked or not — but never a Friday
+     the family has taken off, or the marquee would announce a night that
+     isn't happening */
+  var upNext = openSlots(lineupSlots(1))[0];
   // a bonus night sooner than the next turn is the next thing happening, and
   // worth announcing — but it never changes whose turn it is
   var soonestBonus = bonusNights()[0];
@@ -220,21 +222,50 @@ function renderHome(app){
     dt.appendChild(el('div','d2', away === 0 ? 'Tonight!' : away === 1 ? 'Tomorrow'
       : away < 0 ? 'overdue' : 'in ' + away + ' days'));
     row.appendChild(dt);
-    var lp = el('div','lu-pick');
-    var ld = el('span','dot', slot.member.name.charAt(0));
-    ld.style.background = slot.member.color;
-    lp.appendChild(ld);
-    var lname = el('span', null, slot.bonus
-      ? 'Family bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
-      : slot.member.name + '’s pick');
-    lname.style.color = slot.bonus ? 'var(--dim)' : memberInk(slot.member);
-    lp.appendChild(lname);
-    row.appendChild(lp);
-    if (slot.title){
-      var bt = el('div','lu-title', slot.title);
-      row.appendChild(bt);
-    } else {
+    if (slot.skipped){
+      /* a Friday off. It keeps its row so the gap is something the family
+         chose rather than something that looks broken, and so it can be put
+         back with one tap. */
+      row.classList.add('skipped');
+      var sp = el('div','lu-pick');
+      sp.appendChild(el('span','dot skip','—'));
+      sp.appendChild(el('span', null, 'No movie night'));
+      row.appendChild(sp);
       row.appendChild(el('div','lu-fill'));
+    } else {
+      var lp = el('div','lu-pick');
+      var ld = el('span','dot', slot.member.name.charAt(0));
+      ld.style.background = slot.member.color;
+      lp.appendChild(ld);
+      var lname = el('span', null, slot.bonus
+        ? 'Family bonus' + (slot.night && slot.night.venue === 'theater' ? ' 🍿' : '')
+        : slot.member.name + '’s pick');
+      lname.style.color = slot.bonus ? 'var(--dim)' : memberInk(slot.member);
+      lp.appendChild(lname);
+      row.appendChild(lp);
+      if (slot.title){
+        var bt = el('div','lu-title', slot.title);
+        row.appendChild(bt);
+      } else {
+        row.appendChild(el('div','lu-fill'));
+      }
+    }
+    /* An unbooked Friday can be taken off the calendar, and a skipped one put
+       back. A Friday with a movie on it isn't offered — move or delete the
+       movie first, which is a decision about the film, not the date. */
+    if (!slot.night && !slot.bonus && slot.date >= today){
+      row.classList.add('lu-tap');
+      row.setAttribute('role','button');
+      row.setAttribute('tabindex','0');
+      row.setAttribute('aria-label', (slot.skipped ? 'Put movie night back on ' : 'Skip movie night on ')
+        + AZ.pretty(slot.date));
+      (function(d, off){
+        function toggle(){ openSkipFriday(d, off); }
+        row.addEventListener('click', toggle);
+        row.addEventListener('keydown', function(e){
+          if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+        });
+      })(slot.date, !!slot.skipped);
     }
     lineup.appendChild(row);
   });
@@ -581,7 +612,7 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.5'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.6'));
   app.appendChild(footer);
 
   runPendingJump();   // cards exist now — safe to scroll to one

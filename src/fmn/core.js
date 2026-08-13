@@ -68,6 +68,9 @@ var AZ = {
     var dd = String(d.getDate()).padStart(2,'0');
     return d.getFullYear() + '-' + mm + '-' + dd;
   },
+  isFriday: function(dateStr){
+    return this.daysBetween(this.nextFriday(), dateStr) % 7 === 0;
+  },
   nextFriday: function(){
     var t = this.today().split('-').map(Number);
     var d = new Date(t[0], t[1]-1, t[2]);
