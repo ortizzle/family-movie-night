@@ -121,11 +121,13 @@ function seed(opts){
         hScroll: document.documentElement.scrollWidth > 390
       };
     });
-    check('tonight: label, glow, poster, trailer',
+    /* The projector is a marquee: poster, title, date, showtime. The trailer and
+       where-to-stream moved to the Coming Attractions sheet in v3.5 — they must
+       NOT be back on the screen, and the next check proves they're on the sheet. */
+    check('tonight: label, glow, poster, and no trailer on the marquee',
       /Tonight’s feature/.test(s.label) && s.labelTonight && s.screenTonight &&
       /^Tonight ·/.test(s.showdate) && s.poster && s.posterRole === 'button' &&
-      s.trailerHref === 'https://www.youtube.com/watch?v=TRAILERKEY' && s.trailerH >= 44 &&
-      s.watch && !s.hScroll, s);
+      s.trailerHref === null && !s.watch && !s.hScroll, s);
 
     /* poster tap -> Coming Attractions sheet (no Anthropic key) */
     await page.click('.screen-poster');
@@ -189,8 +191,9 @@ function seed(opts){
         videosTried: rec.facts ? rec.facts.videosTried : null
       };
     });
+    /* the top-up is about what lands in the cache — the link itself is rendered
+       on the sheet now, not the projector */
     check('old facts get a trailer topped up and cached',
-      s.trailerHref === 'https://www.youtube.com/watch?v=TRAILERKEY' &&
       s.savedTrailer === 'TRAILERKEY' && s.videosTried === true && videoCalls >= 1,
       Object.assign({ videoCalls }, s));
     await ctx.close();
@@ -281,6 +284,7 @@ function seed(opts){
     const before = await page.evaluate(() => {
       const cards = Array.prototype.slice.call(document.querySelectorAll('.set-card'));
       const card = cards.filter(c => /Backups/.test(c.textContent))[0];
+      if (!card) return { missing: 'Backups card' };
       card.querySelector('.set-head').click();
       return {
         badge: card.querySelector('.set-badge').textContent,
@@ -294,8 +298,10 @@ function seed(opts){
     await page.evaluate(() => {
       const cards = Array.prototype.slice.call(document.querySelectorAll('.set-card'));
       const card = cards.filter(c => /Backups/.test(c.textContent))[0];
-      Array.prototype.slice.call(card.querySelectorAll('.set-btn'))
-        .filter(b => /Export/.test(b.textContent))[0].click();
+      if (!card) return;
+      const btn = Array.prototype.slice.call(card.querySelectorAll('.set-btn'))
+        .filter(b => /Download backup/.test(b.textContent))[0];
+      if (btn) btn.click();
     });
     await dl;
     await page.waitForTimeout(500);

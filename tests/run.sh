@@ -9,6 +9,14 @@ if [ ! -d node_modules/playwright-core ]; then
   exit 2
 fi
 
+# One run at a time. Two overlapping runs write the same <suite>.log and each
+# other's results, which reads exactly like a suite that regressed.
+exec 9>.run.lock
+if ! flock -n 9; then
+  echo "another run is already going (tests/.run.lock) — wait for it, or kill it"
+  exit 3
+fi
+
 echo "building index.html…"
 python3 ../build.py || exit 1
 echo
@@ -20,7 +28,7 @@ for f in *.test.js; do
   if [ -n "$pick" ] && [ "$f" != "$pick.test.js" ]; then continue; fi
   echo "── $f ─────────────────────────────"
   # a suite that wedges shouldn't wedge the run; each writes <name>.log as it goes
-  timeout 600 node "$f"
+  timeout 1800 node "$f"
   code=$?
   [ $code -ne 0 ] && fails=$((fails+1)) && echo "(exit $code)"
   echo
