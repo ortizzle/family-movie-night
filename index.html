@@ -274,6 +274,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .lu-title.skip{color:var(--muted);font-style:italic;font-weight:600}
 .lu-fill{flex:1}
+/* the visible half of the tap target — quiet, because it rides a row that is
+   already saying whose turn it is */
+.lu-skip{
+  flex-shrink:0;font-size:9.5px;font-weight:900;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--muted);border-bottom:2px dotted var(--line);padding-bottom:2px;
+}
+.lu-skip.on{color:var(--amber);border-bottom-color:var(--amber)}
 /* the family's score on a Recent Fridays row */
 .lu-score{display:flex;align-items:baseline;gap:5px;flex-shrink:0}
 .lu-score .lu-stars{font-size:12px;color:var(--star-off);letter-spacing:0}
@@ -643,6 +650,12 @@ html.motion-on .night.landed{transition:border-color .25s ease,box-shadow .25s e
 }
 .ai-center{text-align:center;margin-top:28px;color:var(--dim);font-weight:700;font-size:14px;line-height:1.7}
 .ai-center .big{font-size:38px}
+/* why the pack didn't come — stays put next to the button, unlike a toast */
+.ai-err{
+  margin-top:18px;padding:12px 14px;border-radius:12px;
+  background:rgba(214,106,106,.13);border-left:5px solid #D66A6A;
+  color:var(--cream);font-size:13px;font-weight:700;line-height:1.55;text-align:left;
+}
 .ai-gen{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   margin-top:18px;min-height:54px;border-radius:99px;border:none;
@@ -4382,32 +4395,99 @@ function openCollection(){
 }
 
 /* ---------- Claude: after-credits packs (browser-direct, canonical) ---------- */
+var CLAUDE_MODEL = 'claude-sonnet-4-6';
+var CLAUDE_TRIES = 3;
+
+/* Every way this can fail used to collapse into one toast — "Couldn't reach
+   Claude" — so an empty account, a dead key, a busy API and an answer that got
+   cut off all looked like the same shrug, and none of them told you what to do.
+   Each gets its own code now. The three that are genuinely transient retry
+   themselves before anyone sees a message at all. */
+function claudeError(status, body){
+  var err = (body && body.error) || {};
+  var blurb = (err.type || '') + ' ' + (err.message || '');
+  if (status === 401) return new Error('BAD_KEY');
+  /* the console reports an empty balance as 400 on some plans and 403 on
+     others, so go by what it says rather than by the number */
+  if (/credit balance|billing/i.test(blurb)) return new Error('NO_CREDIT');
+  if (status === 403) return new Error('NO_ACCESS');
+  if (status === 404) return new Error('BAD_MODEL');
+  if (status === 429 || status >= 500) return new Error('BUSY');
+  return new Error('API_' + status + (err.message ? ': ' + err.message : ''));
+}
+function claudeWait(ms){
+  return new Promise(function(done){ setTimeout(done, ms); });
+}
 function askClaude(prompt, opts){
   opts = opts || {};
   var key = Store.get('anthropic_key');
   if (!key) return Promise.reject(new Error('NO_KEY'));
-  return fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: opts.maxTokens || 1400,
-      system: opts.system || undefined,
-      messages: [{ role:'user', content: prompt }]
-    })
-  }).then(function(res){
-    if (res.status === 401) throw new Error('BAD_KEY');
-    if (!res.ok) throw new Error('Claude API error: ' + res.status);
-    return res.json();
-  }).then(function(d){
-    return d.content.filter(function(b){ return b.type === 'text'; })
-      .map(function(b){ return b.text; }).join('\n');
+  var body = JSON.stringify({
+    model: CLAUDE_MODEL,
+    max_tokens: opts.maxTokens || 1400,
+    system: opts.system || undefined,
+    messages: [{ role:'user', content: prompt }]
   });
+  function attempt(n){
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: body
+    }).catch(function(){
+      throw new Error('OFFLINE');   // fetch only rejects for network/CORS
+    }).then(function(res){
+      if (res.ok) return res.json();
+      return res.json().catch(function(){ return null; }).then(function(j){
+        throw claudeError(res.status, j);
+      });
+    }).then(function(d){
+      /* an answer that stopped mid-sentence can never parse — name that, rather
+         than blaming the JSON for it later */
+      if (d.stop_reason === 'max_tokens') throw new Error('TRUNCATED');
+      var text = (d.content || []).filter(function(b){ return b.type === 'text'; })
+        .map(function(b){ return b.text; }).join('\n');
+      if (!text.trim()) throw new Error('EMPTY');
+      return text;
+    }).catch(function(e){
+      var m = e && e.message;
+      if (n < CLAUDE_TRIES && (m === 'BUSY' || m === 'OFFLINE')){
+        return claudeWait(700 * Math.pow(3, n - 1)).then(function(){ return attempt(n + 1); });
+      }
+      throw e;
+    });
+  }
+  return attempt(1);
+}
+/* Claude usually returns bare JSON as asked, but a stray fence or a sentence of
+   preamble shouldn't cost the family their pack — take the outermost braces. */
+function parseClaudeJson(text){
+  var t = String(text || '').trim()
+    .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  var a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('BAD_SHAPE');
+  try { return JSON.parse(t.slice(a, b + 1)); }
+  catch (err){ throw new Error('BAD_SHAPE'); }
+}
+/* one sentence a parent can act on, for whatever came back */
+function claudeTrouble(e){
+  var m = (e && e.message) || '';
+  if (m === 'NO_KEY')    return 'Add an Anthropic key in Settings first.';
+  if (m === 'BAD_KEY')   return 'That Anthropic key was rejected — check it in Settings.';
+  if (m === 'NO_CREDIT') return 'The Anthropic account is out of credit. Top it up at console.anthropic.com, then try again.';
+  if (m === 'NO_ACCESS') return 'That key isn’t allowed to use ' + CLAUDE_MODEL + '. Check its permissions in the Anthropic console.';
+  if (m === 'BAD_MODEL') return 'Claude no longer offers the model this app asks for — the app needs an update.';
+  if (m === 'BUSY')      return 'Claude is busy right now — tried three times. Give it a minute and tap again.';
+  if (m === 'OFFLINE')   return 'Couldn’t reach Claude — check your connection, then try again.';
+  if (m === 'TRUNCATED') return 'Claude’s answer got cut off partway. Tap try again.';
+  if (m === 'EMPTY')     return 'Claude sent back an empty answer. Tap try again.';
+  if (m === 'BAD_SHAPE') return 'Claude answered, but not in the shape the app expects. Tap try again.';
+  if (m.indexOf('API_') === 0) return 'Claude turned the request down — ' + m.slice(4);
+  return 'Something went wrong talking to Claude. Tap try again.';
 }
 function aiPackFor(nightId){
   var r = data.records['ai_' + nightId];
@@ -4423,10 +4503,8 @@ function generatePack(night){
     + '{"facts":["5 short, surprising behind-the-scenes fun facts about this movie"],'
     + '"trivia":[{"q":"question about this movie","opts":["4 options"],"a":0,"note":"one-line fun explanation"} x3],'
     + '"talk":["3 discussion questions for the family to talk about together after watching"]}';
-  return askClaude(prompt, { system: system, maxTokens: 1600 }).then(function(text){
-    var t = text.trim();
-    t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-    var obj = JSON.parse(t);
+  return askClaude(prompt, { system: system, maxTokens: 2200 }).then(function(text){
+    var obj = parseClaudeJson(text);
     if (!obj || !obj.facts || !obj.facts.length || !obj.trivia || !obj.talk) throw new Error('BAD_SHAPE');
     var rec = {
       id: 'ai_' + night.id, type: 'ai', nightId: night.id, title: night.title,
@@ -4450,9 +4528,13 @@ function openAfterCredits(night){
   var page = el('div','ai-page');
   overlay.appendChild(page);
   var loading = false;
+  /* a toast is gone by the time you've read it — when the pack won't come, the
+     reason stays on the sheet next to the button you're about to tap again */
+  var trouble = '';
 
   function startGenerate(){
     loading = true;
+    trouble = '';
     paint();
     generatePack(night).then(function(){
       loading = false;
@@ -4460,10 +4542,8 @@ function openAfterCredits(night){
       confettiBurst(20);
     }).catch(function(e){
       loading = false;
+      trouble = claudeTrouble(e);
       paint();
-      if (e && e.message === 'BAD_KEY') toast('That Anthropic key was rejected — check it in Settings');
-      else if (e && e.message === 'NO_KEY') toast('Add an Anthropic key in Settings first');
-      else toast('Couldn’t reach Claude — try again in a moment');
     });
   }
 
@@ -4491,9 +4571,10 @@ function openAfterCredits(night){
       c.appendChild(el('div','big','🍿✨'));
       if (hasKey){
         c.appendChild(el('div', null, 'Fun facts, movie trivia, and talk-about-it questions —\nmade just for tonight’s film. One tap:'));
-        var gen = el('button','ai-gen','✨ Make tonight’s pack');
-        gen.addEventListener('click', startGenerate);
         page.appendChild(c);
+        if (trouble) page.appendChild(el('div','ai-err', trouble));
+        var gen = el('button','ai-gen', trouble ? '↻ Try again' : '✨ Make tonight’s pack');
+        gen.addEventListener('click', startGenerate);
         page.appendChild(gen);
       } else {
         c.appendChild(el('div', null, 'After-credits packs need a Claude (Anthropic) API key.\nAdd one in Settings and this button does the rest —\neverything else in the app works without it.'));
@@ -4611,10 +4692,8 @@ function generatePreShow(night){
     + '"lookFor":["3 spoiler-free things to watch for — a visual detail, a piece of craft, a running joke"],'
     + '"guess":["2 predictions the family can call out loud before pressing play"],'
     + '"heads":"one short honest heads-up for parents about tone or intensity, or an empty string if there is nothing to flag"}';
-  return askClaude(prompt, { system: system, maxTokens: 1100 }).then(function(text){
-    var t = text.trim();
-    t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-    var obj = JSON.parse(t);
+  return askClaude(prompt, { system: system, maxTokens: 1500 }).then(function(text){
+    var obj = parseClaudeJson(text);
     if (!obj || !obj.hype || !obj.lookFor || !obj.lookFor.length) throw new Error('BAD_SHAPE');
     var rec = {
       id: 'pre_' + night.id, type: 'preshow', nightId: night.id, title: night.title,
@@ -4640,9 +4719,11 @@ function openComingAttractions(night){
   overlay.appendChild(page);
   var loading = false;
   var facts = night.facts || null;
+  var trouble = '';
 
   function startGenerate(){
     loading = true;
+    trouble = '';
     paint();
     generatePreShow(night).then(function(){
       loading = false;
@@ -4650,10 +4731,8 @@ function openComingAttractions(night){
       confettiBurst(16);
     }).catch(function(e){
       loading = false;
+      trouble = claudeTrouble(e);
       paint();
-      if (e && e.message === 'BAD_KEY') toast('That Anthropic key was rejected — check it in Settings');
-      else if (e && e.message === 'NO_KEY') toast('Add an Anthropic key in Settings first');
-      else toast('Couldn’t reach Claude — try again in a moment');
     });
   }
 
@@ -4753,9 +4832,10 @@ function openComingAttractions(night){
     c.appendChild(el('div','big','🎟️✨'));
     if (hasKey){
       c.appendChild(el('div', null, 'A spoiler-free pre-show — why this pick is worth the popcorn, things to watch for, and predictions to call out loud.'));
-      var gen = el('button','ai-gen','✨ Write the pre-show');
-      gen.addEventListener('click', startGenerate);
       page.appendChild(c);
+      if (trouble) page.appendChild(el('div','ai-err', trouble));
+      var gen = el('button','ai-gen', trouble ? '↻ Try again' : '✨ Write the pre-show');
+      gen.addEventListener('click', startGenerate);
       page.appendChild(gen);
     } else {
       c.appendChild(el('div', null, 'Pre-show notes need a Claude (Anthropic) API key. Add one in Settings — the poster, facts, trailer and where-to-watch all work without it.'));
@@ -5215,6 +5295,7 @@ function renderHome(app){
   });
   withBonus.sort(function(a,b){ return a.date < b.date ? -1 : 1; });
   var rows = withBonus.concat(later);
+  var firstOpenTagged = false;
   rows.forEach(function(slot, u){
     if (u === withBonus.length && later.length) lineup.appendChild(el('div','lu-later','· later on ·'));
     var row = el('div','lu-row' + (u === rows.length - 1 ? ' last' : '') + (slot.bonus ? ' bonus' : ''));
@@ -5261,6 +5342,18 @@ function renderHome(app){
       row.setAttribute('tabindex','0');
       row.setAttribute('aria-label', (slot.skipped ? 'Put movie night back on ' : 'Skip movie night on ')
         + AZ.pretty(slot.date));
+      /* The row has always been tappable, but nothing said so — a phone has no
+         hover to discover it with. The label only rides the Friday the decision
+         is actually about: the next open one, and any Friday already off. On
+         every row it turned into four identical shouting pills that read like a
+         status rather than a choice. */
+      if (slot.skipped || !firstOpenTagged){
+        if (!slot.skipped) firstOpenTagged = true;
+        var chip = el('div','lu-skip' + (slot.skipped ? ' on' : ''),
+          slot.skipped ? 'Put it back' : 'Skip this one');
+        chip.setAttribute('aria-hidden','true');
+        row.appendChild(chip);
+      }
       (function(d, off){
         function toggle(){ openSkipFriday(d, off); }
         row.addEventListener('click', toggle);
@@ -5614,7 +5707,7 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.6'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.7'));
   app.appendChild(footer);
 
   runPendingJump();   // cards exist now — safe to scroll to one

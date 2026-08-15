@@ -274,6 +274,13 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .lu-title.skip{color:var(--muted);font-style:italic;font-weight:600}
 .lu-fill{flex:1}
+/* the visible half of the tap target — quiet, because it rides a row that is
+   already saying whose turn it is */
+.lu-skip{
+  flex-shrink:0;font-size:9.5px;font-weight:900;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--muted);border-bottom:2px dotted var(--line);padding-bottom:2px;
+}
+.lu-skip.on{color:var(--amber);border-bottom-color:var(--amber)}
 /* the family's score on a Recent Fridays row */
 .lu-score{display:flex;align-items:baseline;gap:5px;flex-shrink:0}
 .lu-score .lu-stars{font-size:12px;color:var(--star-off);letter-spacing:0}
@@ -643,6 +650,12 @@ html.motion-on .night.landed{transition:border-color .25s ease,box-shadow .25s e
 }
 .ai-center{text-align:center;margin-top:28px;color:var(--dim);font-weight:700;font-size:14px;line-height:1.7}
 .ai-center .big{font-size:38px}
+/* why the pack didn't come — stays put next to the button, unlike a toast */
+.ai-err{
+  margin-top:18px;padding:12px 14px;border-radius:12px;
+  background:rgba(214,106,106,.13);border-left:5px solid #D66A6A;
+  color:var(--cream);font-size:13px;font-weight:700;line-height:1.55;text-align:left;
+}
 .ai-gen{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   margin-top:18px;min-height:54px;border-radius:99px;border:none;

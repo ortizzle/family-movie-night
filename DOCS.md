@@ -174,6 +174,12 @@ announcing one as the next movie night was the first thing that broke.
 Skipped Fridays are also neutral in `fridayStreak`: stepped over, neither
 counted nor held against the family.
 
+The control has to be *visible*, not just present. It shipped as a bare tap on
+the row and Chris asked for it again a week later, because a phone has no hover
+to discover an invisible target with. Every open Friday now carries a
+`.lu-skip` chip that says "No movie night" (or "Put it back" once it's off),
+which is the affordance — the whole row is still the tap target.
+
 **A Friday row shows the score, not who showed up.** The initials used to sit
 there, one per person, lit when they'd written something — but everybody is at
 movie night, so they only ever said the same thing. The row carries
@@ -325,6 +331,22 @@ tells Claude the family hasn't seen the film; the sheet says so too. Keep that
 instruction if you touch the prompt — the after-credits pack is the one that's
 allowed to discuss the plot.
 
+**Every Claude failure has to name itself.** `askClaude` maps each way the call
+can fail to its own code — `BAD_KEY`, `NO_CREDIT`, `NO_ACCESS`, `BAD_MODEL`,
+`BUSY`, `OFFLINE`, `TRUNCATED`, `EMPTY`, plus `BAD_SHAPE` from the parser — and
+`claudeTrouble` turns each into one sentence a parent can act on. They all used
+to collapse into "Couldn't reach Claude — try again in a moment", which meant an
+empty Anthropic account looked exactly like bad wifi and nobody could tell what
+to fix. The message renders as `.ai-err` on the sheet, next to the button, not
+as a toast that's gone before you've read it. `BUSY` and `OFFLINE` retry three
+times with backoff before anyone sees anything.
+
+**Claude's JSON goes through `parseClaudeJson`, never `JSON.parse` directly.**
+It strips a fence and takes the outermost braces, so a stray "Sure! Here you go:"
+doesn't cost the family their pack. Ask for more `max_tokens` than the pack
+needs — a reply that stops at the limit throws `TRUNCATED`, which reads very
+differently from a shape problem and is fixed differently too.
+
 **The backup nudge is synced, not per-phone.** `settings_backup` records when
 anybody last exported, so Chris backing up settles the nudge on Kat's phone
 instead of nagging everyone separately.
@@ -367,6 +389,7 @@ mistake would hide.
 
 ## Version history
 
+- **v3.7** — Claude failures say what actually went wrong; "No movie night" is a visible choice
 - **v3.6** — skip a Friday without anyone losing their turn
 - **v3.5** — a nudge to text whoever hasn't reacted yet; trivia answers stay
   answered; fixing a night's title forgets the wrong movie's poster and facts;

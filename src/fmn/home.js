@@ -213,6 +213,7 @@ function renderHome(app){
   });
   withBonus.sort(function(a,b){ return a.date < b.date ? -1 : 1; });
   var rows = withBonus.concat(later);
+  var firstOpenTagged = false;
   rows.forEach(function(slot, u){
     if (u === withBonus.length && later.length) lineup.appendChild(el('div','lu-later','· later on ·'));
     var row = el('div','lu-row' + (u === rows.length - 1 ? ' last' : '') + (slot.bonus ? ' bonus' : ''));
@@ -259,6 +260,18 @@ function renderHome(app){
       row.setAttribute('tabindex','0');
       row.setAttribute('aria-label', (slot.skipped ? 'Put movie night back on ' : 'Skip movie night on ')
         + AZ.pretty(slot.date));
+      /* The row has always been tappable, but nothing said so — a phone has no
+         hover to discover it with. The label only rides the Friday the decision
+         is actually about: the next open one, and any Friday already off. On
+         every row it turned into four identical shouting pills that read like a
+         status rather than a choice. */
+      if (slot.skipped || !firstOpenTagged){
+        if (!slot.skipped) firstOpenTagged = true;
+        var chip = el('div','lu-skip' + (slot.skipped ? ' on' : ''),
+          slot.skipped ? 'Put it back' : 'Skip this one');
+        chip.setAttribute('aria-hidden','true');
+        row.appendChild(chip);
+      }
       (function(d, off){
         function toggle(){ openSkipFriday(d, off); }
         row.addEventListener('click', toggle);
@@ -612,7 +625,7 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.6'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.7'));
   app.appendChild(footer);
 
   runPendingJump();   // cards exist now — safe to scroll to one
