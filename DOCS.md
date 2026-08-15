@@ -341,6 +341,22 @@ to fix. The message renders as `.ai-err` on the sheet, next to the button, not
 as a toast that's gone before you've read it. `BUSY` and `OFFLINE` retry three
 times with backoff before anyone sees anything.
 
+**Claude needs a way to say "I don't know this film."** Without one, the only
+way for it to answer about a small or very new title is prose — and prose can
+never parse, so the app reported a film nobody knows as a mangled-JSON problem.
+That's what "repeatedly unable to pull after credits" actually was: River picked
+*The Sheep Detectives*, Claude didn't know it, and the sheet blamed the shape.
+Both prompts now offer `{"unknown":true}` as an explicit out, and both hand over
+`filmContext(night)` — release date, certificate, runtime, IMDb and TMDB ids —
+so a real-but-obscure film has an identity beyond its title. Keep the escape
+hatch if you rewrite a prompt; without it the failure becomes unreadable again.
+
+**A `BAD_SHAPE` carries what Claude actually said.** The sentence it replied
+with *is* the diagnosis, and a generic shape complaint throws it away. `badShape`
+keeps 160 characters and `claudeTrouble` quotes them back. Prose also gets one
+automatic retry (`askForJson`) that tells Claude plainly to send JSON only —
+which doesn't fire for an unknown film, because that now returns valid JSON.
+
 **Claude's JSON goes through `parseClaudeJson`, never `JSON.parse` directly.**
 It strips a fence and takes the outermost braces, so a stray "Sure! Here you go:"
 doesn't cost the family their pack. Ask for more `max_tokens` than the pack
@@ -389,6 +405,7 @@ mistake would hide.
 
 ## Version history
 
+- **v3.8** — Claude can say it doesn't know a film, instead of failing as bad JSON
 - **v3.7** — Claude failures say what actually went wrong; "No movie night" is a visible choice
 - **v3.6** — skip a Friday without anyone losing their turn
 - **v3.5** — a nudge to text whoever hasn't reacted yet; trivia answers stay

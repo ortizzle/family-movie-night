@@ -125,7 +125,31 @@ function seed(){
   /* an answer that stopped at max_tokens reads differently from a bad shape,
      and is fixed differently too */
   await runCase('truncated', ok('{"facts":["one","two thr', 'max_tokens'), { match:'cut off', calls:1 });
-  await runCase('not json', ok('I would love to help with that movie!'), { match:'not in the shape', calls:1 });
+
+  /* The real one Chris hit, on River's pick: a small film Claude doesn't know.
+     It answers in prose, which can never parse — so the app used to blame the
+     JSON. The prompt now offers {"unknown":true} as a way to say so. */
+  await runCase('film Claude doesn’t know',
+    ok(JSON.stringify({ unknown: true })),
+    { match:'doesn’t know a film called', calls:1 });
+  await runCase('unknown film names the title',
+    ok(JSON.stringify({ unknown: true })),
+    { match:'The Iron Giant', calls:1 });
+
+  /* prose retries once, told plainly to send JSON only... */
+  await runCase('prose retries and recovers',
+    (r, n) => n === 1
+      ? r.fulfill({ status:200, contentType:'application/json',
+          body: JSON.stringify({ content:[{ type:'text', text:'I would love to help with that movie!' }], stop_reason:'end_turn' }) })
+      : r.fulfill({ status:200, contentType:'application/json',
+          body: JSON.stringify({ content:[{ type:'text', text: JSON.stringify(GOOD) }], stop_reason:'end_turn' }) }),
+    { match:null, facts:5, calls:2 });
+
+  /* ...and when it won't comply, the family sees what it actually said, which
+     is the whole diagnosis */
+  await runCase('prose twice quotes what Claude said',
+    ok('I am not familiar with a film by that title.'),
+    { match:'I am not familiar with a film by that title', calls:2 });
   await runCase('empty answer', ok(''), { match:'empty answer', calls:1 });
   await runCase('network down', (r) => r.abort('failed'), { match:'check your connection', calls:3, wait:6000 });
 

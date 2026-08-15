@@ -4464,18 +4464,64 @@ function askClaude(prompt, opts){
   return attempt(1);
 }
 /* Claude usually returns bare JSON as asked, but a stray fence or a sentence of
-   preamble shouldn't cost the family their pack — take the outermost braces. */
+   preamble shouldn't cost the family their pack — take the outermost braces.
+   When it isn't JSON at all, carry what it actually said: that sentence is the
+   whole diagnosis, and "not in the shape the app expects" hides it. */
+function badShape(said){
+  var e = new Error('BAD_SHAPE');
+  e.said = String(said || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+  return e;
+}
 function parseClaudeJson(text){
   var t = String(text || '').trim()
     .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   var a = t.indexOf('{'), b = t.lastIndexOf('}');
-  if (a < 0 || b < a) throw new Error('BAD_SHAPE');
+  if (a < 0 || b < a) throw badShape(t);
   try { return JSON.parse(t.slice(a, b + 1)); }
-  catch (err){ throw new Error('BAD_SHAPE'); }
+  catch (err){ throw badShape(t); }
+}
+
+/* What the app knows about the film, handed over as identity. A small or very
+   new title is the case that broke this: asked for behind-the-scenes facts about
+   a film it doesn't know, Claude answers in prose, and the app called that a
+   shape problem. The IMDb/TMDB ids pin down which film we mean even when the
+   title alone is ambiguous. */
+function filmContext(night){
+  var f = night.facts || {};
+  var bits = [];
+  if (f.released) bits.push('released ' + f.released);
+  if (f.cert) bits.push('rated ' + f.cert);
+  if (f.runtime) bits.push(f.runtime + ' min');
+  if (f.imdbId) bits.push('IMDb ' + f.imdbId);
+  if (f.tmdbId) bits.push('TMDB id ' + f.tmdbId);
+  return bits.length ? '\nWhat we know about it: ' + bits.join(', ') + '.' : '';
+}
+/* The escape hatch. Without it the only way for Claude to say "I don't know this
+   film" is prose, which can never parse — so the app could never tell "we asked
+   about a film nobody knows" apart from "the JSON came back mangled". */
+var UNKNOWN_OUT = '\nIf you do not actually know this specific film, do not guess '
+  + 'and do not invent facts about it — respond with exactly {"unknown":true} and nothing else.';
+
+/* One retry when a reply isn't JSON. A model that wandered into prose usually
+   complies when told so directly, and a genuinely unknown film now answers with
+   {"unknown":true} instead, so this doesn't fire for that case. */
+function askForJson(prompt, opts){
+  return askClaude(prompt, opts).then(parseClaudeJson).catch(function(e){
+    if (!e || e.message !== 'BAD_SHAPE') throw e;
+    return askClaude(prompt + '\n\nYour previous reply was not valid JSON. '
+      + 'Reply with the JSON object only — no preamble, no explanation, no fences.', opts)
+      .then(parseClaudeJson);
+  });
 }
 /* one sentence a parent can act on, for whatever came back */
-function claudeTrouble(e){
+function claudeTrouble(e, title){
   var m = (e && e.message) || '';
+  var film = title ? '“' + title + '”' : 'that film';
+  if (m === 'UNKNOWN_FILM') return 'Claude doesn’t know a film called ' + film + '. '
+    + 'Check the title under Edit details — otherwise it may be too new or too small for Claude to know it.';
+  /* what it actually said is the diagnosis; a generic shape complaint isn't */
+  if (m === 'BAD_SHAPE' && e.said) return 'Claude answered, but not in the shape the app expects. '
+    + 'It said: “' + e.said + '”';
   if (m === 'NO_KEY')    return 'Add an Anthropic key in Settings first.';
   if (m === 'BAD_KEY')   return 'That Anthropic key was rejected — check it in Settings.';
   if (m === 'NO_CREDIT') return 'The Anthropic account is out of credit. Top it up at console.anthropic.com, then try again.';
@@ -4498,13 +4544,15 @@ function generatePack(night){
     + 'The family: Chris and Kat (parents), Sedona and River (kids). '
     + 'Everything must be family-friendly, warm, and fun. Avoid spoiling major twists in the facts; '
     + 'the family has JUST watched the movie, so trivia and discussion questions may reference the plot freely.';
-  var prompt = 'Movie: "' + night.title + '"' + (night.year ? ' (' + night.year + ')' : '') + '.\n'
+  var prompt = 'Movie: "' + night.title + '"' + (night.year ? ' (' + night.year + ')' : '') + '.'
+    + filmContext(night) + '\n'
     + 'Respond with ONLY valid JSON, no markdown fences, exactly this shape:\n'
     + '{"facts":["5 short, surprising behind-the-scenes fun facts about this movie"],'
     + '"trivia":[{"q":"question about this movie","opts":["4 options"],"a":0,"note":"one-line fun explanation"} x3],'
-    + '"talk":["3 discussion questions for the family to talk about together after watching"]}';
-  return askClaude(prompt, { system: system, maxTokens: 2200 }).then(function(text){
-    var obj = parseClaudeJson(text);
+    + '"talk":["3 discussion questions for the family to talk about together after watching"]}'
+    + UNKNOWN_OUT;
+  return askForJson(prompt, { system: system, maxTokens: 2200 }).then(function(obj){
+    if (obj && obj.unknown) throw new Error('UNKNOWN_FILM');
     if (!obj || !obj.facts || !obj.facts.length || !obj.trivia || !obj.talk) throw new Error('BAD_SHAPE');
     var rec = {
       id: 'ai_' + night.id, type: 'ai', nightId: night.id, title: night.title,
@@ -4542,7 +4590,7 @@ function openAfterCredits(night){
       confettiBurst(20);
     }).catch(function(e){
       loading = false;
-      trouble = claudeTrouble(e);
+      trouble = claudeTrouble(e, night.title);
       paint();
     });
   }
@@ -4686,14 +4734,16 @@ function generatePreShow(night){
     + 'They have NOT seen this film yet — never reveal twists, endings, deaths or any '
     + 'surprise, and never hint that one is coming. Warm, excited, PG, and specific to '
     + 'this film rather than generic praise.';
-  var prompt = 'Movie: "' + night.title + '"' + (night.year ? ' (' + night.year + ')' : '') + '.\n'
+  var prompt = 'Movie: "' + night.title + '"' + (night.year ? ' (' + night.year + ')' : '') + '.'
+    + filmContext(night) + '\n'
     + 'Respond with ONLY valid JSON, no markdown fences, exactly this shape:\n'
     + '{"hype":"two spoiler-free sentences on why this is a great pick for tonight",'
     + '"lookFor":["3 spoiler-free things to watch for — a visual detail, a piece of craft, a running joke"],'
     + '"guess":["2 predictions the family can call out loud before pressing play"],'
-    + '"heads":"one short honest heads-up for parents about tone or intensity, or an empty string if there is nothing to flag"}';
-  return askClaude(prompt, { system: system, maxTokens: 1500 }).then(function(text){
-    var obj = parseClaudeJson(text);
+    + '"heads":"one short honest heads-up for parents about tone or intensity, or an empty string if there is nothing to flag"}'
+    + UNKNOWN_OUT;
+  return askForJson(prompt, { system: system, maxTokens: 1500 }).then(function(obj){
+    if (obj && obj.unknown) throw new Error('UNKNOWN_FILM');
     if (!obj || !obj.hype || !obj.lookFor || !obj.lookFor.length) throw new Error('BAD_SHAPE');
     var rec = {
       id: 'pre_' + night.id, type: 'preshow', nightId: night.id, title: night.title,
@@ -4731,7 +4781,7 @@ function openComingAttractions(night){
       confettiBurst(16);
     }).catch(function(e){
       loading = false;
-      trouble = claudeTrouble(e);
+      trouble = claudeTrouble(e, night.title);
       paint();
     });
   }
@@ -5707,7 +5757,7 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.7'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.8'));
   app.appendChild(footer);
 
   runPendingJump();   // cards exist now — safe to scroll to one
