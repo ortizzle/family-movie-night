@@ -131,10 +131,70 @@ function seed(){
      JSON. The prompt now offers {"unknown":true} as a way to say so. */
   await runCase('film Claude doesn’t know',
     ok(JSON.stringify({ unknown: true })),
-    { match:'doesn’t know a film called', calls:1 });
+    { match:'doesn’t know', calls:1 });
   await runCase('unknown film names the title',
     ok(JSON.stringify({ unknown: true })),
     { match:'The Iron Giant', calls:1 });
+
+  /* A film released after Claude's training data — the real case. TMDB knows
+     it, Claude can't, so the app briefs it and the pack gets written from that.
+     The prompt must actually carry the plot and cast, or none of this works. */
+  {
+    R.note('new film: briefing reaches Claude');
+    const ctx = await browser.newContext({ viewport: PIXEL, colorScheme:'dark' });
+    const page = await ctx.newPage();
+    page.on('pageerror', e => errors.push('briefing: ' + e.message));
+    let sent = null;
+    await page.route('**image.tmdb.org/**', r => r.fulfill({ status:200, contentType:'image/png', body:PNG }));
+    await page.route('**api.themoviedb.org/**', r => r.fulfill({ status:200, contentType:'application/json', body:'{}' }));
+    await page.route('**api.anthropic.com/**', r => {
+      sent = JSON.parse(r.request().postData() || '{}');
+      return r.fulfill({ status:200, contentType:'application/json',
+        body: JSON.stringify({ content:[{ type:'text',
+          text: JSON.stringify(Object.assign({ grounded:true }, GOOD)) }], stop_reason:'end_turn' }) });
+    });
+    await page.goto(APP);
+    await page.evaluate(() => {
+      const az = new Intl.DateTimeFormat('en-CA', { timeZone:'America/Phoenix' }).format(new Date());
+      localStorage.setItem('fmn_data', JSON.stringify({ records:{
+        night_new: { id:'night_new', type:'night', title:'The Sheep Detectives', year:2026,
+          date: az, pickedBy:'river', updatedAt: Date.now(),
+          facts: { fetchedAt: Date.now(), storyTried: true, tmdbId: 99, released:'2026-07-31',
+            cert:'PG', runtime:104, genres:['Animation','Comedy'], director:['A. Director'],
+            cast:['Someone as Woolly','Another as Baa'], tagline:'Ewe can solve it',
+            overview:'Three sheep open a detective agency and lose the farm cat.' } },
+        rx_night_new_river: { id:'rx_night_new_river', type:'reaction', nightId:'night_new',
+          memberId:'river', stars:5, updatedAt: Date.now() }
+      } }));
+      localStorage.setItem('fmn_me', JSON.stringify('chris'));
+      localStorage.setItem('fmn_sample_dismissed', JSON.stringify(true));
+      localStorage.setItem('fmn_anthropic_key', JSON.stringify('sk-ant-testtesttest'));
+    });
+    await page.reload();
+    await page.waitForTimeout(700);
+    await page.evaluate(() => openAfterCredits(nights()[0]));
+    await page.waitForTimeout(200);
+    await page.click('.ai-overlay .ai-gen', { timeout: 4000 }).catch(e => errors.push('briefing click: ' + e.message));
+    await page.waitForTimeout(1400);
+
+    const prompt = sent && sent.messages ? sent.messages[0].content : '';
+    R.check('new film · synopsis is sent', /Three sheep open a detective agency/.test(prompt), { len: prompt.length });
+    R.check('new film · cast and director are sent',
+      /A\. Director/.test(prompt) && /Someone as Woolly/.test(prompt), {});
+    R.check('new film · told what to do when it doesn’t know the film',
+      /not in your own knowledge/.test(prompt) && /"unknown":true/.test(prompt), {});
+
+    const out = await page.evaluate(() => ({
+      err: (document.querySelector('.ai-overlay .ai-err') || {}).textContent || null,
+      facts: document.querySelectorAll('.ai-overlay .ai-fact').length,
+      note: (document.querySelector('.ai-overlay .ai-disclaimer') || {}).textContent || null,
+      saved: !!(JSON.parse(localStorage.getItem('fmn_data')).records.ai_night_new || {}).grounded
+    }));
+    R.check('new film · pack renders', out.err === null && out.facts === 5, out);
+    R.check('new film · sheet says where it came from', /TMDB details/.test(out.note || ''), { note: out.note });
+    R.check('new film · grounded flag is stored', out.saved, out);
+    await ctx.close();
+  }
 
   /* prose retries once, told plainly to send JSON only... */
   await runCase('prose retries and recovers',

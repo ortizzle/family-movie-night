@@ -853,26 +853,43 @@ function parseClaudeJson(text){
   catch (err){ throw badShape(t); }
 }
 
-/* What the app knows about the film, handed over as identity. A small or very
-   new title is the case that broke this: asked for behind-the-scenes facts about
-   a film it doesn't know, Claude answers in prose, and the app called that a
-   shape problem. The IMDb/TMDB ids pin down which film we mean even when the
-   title alone is ambiguous. */
+/* Everything the app knows about the film, handed over as a briefing.
+
+   This is the case that broke After the Credits: a film released after Claude's
+   training data is one Claude cannot know, however big it was at the box office.
+   The app was sending a bare title and asking for behind-the-scenes facts, so
+   the model answered in prose and the sheet called it a JSON problem. TMDB knows
+   this week's releases; the model doesn't. So the app does the introducing —
+   plot, cast, director, genre — and the pack gets written from that. */
 function filmContext(night){
   var f = night.facts || {};
+  var lines = [];
   var bits = [];
   if (f.released) bits.push('released ' + f.released);
   if (f.cert) bits.push('rated ' + f.cert);
   if (f.runtime) bits.push(f.runtime + ' min');
+  if (f.genres && f.genres.length) bits.push(f.genres.join('/'));
   if (f.imdbId) bits.push('IMDb ' + f.imdbId);
-  if (f.tmdbId) bits.push('TMDB id ' + f.tmdbId);
-  return bits.length ? '\nWhat we know about it: ' + bits.join(', ') + '.' : '';
+  if (bits.length) lines.push('Details: ' + bits.join(', ') + '.');
+  if (f.director && f.director.length) lines.push('Directed by ' + f.director.join(' and ') + '.');
+  if (f.cast && f.cast.length) lines.push('Starring ' + f.cast.join(', ') + '.');
+  if (f.tagline) lines.push('Tagline: “' + f.tagline + '”');
+  if (f.overview) lines.push('Synopsis (from TMDB): ' + f.overview);
+  return lines.length ? '\n\nWhat the app knows about this film:\n' + lines.join('\n') + '\n' : '';
 }
-/* The escape hatch. Without it the only way for Claude to say "I don't know this
-   film" is prose, which can never parse — so the app could never tell "we asked
-   about a film nobody knows" apart from "the JSON came back mangled". */
-var UNKNOWN_OUT = '\nIf you do not actually know this specific film, do not guess '
-  + 'and do not invent facts about it — respond with exactly {"unknown":true} and nothing else.';
+/* Two outs, and which one applies depends on whether the briefing above had
+   anything in it. With a synopsis and a cast list, a film Claude has never heard
+   of can still get a real pack — grounded in what it was given, and honest that
+   production trivia isn't available. With nothing, saying so plainly beats
+   inventing, and beats prose the parser can never read. */
+var UNKNOWN_OUT = '\n\nIf this film is not in your own knowledge — a very recent '
+  + 'release, for instance — do NOT invent anything about it, and do NOT refuse in prose. '
+  + 'If details are given above, write the pack from THOSE: base trivia and discussion '
+  + 'questions on the synopsis, cast and crew you were given, keep "facts" to things those '
+  + 'details support (who made it, who is in it, when it came out, what it is about) rather '
+  + 'than behind-the-scenes production stories you cannot verify, and add "grounded":true '
+  + 'to your JSON. Only if no details are given above and you do not know the film, respond '
+  + 'with exactly {"unknown":true} and nothing else.';
 
 /* One retry when a reply isn't JSON. A model that wandered into prose usually
    complies when told so directly, and a genuinely unknown film now answers with
@@ -889,8 +906,9 @@ function askForJson(prompt, opts){
 function claudeTrouble(e, title){
   var m = (e && e.message) || '';
   var film = title ? '“' + title + '”' : 'that film';
-  if (m === 'UNKNOWN_FILM') return 'Claude doesn’t know a film called ' + film + '. '
-    + 'Check the title under Edit details — otherwise it may be too new or too small for Claude to know it.';
+  if (m === 'UNKNOWN_FILM') return 'Claude doesn’t know ' + film + ' and the app had no details to '
+    + 'send it. Add a TMDB key in Settings so the plot and cast get looked up — or check the title '
+    + 'under Edit details, in case the lookup missed.';
   /* what it actually said is the diagnosis; a generic shape complaint isn't */
   if (m === 'BAD_SHAPE' && e.said) return 'Claude answered, but not in the shape the app expects. '
     + 'It said: “' + e.said + '”';
@@ -933,6 +951,9 @@ function generatePack(night){
       talk: obj.talk.slice(0, 4),
       updatedAt: Date.now()
     };
+    /* written from the app's briefing rather than Claude's own knowledge —
+       the sheet says so, because "fun facts" means something different then */
+    if (obj.grounded) rec.grounded = true;
     if (night.sample) rec.sample = true; // demo packs stay off the family gist
     data.records[rec.id] = rec;
     saveData();
@@ -1084,7 +1105,9 @@ function openAfterCredits(night){
       });
       page.appendChild(regen);
     }
-    page.appendChild(el('div','ai-disclaimer','Written by Claude · double-check facts before quoting them at school'));
+    page.appendChild(el('div','ai-disclaimer', pack.grounded
+      ? 'Written by Claude from this film’s TMDB details — too new for it to have seen'
+      : 'Written by Claude · double-check facts before quoting them at school'));
   }
 
   paint();
@@ -1125,6 +1148,7 @@ function generatePreShow(night){
       heads: obj.heads ? String(obj.heads) : '',
       updatedAt: Date.now()
     };
+    if (obj.grounded) rec.grounded = true;
     if (night.sample) rec.sample = true; // demo packs stay off the family gist
     data.records[rec.id] = rec;
     saveData();
@@ -1246,7 +1270,9 @@ function openComingAttractions(night){
         });
         page.appendChild(regen);
       }
-      page.appendChild(el('div','ai-disclaimer','Written by Claude · asked to stay spoiler-free, but skim it first'));
+      page.appendChild(el('div','ai-disclaimer', pack.grounded
+        ? 'Written by Claude from this film’s TMDB details — too new for it to have seen'
+        : 'Written by Claude · asked to stay spoiler-free, but skim it first'));
       return;
     }
 

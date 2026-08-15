@@ -625,7 +625,7 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.8'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.9'));
   app.appendChild(footer);
 
   runPendingJump();   // cards exist now — safe to scroll to one

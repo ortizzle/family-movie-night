@@ -232,7 +232,7 @@ function tmdbSearch(query){
 function tmdbDetails(tmdbId){
   var cred = loadTmdbCred();
   if (!cred || !tmdbId) return Promise.reject(new Error('NO_KEY'));
-  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates,watch/providers,videos';
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates,watch/providers,videos,credits';
   var headers = {};
   if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
   else url += '&api_key=' + encodeURIComponent(cred.value);
@@ -327,6 +327,28 @@ function omdbScores(imdbId){
     .catch(function(){ return null; });
 }
 /* resolves {cert, released, runtime, tmdbScore, imdb, rt, meta} */
+/* The film's own story, straight from TMDB. Cached because a movie released
+   after Claude's training data is a film Claude cannot know — and a bare title
+   is all the app used to send. TMDB knows this week's releases; the model
+   doesn't, so the app has to do the introducing. */
+function storyFrom(d){
+  var credits = d.credits || {};
+  var dir = (credits.crew || []).filter(function(c){ return c.job === 'Director'; })
+    .map(function(c){ return c.name; }).slice(0, 2);
+  return {
+    overview: d.overview || null,
+    tagline: d.tagline || null,
+    genres: (d.genres || []).map(function(g){ return g.name; }).slice(0, 4),
+    director: dir,
+    cast: (credits.cast || []).slice(0, 5).map(function(c){
+      return c.character ? c.name + ' as ' + c.character : c.name;
+    }),
+    storyTried: true
+  };
+}
+function tmdbStory(tmdbId){
+  return tmdbDetails(tmdbId).then(storyFrom).catch(function(){ return null; });
+}
 function buildFacts(tmdbId, fallbackTitle){
   var idPromise = tmdbId
     ? Promise.resolve(tmdbId)
@@ -351,6 +373,8 @@ function buildFacts(tmdbId, fallbackTitle){
         videosTried: true,
         fetchedAt: Date.now()
       };
+      var story = storyFrom(d);
+      for (var sk in story) f[sk] = story[sk];
       return omdbScores(f.imdbId).then(function(sc){
         if (sc){ f.imdb = sc.imdb; f.rt = sc.rt; f.meta = sc.meta; }
         if (omdbKey()) f.omdbTried = true;
@@ -490,6 +514,10 @@ function ensureNightFacts(night, onDone){
   /* facts cached before trailers existed have no video, so top those up the
      same way rather than leaving old bookings without a trailer forever */
   var wantsVideos = haveCore && !f.trailer && !f.videosTried && !!loadTmdbCred() && !!f.tmdbId;
+  /* every night cached before the app started keeping the plot, cast and
+     director — which is every night before v3.9 — needs them topped up, or a
+     new film stays a bare title to Claude forever */
+  var wantsStory = haveCore && !f.storyTried && !!loadTmdbCred() && !!f.tmdbId;
   /* Where a film streams changes month to month, and the rest of the facts
      never expire — so providers get their own clock. Only for a night still
      coming up: that's when the answer matters, and it keeps watched nights
@@ -498,16 +526,17 @@ function ensureNightFacts(night, onDone){
   var wantsProviders = haveCore && !!loadTmdbCred() && !!f.tmdbId
     && !nightHappened(night) && providerAge > 7 * 24 * 3600 * 1000;
 
-  if (haveCore && !wantsOmdb && !wantsVideos && !wantsProviders){ if (onDone) onDone(f); return; }
+  if (haveCore && !wantsOmdb && !wantsVideos && !wantsProviders && !wantsStory){ if (onDone) onDone(f); return; }
 
   if (haveCore){
     if (onDone) onDone(f);            // paint what we already have
     Promise.all([
       wantsOmdb ? omdbScores(f.imdbId) : Promise.resolve(null),
       wantsVideos ? tmdbVideos(f.tmdbId) : Promise.resolve(null),
-      wantsProviders ? tmdbProviders(f.tmdbId) : Promise.resolve(null)
+      wantsProviders ? tmdbProviders(f.tmdbId) : Promise.resolve(null),
+      wantsStory ? tmdbStory(f.tmdbId) : Promise.resolve(null)
     ]).then(function(res){
-      var sc = res[0], tr = res[1], pr = res[2];
+      var sc = res[0], tr = res[1], pr = res[2], st = res[3];
       var rec = data.records[night.id];
       if (!rec || rec.deleted) return;
       var merged = {};
@@ -520,6 +549,8 @@ function ensureNightFacts(night, onDone){
       /* stamped even when the call failed, so a flaky network doesn't mean a
          fetch on every single render */
       if (wantsProviders) merged.watchAt = Date.now();
+      if (st) for (var sk in st) merged[sk] = st[sk];
+      else if (wantsStory) merged.storyTried = true;   // don't retry a dud forever
       rec.facts = merged;
       rec.updatedAt = Date.now();
       saveData();

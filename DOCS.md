@@ -341,6 +341,29 @@ to fix. The message renders as `.ai-err` on the sheet, next to the button, not
 as a toast that's gone before you've read it. `BUSY` and `OFFLINE` retry three
 times with backoff before anyone sees anything.
 
+**A film newer than Claude's training data is a film Claude cannot know — and
+the app has to introduce it.** This is what "repeatedly unable to pull after
+credits" really was. River picked a major 2026 release; TMDB knew all about it,
+Claude had never heard of it, and the app was sending nothing but the title
+while demanding five behind-the-scenes facts. The model answered in prose, and
+prose can never parse. Size at the box office has nothing to do with it: what
+matters is whether the film existed when the model was trained, and every
+Friday from here on is newer than that.
+
+So `buildFacts` now caches the film's **story** — `overview`, `tagline`,
+`genres`, `director`, `cast` — and `filmContext(night)` hands all of it to
+Claude as a briefing. Nights cached before v3.9 have no story, so
+`ensureNightFacts` tops them up behind a `storyTried` flag, the same additive
+pattern as OMDb scores and trailers. **`storyTried` is stamped even when the
+fetch fails**, or a film TMDB can't find re-fetches on every render.
+
+A pack written from the briefing rather than Claude's own memory comes back with
+`"grounded":true`, gets stored on the record, and the sheet says so: *"Written
+by Claude from this film's TMDB details — too new for it to have seen."* Keep
+that honest if you touch it. "Surprising behind-the-scenes fun facts" about a
+film the model has never seen would be invention, which is why the prompt
+redirects those to what the details actually support.
+
 **Claude needs a way to say "I don't know this film."** Without one, the only
 way for it to answer about a small or very new title is prose — and prose can
 never parse, so the app reported a film nobody knows as a mangled-JSON problem.
@@ -405,6 +428,7 @@ mistake would hide.
 
 ## Version history
 
+- **v3.9** — the app briefs Claude on films newer than it, so new releases get packs
 - **v3.8** — Claude can say it doesn't know a film, instead of failing as bad JSON
 - **v3.7** — Claude failures say what actually went wrong; "No movie night" is a visible choice
 - **v3.6** — skip a Friday without anyone losing their turn
