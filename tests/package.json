@@ -1,0 +1,11 @@
+{
+  "name": "family-movie-night-tests",
+  "private": true,
+  "description": "Playwright suites for the built index.html. Dev only — the app itself ships with no dependencies.",
+  "scripts": {
+    "test": "./run.sh"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.62.0"
+  }
+}
