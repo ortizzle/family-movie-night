@@ -119,6 +119,18 @@ per record by `updatedAt`; tombstones are kept 60 days then purged; records
 flagged `sample: true` are stripped before upload so demo data never reaches
 the family gist.
 
+**Re-read local *after* the round trip, never before.** Both `save` and `load`
+used to snapshot local data, spend a second or two on the network, then write
+the merge back — so anything saved during that window was silently deleted.
+River answered his question on Chris's phone while a foreground pull was in
+flight: the upload already on its way carried it to Kat, and the pull landing
+afterwards wiped it locally. It looked like "saved on one phone, not the
+other" and was really a write being thrown away at home. Both paths now merge
+against `Store.get('data')` at the moment they adopt, which is safe precisely
+because the merge is newest-wins. `scheduleSync` also sets `syncAgain` when it
+fires during a sync, so a mid-flight write still reaches the gist instead of
+waiting for somebody to save again.
+
 **Deletes need tombstones with the sample flag dropped.** A tombstone that kept
 `sample: true` got filtered out of the upload, so deletions never propagated
 and sample movies kept coming back on Kat's phone.

@@ -2088,6 +2088,15 @@ var Sync = {
       })
       .then(function(res){
         if (!res.ok) throw new Error('Gist save failed: ' + res.status);
+        /* Fold in anything written while the request was open. A round trip
+           takes a second or two, and a reaction typed in that window used to
+           be wiped by this very line: the merge was computed before the save
+           happened, so writing it back deleted it locally — while the upload
+           already on its way carried it to everyone else's phone. Merging
+           again against what's on disk *now* is safe, because the merge is
+           newest-wins per record and anything newer is exactly what we want
+           to keep. */
+        mergedHolder = self.merge(Store.get('data', { records:{} }), mergedHolder);
         Store.set('data', mergedHolder);
         Store.set('last_sync', Date.now());
         return mergedHolder;
@@ -2095,9 +2104,9 @@ var Sync = {
   },
   load: function(){
     var self = this;
-    var local = Store.get('data', { records:{} });
+    /* read local *after* the fetch, never before — see the note in save() */
     return self.pullRemote().then(function(remote){
-      var merged = self.merge(local, remote);
+      var merged = self.merge(Store.get('data', { records:{} }), remote);
       Store.set('data', merged);
       Store.set('last_sync', Date.now());
       return merged;
@@ -2128,6 +2137,10 @@ var Sync = {
 };
 var syncTimer = null;
 var syncBusy = false;
+/* Something was saved while a sync was already running. The scheduled retry
+   would have hit the busy guard and given up, leaving that write sitting on
+   this phone until somebody happened to save again. */
+var syncAgain = false;
 function overlaysOpen(){
   return !!document.querySelector('.modal-overlay') || !!document.querySelector('.scrap-overlay');
 }
@@ -2151,15 +2164,20 @@ function adoptMerged(merged){
 }
 function scheduleSync(){
   if (!Sync.configured()) return;
+  if (syncBusy) syncAgain = true;
   clearTimeout(syncTimer);
   syncTimer = setTimeout(runSync, 1500);
 }
 function runSync(){
-  if (!Sync.configured() || syncBusy) return;
+  if (!Sync.configured()) return;
+  if (syncBusy){ syncAgain = true; return; }
   syncBusy = true;
+  syncAgain = false;
   Sync.save(data).then(function(merged){
     syncBusy = false;
     adoptMerged(merged);
+    // a write landed mid-flight; it isn't on the gist yet
+    if (syncAgain) scheduleSync();
   }).catch(function(){
     syncBusy = false;
     toast('Saved on this phone — family sync will retry');
