@@ -389,6 +389,10 @@ function renderHome(app){
     voteBtn.addEventListener('click', openStartVote);
     app.appendChild(voteBtn);
   }
+  var driveSlot = el('div');
+  driveSlot.id = 'drive-slot';
+  app.appendChild(driveSlot);
+  OrtizDrive.mountBar(driveSlot, DRIVE_BAR);
 
   /* memory book.
      nights() is newest-first, which is right for memories but backwards for
@@ -625,7 +629,7 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.9'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.10'));
   app.appendChild(footer);
 
   runPendingJump();   // cards exist now — safe to scroll to one

@@ -1399,6 +1399,43 @@ function shareBackup(){
       toast('Share sheet didn’t open — saved to Downloads instead');
     });
 }
+/* ---------- Google Drive copy (shared ortiz-drive.js) ----------
+   The export's shape, so a Drive file goes back in through importBackup.
+   Two things are left out: demo nights (the gist never gets them either) and
+   any setting record carrying a `value` — that's how the TMDB and OMDb keys
+   travel, and an API key has no business sitting in a Drive file. */
+var DRIVE_ADULTS = ['chris', 'kat'];
+function driveBackupData(){
+  var out = { records:{} };
+  for (var id in data.records){
+    var r = data.records[id];
+    if (!r || r.sample) continue;
+    if (r.type === 'setting' && 'value' in r) continue;
+    out.records[id] = r;
+  }
+  return out;
+}
+/* the kids' phones never offer it — the backup lands in whoever's Google
+   account connects, and that should be a parent's */
+function driveAllowed(){
+  var me = whoAmI();
+  return !!me && DRIVE_ADULTS.indexOf(me.id) !== -1;
+}
+var DRIVE_BAR = { className:'set-btn' };
+function mountDriveBar(){
+  var slot = document.getElementById('drive-slot');
+  if (slot) OrtizDrive.mountBar(slot, DRIVE_BAR);
+}
+function initDrive(){
+  OrtizDrive.init({
+    app: 'Family Movie Night',
+    prefix: 'family-movie-night',
+    getData: driveBackupData,
+    toast: toast,
+    onChange: mountDriveBar,
+    allowed: driveAllowed
+  });
+}
 function importBackup(file){
   var reader = new FileReader();
   reader.onload = function(){

@@ -5,6 +5,7 @@
    scope, exactly as the single inline script did. Order matters: boot.js
    runs the startup calls and must stay last. */
 
+initDrive();
 applyTheme();
 applyMotion();
 seedSample();

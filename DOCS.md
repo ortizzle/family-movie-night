@@ -428,6 +428,7 @@ mistake would hide.
 
 ## Version history
 
+- **v3.10** — an automatic dated copy in Google Drive (Ortiz App Backups › Family Movie Night), offered on Chris's and Kat's phones
 - **v3.9** — the app briefs Claude on films newer than it, so new releases get packs
 - **v3.8** — Claude can say it doesn't know a film, instead of failing as bad JSON
 - **v3.7** — Claude failures say what actually went wrong; "No movie night" is a visible choice
