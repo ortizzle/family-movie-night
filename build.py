@@ -41,6 +41,7 @@ html = html[:block.start()] + bundle + html[block.end():]
 # development; at the root they sit alongside index.html
 html = html.replace('../manifest.webmanifest', 'manifest.webmanifest')
 html = html.replace('../icon.svg', 'icon.svg')
+html = html.replace('../ortiz-drive.js', 'ortiz-drive.js')
 
 OUT.write_text(html)
 print('built index.html — %d lines, %d scripts inlined' % (html.count('\n') + 1, len(tags)))

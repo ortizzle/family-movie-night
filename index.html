@@ -1464,6 +1464,7 @@ footer{
 <nav class="tabbar" id="tabbar"></nav>
 <div class="toast" id="toast"></div>
 
+<script src="ortiz-drive.js?v=31"></script>
 <script>
 /* ===== fmn/core.js ===== */
 /* Family Movie Night — fmn/core.js
@@ -2056,6 +2057,8 @@ function saveData(){
   data.updatedAt = Date.now();
   if (!Store.set('data', data)) toast('Storage full — could not save');
   scheduleSync();
+  // a synced phone checks once the merge lands, so the copy is the family's
+  if (!Sync.configured()) OrtizDrive.check();
 }
 
 /* ---------- family Gist sync (safe merge + tombstones — canonical) ----------
@@ -2220,6 +2223,7 @@ function runSync(){
   Sync.save(data).then(function(merged){
     syncBusy = false;
     adoptMerged(merged);
+    OrtizDrive.check();
     // a write landed mid-flight; it isn't on the gist yet
     if (syncAgain) scheduleSync();
   }).catch(function(){
@@ -2233,6 +2237,7 @@ function pullSync(quiet){
   Sync.load().then(function(merged){
     syncBusy = false;
     var changed = adoptMerged(merged);
+    OrtizDrive.check();
     if (!quiet) toast(changed ? 'Synced — new family entries in! 🍿' : 'Synced — all caught up ✓');
   }).catch(function(){
     syncBusy = false;
@@ -5058,6 +5063,43 @@ function shareBackup(){
       toast('Share sheet didn’t open — saved to Downloads instead');
     });
 }
+/* ---------- Google Drive copy (shared ortiz-drive.js) ----------
+   The export's shape, so a Drive file goes back in through importBackup.
+   Two things are left out: demo nights (the gist never gets them either) and
+   any setting record carrying a `value` — that's how the TMDB and OMDb keys
+   travel, and an API key has no business sitting in a Drive file. */
+var DRIVE_ADULTS = ['chris', 'kat'];
+function driveBackupData(){
+  var out = { records:{} };
+  for (var id in data.records){
+    var r = data.records[id];
+    if (!r || r.sample) continue;
+    if (r.type === 'setting' && 'value' in r) continue;
+    out.records[id] = r;
+  }
+  return out;
+}
+/* the kids' phones never offer it — the backup lands in whoever's Google
+   account connects, and that should be a parent's */
+function driveAllowed(){
+  var me = whoAmI();
+  return !!me && DRIVE_ADULTS.indexOf(me.id) !== -1;
+}
+var DRIVE_BAR = { className:'set-btn' };
+function mountDriveBar(){
+  var slot = document.getElementById('drive-slot');
+  if (slot) OrtizDrive.mountBar(slot, DRIVE_BAR);
+}
+function initDrive(){
+  OrtizDrive.init({
+    app: 'Family Movie Night',
+    prefix: 'family-movie-night',
+    getData: driveBackupData,
+    toast: toast,
+    onChange: mountDriveBar,
+    allowed: driveAllowed
+  });
+}
 function importBackup(file){
   var reader = new FileReader();
   reader.onload = function(){
@@ -5578,6 +5620,10 @@ function renderHome(app){
     voteBtn.addEventListener('click', openStartVote);
     app.appendChild(voteBtn);
   }
+  var driveSlot = el('div');
+  driveSlot.id = 'drive-slot';
+  app.appendChild(driveSlot);
+  OrtizDrive.mountBar(driveSlot, DRIVE_BAR);
 
   /* memory book.
      nights() is newest-first, which is right for memories but backwards for
@@ -5814,7 +5860,7 @@ function renderHome(app){
   applyBookFilter();
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.9'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.10'));
   app.appendChild(footer);
 
   runPendingJump();   // cards exist now — safe to scroll to one
@@ -8144,6 +8190,11 @@ function renderSettings(app){
   im.addEventListener('click', function(){ fileInput.click(); });
   ds.appendChild(im);
   ds.appendChild(el('div','set-note','Even with family sync on, a backup file in Drive/Files is the seatbelt.'));
+  if (OrtizDrive.allowedHere()){
+    ds.appendChild(OrtizDrive.settingsBlock({ labelClass:'f-label', buttonClass:'set-btn', hintClass:'set-note' }));
+  } else {
+    ds.appendChild(el('div','set-note','Automatic Google Drive copies can be switched on from Chris’s or Kat’s phone (🙋 Who’s on this phone?).'));
+  }
   /* tmdb key */
   var tk = collapsible(app, '🎬 TMDB key — posters & facts', {
     badge: loadTmdbCred() ? 'Saved' : 'Not set', badgeOn: !!loadTmdbCred()
@@ -8254,7 +8305,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.2'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.10'));
   app.appendChild(foot);
 }
 
@@ -8279,6 +8330,7 @@ function render(){
    scope, exactly as the single inline script did. Order matters: boot.js
    runs the startup calls and must stay last. */
 
+initDrive();
 applyTheme();
 applyMotion();
 seedSample();

@@ -572,6 +572,11 @@ function renderSettings(app){
   im.addEventListener('click', function(){ fileInput.click(); });
   ds.appendChild(im);
   ds.appendChild(el('div','set-note','Even with family sync on, a backup file in Drive/Files is the seatbelt.'));
+  if (OrtizDrive.allowedHere()){
+    ds.appendChild(OrtizDrive.settingsBlock({ labelClass:'f-label', buttonClass:'set-btn', hintClass:'set-note' }));
+  } else {
+    ds.appendChild(el('div','set-note','Automatic Google Drive copies can be switched on from Chris’s or Kat’s phone (🙋 Who’s on this phone?).'));
+  }
   /* tmdb key */
   var tk = collapsible(app, '🎬 TMDB key — posters & facts', {
     badge: loadTmdbCred() ? 'Saved' : 'Not set', badgeOn: !!loadTmdbCred()
@@ -682,7 +687,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.2'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.10'));
   app.appendChild(foot);
 }
 

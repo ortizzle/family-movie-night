@@ -13,6 +13,8 @@ function saveData(){
   data.updatedAt = Date.now();
   if (!Store.set('data', data)) toast('Storage full — could not save');
   scheduleSync();
+  // a synced phone checks once the merge lands, so the copy is the family's
+  if (!Sync.configured()) OrtizDrive.check();
 }
 
 /* ---------- family Gist sync (safe merge + tombstones — canonical) ----------
@@ -177,6 +179,7 @@ function runSync(){
   Sync.save(data).then(function(merged){
     syncBusy = false;
     adoptMerged(merged);
+    OrtizDrive.check();
     // a write landed mid-flight; it isn't on the gist yet
     if (syncAgain) scheduleSync();
   }).catch(function(){
@@ -190,6 +193,7 @@ function pullSync(quiet){
   Sync.load().then(function(merged){
     syncBusy = false;
     var changed = adoptMerged(merged);
+    OrtizDrive.check();
     if (!quiet) toast(changed ? 'Synced — new family entries in! 🍿' : 'Synced — all caught up ✓');
   }).catch(function(){
     syncBusy = false;
